@@ -1,0 +1,223 @@
+Sub SplitTextIntoSlidesByRenderedLines()
+    Dim sld As slide
+    Dim shp As shape
+    Dim origText As String
+    Dim totalLines As Long
+    Dim renderedLines() As String
+    Dim i As Long, j As Long, endLine As Long
+    Dim groupText As String
+    Dim newSlide As slide
+    Dim newShp As shape
+    Dim currentSlideIndex As Long
+    Dim slideCollection As Collection
+    Dim s As Variant
+    
+    ' Build a collection of the original slides to process.
+    Set slideCollection = New Collection
+    For Each sld In ActivePresentation.Slides
+        slideCollection.Add sld
+    Next sld
+    
+    ' Process each slide from the collection.
+    For Each s In slideCollection
+        Set sld = s
+        currentSlideIndex = sld.slideIndex
+        For Each shp In sld.Shapes
+            If shp.Type = msoTextBox And shp.Name = "Content Placeholder 3" Then
+                ' Ensure fixed width for predictable wrapping.
+                shp.Width = sld.Master.Width
+                shp.Left = 0
+                
+                ' Get and store the original text.
+                origText = shp.TextFrame2.TextRange.Text
+                ' (Reassign the text so the formatting takes effect.)
+                shp.TextFrame2.TextRange.Text = origText
+                FormatTextBox shp
+                
+                ' Force a layout update (if needed).
+                DoEvents
+                
+                ' Get the total number of rendered lines.
+                totalLines = shp.TextFrame2.TextRange.lines.Count
+                If totalLines = 0 Then GoTo NextShape
+                
+                ' Store each rendered line into an array.
+                ReDim renderedLines(1 To totalLines)
+                For i = 1 To totalLines
+                    renderedLines(i) = shp.TextFrame2.TextRange.lines(i, 1).Text
+                Next i
+                
+                ' Clear the text box content.
+                shp.TextFrame2.TextRange.Text = ""
+                
+                ' Process the rendered lines in groups of 4.
+                For i = 1 To totalLines Step 4
+                    groupText = ""
+                    endLine = i + 3
+                    If endLine > totalLines Then endLine = totalLines
+                    For j = i To endLine
+                        groupText = groupText & renderedLines(j) & vbCrLf
+                    Next j
+                    ' Remove the trailing line break.
+                    If Right(groupText, 2) = vbCrLf Then
+                        groupText = Left(groupText, Len(groupText) - 2)
+                    End If
+                    
+                    If i = 1 Then
+                        ' Place the first group in the original text box.
+                        shp.TextFrame2.TextRange.Text = groupText
+                        FormatTextBox shp
+                    Else
+                        ' Create a new slide after the current slide.
+                        Set newSlide = ActivePresentation.Slides.Add(currentSlideIndex + 1, ppLayoutBlank)
+                        currentSlideIndex = currentSlideIndex + 1
+                        ' Add a new text box with fixed width.
+                        Set newShp = newSlide.Shapes.AddTextbox( _
+                            Orientation:=msoTextOrientationHorizontal, _
+                            Left:=0, _
+                            Top:=newSlide.Master.Height - 200, _
+                            Width:=newSlide.Master.Width, _
+                            Height:=200)
+                        newShp.Name = "Content Placeholder 3"
+                        newShp.TextFrame2.TextRange.Text = groupText
+                        FormatTextBox newShp
+                    End If
+                Next i
+NextShape:
+            End If
+        Next shp
+    Next s
+End Sub
+
+' Helper routine to apply the desired formatting.
+Sub FormatTextBox(shp As shape)
+    With shp.TextFrame2.TextRange.Font
+        .Name = "Times New Roman"
+        .Size = 44
+        .Bold = msoTrue
+        .Fill.ForeColor.RGB = RGB(255, 255, 255)
+    End With
+    With shp.TextFrame2.TextRange.ParagraphFormat
+        .Alignment = msoAlignJustifyLow
+        .SpaceWithin = 0.9
+        .TextDirection = msoTextDirectionRightToLeft
+    End With
+End Sub
+
+
+Sub FormatContentPlaceholders()
+    Dim sld As slide
+    Dim shp As shape
+    Dim cleanedText As String
+    
+    ' Loop through every slide in the active presentation
+    For Each sld In ActivePresentation.Slides
+        ' Loop through every shape on the slide
+        For Each shp In sld.Shapes
+            ' Check if the shape has a text frame and contains text
+            If shp.HasTextFrame Then
+                If shp.TextFrame.HasText Then
+                    ' Check if the shape's name is exactly "Content Placeholder 3"
+                    If shp.Name = "Content Placeholder 3" Then
+                        With shp.TextFrame.TextRange
+                            ' Get the current text
+                            cleanedText = .Text
+                            
+                            ' Remove any line breaks (Carriage Return & Line Feed variants)
+                            cleanedText = Replace(cleanedText, vbCrLf, " ")
+                            cleanedText = Replace(cleanedText, vbCr, " ")
+                            cleanedText = Replace(cleanedText, vbLf, " ")
+                            
+                            ' Trim extra spaces and append a Shift+Enter line break (Chr(11))
+                            cleanedText = Trim(cleanedText) & Chr(11)
+                            
+                            ' Set the modified text back into the shape
+                            .Text = cleanedText
+                            
+                            ' Apply formatting:
+                            .Font.Name = "Times New Roman"
+                            .Font.Size = 44
+                            .ParagraphFormat.Alignment = ppAlignJustifyLow
+                            .ParagraphFormat.TextDirection = ppDirectionRightToLeft
+                            .ParagraphFormat.SpaceWithin = 0.9
+                        End With
+                    End If
+                End If
+            End If
+        Next shp
+    Next sld
+End Sub
+
+
+
+Sub ChangeAllTextToTimesNewRoman()
+    Dim sld As slide
+    Dim shp As shape
+    
+    For Each sld In ActivePresentation.Slides
+        For Each shp In sld.Shapes
+            If shp.HasTextFrame Then
+                If shp.TextFrame.HasText Then
+                    shp.TextFrame2.TextRange.Font.Name = "Times New Roman (Headings)"
+                End If
+            End If
+        Next shp
+    Next sld
+End Sub
+
+
+
+Sub HideSlidesWithText()
+    Dim sld As slide
+    Dim shp As shape
+    Dim hideSlide As Boolean
+    
+    ' Loop through every slide in the active presentation
+    For Each sld In ActivePresentation.Slides
+        hideSlide = False
+        
+        ' Loop through each shape on the slide
+        For Each shp In sld.Shapes
+            ' Check if the shape has a text frame and contains text
+            If shp.HasTextFrame Then
+                If shp.TextFrame.HasText Then
+                    ' If the text (after trimming spaces) is not empty, mark the slide for hiding
+                    If Trim(shp.TextFrame.TextRange.Text) <> "" Then
+                        hideSlide = True
+                        Exit For  ' No need to check other shapes once we know the slide has text
+                    End If
+                End If
+            End If
+        Next shp
+        
+        ' Hide the slide if any shape contained non-empty text; otherwise, show it.
+        sld.SlideShowTransition.Hidden = IIf(hideSlide, msoTrue, msoFalse)
+    Next sld
+    
+    MsgBox "Slides containing text have been hidden."
+End Sub
+
+
+
+Sub SetContentPlaceholderPosition()
+    Dim sld As slide
+    Dim shp As shape
+    Dim newTop As Single
+
+    ' Convert 12.7 centimeters to points
+    newTop = 345
+    
+    ' Loop through every slide in the active presentation
+    For Each sld In ActivePresentation.Slides
+        ' Loop through every shape on the slide
+        For Each shp In sld.Shapes
+            ' Check if the shape's name is "Content Placeholder 3"
+            If shp.Name = "Content Placeholder 3" Then
+                shp.Top = newTop
+            End If
+        Next shp
+    Next sld
+
+    MsgBox "Positions updated for all 'Content Placeholder 3' shapes."
+End Sub
+

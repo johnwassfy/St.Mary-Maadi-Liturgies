@@ -1,0 +1,45 @@
+Dim visitedSlides As Collection ' Global collection to track visited slides
+
+Sub OnSlideShowPageChange()
+    Dim currentSlideNumber As Integer
+    Dim targetShape As Shape
+
+    ' Initialize the visitedSlides collection if it hasn't been created yet
+    If visitedSlides Is Nothing Then
+        Set visitedSlides = New Collection
+    End If
+
+    ' Get the current slide number in the slideshow view
+    currentSlideNumber = ActivePresentation.SlideShowWindow.View.Slide.SlideIndex
+
+    ' Check if the slide has already been visited (i.e., hyperlink followed)
+    On Error Resume Next
+    visitedSlides.Item currentSlideNumber
+    If Err.Number = 0 Then
+        ' Slide has already been visited; exit without doing anything
+        Exit Sub
+    End If
+    On Error GoTo 0
+
+    ' Use Select Case to handle actions on specific slides by slide number
+    Select Case currentSlideNumber
+        Case 431 ' Replace with the slide number for the first target slide
+            ' Attempt to locate and "click" the target shape
+            Set targetShape = GetShapeByName("TextBox 2") ' Replace with your shape name
+            
+            If Not targetShape Is Nothing Then
+                If targetShape.ActionSettings(ppMouseClick).Action = ppActionHyperlink Then
+                    ' Follow the hyperlink
+                    targetShape.ActionSettings(ppMouseClick).Hyperlink.Follow
+                End If
+            End If
+    End Select
+End Sub
+
+' Helper function to get a shape by name on the current slide
+Function GetShapeByName(shapeName As String) As Shape
+    On Error Resume Next
+    Set GetShapeByName = ActivePresentation.SlideShowWindow.View.Slide.Shapes(shapeName)
+    On Error GoTo 0
+End Function
+
