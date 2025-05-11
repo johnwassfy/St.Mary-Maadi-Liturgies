@@ -126,9 +126,9 @@ class elfhrswindow(QMainWindow):
         self.buttons_layout.addWidget(self.label, alignment=Qt.AlignRight)
 
         # Add the buttons
-        self.add_buttons(["باكر و عشية", "القداس", "قداس الطفل", 
-                          "الإبصلمودية السنوية", "الإبصلمودية الكيهكية", "الذكصولوجيات"], 
-                         ["رفع بخور", "القداس", "قداس الطفل", "التسبحة", "تسبحة كيهك", "الذكصولوجيات"])
+        self.add_buttons(["باكر و عشية", "القداس", "قداس الطفل", "الإبصلمودية السنوية", 
+                          "الإبصلمودية الكيهكية", "الذكصولوجيات", "المدائح والتماجيد"], 
+                         ["رفع بخور", "القداس", "قداس الطفل", "التسبحة", "تسبحة كيهك", "الذكصولوجيات", "المدائح"])
 
         # Create a label with the text "القطمارس"
         self.label = QLabel("القطمارس", self)
@@ -234,6 +234,8 @@ class elfhrswindow(QMainWindow):
                 file_path = r"Data\CopyData\الإبصلمودية الكيهكية.pptx"
             case "الذكصولوجيات":
                 file_path = r"Data\CopyData\الذكصولوجيات.pptx"
+            case "المدائح والتماجيد":
+                file_path = r"Data\CopyData\كتاب المدائح.pptx"
 
         file_path = relative_path(file_path)
 
@@ -414,6 +416,7 @@ class elfhrswindow(QMainWindow):
                     (relative_path(r"Data\CopyData\في حضور الاسقف و اساقفة ضيوف.pptx"), "في حضور الأسقف"),
                     (relative_path(r"Data\CopyData\الإبصلمودية.pptx"), "التسبحة"),
                     (relative_path(r"Data\CopyData\الإبصلمودية الكيهكية.pptx"), "تسبحة كيهك"),
+                    (relative_path(r"Data\CopyData\كتاب المدائح.pptx"), "المدائح"),
                 ]
 
                 excel_file = relative_path(r'بيانات القداسات.xlsx')
