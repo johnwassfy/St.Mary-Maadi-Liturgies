@@ -5,10 +5,6 @@ import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
 import pandas as pd
 
-def relative_path(relative_path):
-    script_directory = os.path.dirname(os.path.abspath(__file__))
-    absolute_path = os.path.join(script_directory, relative_path)
-    return absolute_path
 
 def extract_section_info(file_sheet_pairs, excel_file):
     try:

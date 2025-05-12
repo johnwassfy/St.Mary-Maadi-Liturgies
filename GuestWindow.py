@@ -2,10 +2,8 @@ import os
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QCheckBox, QVBoxLayout, QHBoxLayout, QComboBox, QLineEdit, QPushButton
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, pyqtSignal
 from pptx import Presentation
-from pptx.enum.text import PP_ALIGN
-from pptx.util import Pt
+from commonFunctions import relative_path
 
 class CustomRow(QWidget):
     def __init__(self, label_text):
@@ -35,7 +33,7 @@ class Bishop(QWidget):
         self.label1 = QLabel("حضور اسقف الابراشية ")
         self.textbox1 = QLabel()
         self.checkbox1 = QCheckBox()
-        self.setWindowIcon(QIcon(self.relative_path(r"Data\الصور\Logo.ico")))
+        self.setWindowIcon(QIcon(relative_path(r"Data\الصور\Logo.ico")))
         
         # Create custom rows for the second and third rows
         self.row2 = CustomRow("حضور اسقف ضيف واحد")
@@ -60,13 +58,8 @@ class Bishop(QWidget):
         
         self.setLayout(layout)
 
-    def relative_path(self, relative_path):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        absolute_path = os.path.join(script_directory, relative_path)
-        return absolute_path
-
     def update_powerpoint(self):
-        presentation = Presentation(self.relative_path(r"Data\CopyData\في حضور الاسقف و اساقفة ضيوف.pptx"))  # Provide your PowerPoint file path
+        presentation = Presentation(relative_path(r"Data\CopyData\في حضور الاسقف و اساقفة ضيوف.pptx"))  # Provide your PowerPoint file path
 
         for slide in presentation.slides:
             slide_contains_word = False  # Flag to indicate if the slide contains "(الضيف)"
@@ -115,7 +108,7 @@ class Bishop(QWidget):
                                     run.text = run.text.replace("epickopoc", "mmytropolityc")
                                     run.text = run.text.replace("`epickopou tyc", "mmytropolityc")
         
-        presentation.save(self.relative_path(r"Data\حضور الأسقف.pptx"))
+        presentation.save(relative_path(r"Data\حضور الأسقف.pptx"))
     
 
 

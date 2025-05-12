@@ -4,6 +4,8 @@ import asyncio
 from PyQt5.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QWidget, QMessageBox
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
+from commonFunctions import relative_path, load_background_image, open_presentation_relative_path
+from NotificationBar import NotificationBar
 
 class elbas5aWindow(QMainWindow):
     def __init__(self, main_window):
@@ -28,8 +30,15 @@ class elbas5aWindow(QMainWindow):
         layout.addWidget(self.back_button, alignment=Qt.AlignBottom | Qt.AlignRight)  # Align the button to the top left corner
         self.back_button.clicked.connect(self.go_back)
 
+        # Add NotificationBar
+        self.notification_bar = NotificationBar(self)
+        self.notification_bar.setGeometry(0, 70, self.width(), 50)
+        
         # Load background image
-        self.load_background_image()
+        try:
+            load_background_image(self.central_widget)
+        except Exception as e:
+            self.notification_bar.show_message(f"خطأ في تحميل الخلفية: {str(e)}")
 
         frame0 = QFrame(self)
         frame0.setGeometry(0, 0, 625, 70)
@@ -37,7 +46,7 @@ class elbas5aWindow(QMainWindow):
         # Add the picture to frame0
         image_label = QLabel(frame0)
         image_label.setGeometry(0, 0, 625, 70)
-        image_path = self.relative_path(r"Data\الصور\Untitled-2.png")
+        image_path = relative_path(r"Data\الصور\Untitled-2.png")
         pixmap = QPixmap(image_path)
         image_label.setPixmap(pixmap)
         image_label.setScaledContents(True)
@@ -63,7 +72,7 @@ class elbas5aWindow(QMainWindow):
 
         # Add photo inside the first frame
         image_label = QLabel(frame)
-        pixmap = QPixmap(self.relative_path(r"Data\الصور\esbo3elalam.png"))  # Replace with your image path
+        pixmap = QPixmap(relative_path(r"Data\الصور\esbo3elalam.png"))  # Replace with your image path
         image_label.setPixmap(pixmap)
         image_label.setGeometry(20, 60, 230, 335)  # Adjust dimensions as needed
         image_label.setScaledContents(True)
@@ -137,7 +146,7 @@ class elbas5aWindow(QMainWindow):
 
         for button_text, pptx_path in buttons:
             button = QPushButton(button_text)
-            button.clicked.connect(lambda _, p=pptx_path: self.open_presentation(p))
+            button.clicked.connect(lambda _, p=pptx_path: open_presentation_relative_path(p))
             self.set_default_button_style(button)
             self.buttons_layout.addWidget(button)
 
@@ -160,22 +169,8 @@ class elbas5aWindow(QMainWindow):
             "}"
         )
 
-    def open_presentation(self, file_name):
-        file_path = self.relative_path(file_name)
-        os.startfile(file_path)
-
     def go_back(self):
         self.close()
 
-    def relative_path(self, relative_path):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        absolute_path = os.path.join(script_directory, relative_path)
-        return absolute_path
-
     def show_error_message(self, error_message):
         QMessageBox.critical(self, "Error", error_message)
-
-    def load_background_image(self):
-        pixmap = QPixmap(self.relative_path(r"Data\الصور\background.png"))
-        self.central_widget.setPixmap(pixmap)
-        self.central_widget.setScaledContents(True)

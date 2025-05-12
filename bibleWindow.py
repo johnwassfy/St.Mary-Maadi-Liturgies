@@ -3,15 +3,14 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBo
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 import win32com
-
+from commonFunctions import relative_path, load_background_image
+from NotificationBar import NotificationBar  # Assuming NotificationBar is in the same directory
 
 class bibleWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
-        # self.main_window = main_window  # Reference to the main window
-
-        self.setWindowTitle("Coptic Shasha")
+        
+        self.setWindowTitle("St. Mary Maadi Liturgies")
         self.setGeometry(100, 100, 625, 600)
         self.setFixedSize(625, 600)
 
@@ -20,6 +19,7 @@ class bibleWindow(QMainWindow):
         self.central_widget.setAlignment(Qt.AlignCenter)
         self.setCentralWidget(self.central_widget)
 
+
         # Create a vertical layout for the central widget
         layout = QVBoxLayout(self.central_widget)
 
@@ -27,9 +27,16 @@ class bibleWindow(QMainWindow):
         self.back_button = QPushButton("Back")
         layout.addWidget(self.back_button, alignment=Qt.AlignBottom | Qt.AlignRight)  # Align the button to the top left corner
         self.back_button.clicked.connect(self.go_back)
-
+        
+        # Add NotificationBar
+        self.notification_bar = NotificationBar(self)
+        self.notification_bar.setGeometry(0, 70, self.width(), 50)
+        
         # Load background image
-        self.load_background_image()
+        try:
+            load_background_image(self.central_widget)
+        except Exception as e:
+            self.notification_bar.show_message(f"خطأ في تحميل الخلفية: {str(e)}")
 
         frame0 = QFrame(self)
         frame0.setGeometry(0, 0, 625, 70)
@@ -37,7 +44,7 @@ class bibleWindow(QMainWindow):
         # Add the picture to frame0
         image_label = QLabel(frame0)
         image_label.setGeometry(0, 0, 625, 70)
-        image_path = self.relative_path(r"Data\الصور\Untitled-2.png")
+        image_path = relative_path(r"Data\الصور\Untitled-2.png")
         pixmap = QPixmap(image_path)
         image_label.setPixmap(pixmap)
         image_label.setScaledContents(True)
@@ -63,7 +70,7 @@ class bibleWindow(QMainWindow):
 
         # Add photo inside the first frame
         image_label = QLabel(frame)
-        pixmap = QPixmap(self.relative_path(r"Data\الصور\bible.png"))  # Replace with your image path
+        pixmap = QPixmap(relative_path(r"Data\الصور\bible.png"))  # Replace with your image path
         image_label.setPixmap(pixmap)
         image_label.setGeometry(-10, 20, 274, 411)  # Adjust dimensions as needed
         image_label.setScaledContents(True)
@@ -202,7 +209,7 @@ class bibleWindow(QMainWindow):
 
     def open_presentation(self, file_name, slide_number=None):
         if file_name != None:
-            file_path = self.relative_path(file_name)
+            file_path = relative_path(file_name)
             if slide_number is None:
                 os.startfile(file_path)
             else:
@@ -225,16 +232,5 @@ class bibleWindow(QMainWindow):
     def go_back(self):
         self.close()
 
-    def relative_path(self, relative_path):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        absolute_path = os.path.join(script_directory, relative_path)
-        return absolute_path
-
     def show_error_message(self, error_message):
         QMessageBox.critical(self, "Error", error_message)
-
-    def load_background_image(self):
-        pixmap = QPixmap(self.relative_path(r"Data\الصور\background.png"))
-        self.central_widget.setPixmap(pixmap)
-        self.central_widget.setScaledContents(True)
-

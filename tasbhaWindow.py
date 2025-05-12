@@ -4,6 +4,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 import win32com
 from tasbha import *
+from commonFunctions import relative_path, load_background_image
 
 class tasbhawindow(QMainWindow):
     def __init__(self, copticdate,season):
@@ -29,7 +30,10 @@ class tasbhawindow(QMainWindow):
         self.back_button.clicked.connect(self.go_back)
 
         # Load background image
-        self.load_background_image()
+        try:
+            load_background_image(self.central_widget)
+        except Exception as e:
+            self.show_error(f"خطأ في تحميل الخلفية: {str(e)}")
 
         frame0 = QFrame(self)
         frame0.setGeometry(0, 0, 625, 70)
@@ -37,7 +41,7 @@ class tasbhawindow(QMainWindow):
         # Add the picture to frame0
         image_label = QLabel(frame0)
         image_label.setGeometry(0, 0, 625, 70)
-        image_path = self.relative_path(r"Data\الصور\Untitled-2.png")
+        image_path = relative_path(r"Data\الصور\Untitled-2.png")
         pixmap = QPixmap(image_path)
         image_label.setPixmap(pixmap)
         image_label.setScaledContents(True)
@@ -63,7 +67,7 @@ class tasbhawindow(QMainWindow):
 
         # Add photo inside the first frame
         image_label = QLabel(frame)
-        pixmap = QPixmap(self.relative_path(r"Data\الصور\داود.png"))  # Replace with your image path
+        pixmap = QPixmap(relative_path(r"Data\الصور\داود.png"))  # Replace with your image path
         image_label.setPixmap(pixmap)
         image_label.setGeometry(25, 35, 247, 368)  # Adjust dimensions as needed
         image_label.setScaledContents(True)
@@ -129,15 +133,6 @@ class tasbhawindow(QMainWindow):
     def go_back(self):
         self.close()
 
-    def relative_path(self, relative_path):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        absolute_path = os.path.join(script_directory, relative_path)
-        return absolute_path
-
     def show_error_message(self, error_message):
         QMessageBox.critical(self, "Error", error_message)
 
-    def load_background_image(self):
-        pixmap = QPixmap(self.relative_path(r"Data\الصور\background.png"))
-        self.central_widget.setPixmap(pixmap)
-        self.central_widget.setScaledContents(True)

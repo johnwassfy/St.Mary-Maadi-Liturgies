@@ -10,6 +10,14 @@ def relative_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
+def load_background_image(background_label, image_path=r"Data\الصور\background2.png"):
+    from PyQt5.QtGui import QPixmap
+    pixmap = QPixmap(relative_path(image_path))
+    if background_label:  # Check if the background label exists
+        background_label.setPixmap(pixmap)
+        background_label.setScaledContents(True)
+        background_label.setObjectName("background_label")  # Set object name for the background label
+
 def find_slide_num(excel_path, sheet_name, word, col_num):
     try:
         # Load the Excel workbook
@@ -1164,7 +1172,7 @@ def move_sections_range(presentation, start_section_name, end_section_name, targ
 
 def run_vba_with_slide_id_bakr_aashya(excel, sheet, prs, presentation):
 
-    slide = find_slide_num_v2(excel, sheet, '{A5B9CE2F-90E3-44D7-B22F-CAE6783C8E2F}', 1)
+    slide = find_slide_num_v2(excel, sheet, '{A5B9CE2F-90E3-44D7-B22F-CAE6783C8E2F}', 2, 1)
 
     slide_id = get_slide_ids_by_number(prs, slide)
 
@@ -1252,13 +1260,19 @@ def elzoksologyat (excel_path, season, bakerOR3ashyaORtasbha):
     replacefile(relative_path(r"الذكصولوجيات.pptx"), relative_path(r"Data\CopyData\الذكصولوجيات.pptx"))
     pptx_file = relative_path(r"الذكصولوجيات.pptx")
     sheet = "الذكصولوجيات"
+    if bakerOR3ashyaORtasbha == "باكر":
+        bakerOR3ashyaORtasbha = '{9621F9CE-ABC8-4FF6-A8C6-3AA9D24690A0}'
+    elif bakerOR3ashyaORtasbha == "عشية":
+        bakerOR3ashyaORtasbha = '{267B00F5-E8C1-4DF6-A5CB-DFF5531064E8}'
+    else:
+        bakerOR3ashyaORtasbha = '{38C049BC-0822-439F-B5A3-C6094A6A24B1}'
     match(season):
-        case 1: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["النيروز", f"العذراء ({bakerOR3ashyaORtasbha})"])
-        case 2: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["الصليب", f"العذراء ({bakerOR3ashyaORtasbha})"])
-        case 29: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["التجلي", f"العذراء ({bakerOR3ashyaORtasbha})"])
+        case 1: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{9A902651-94A5-4D6A-83A0-BF404F380CD5}", bakerOR3ashyaORtasbha])
+        case 2: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{264E4307-BE55-4799-9151-3D149372B553}", bakerOR3ashyaORtasbha])
+        case 29: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{DC61EC21-9EF0-4E7C-8E4E-CD4269024AE6}", bakerOR3ashyaORtasbha])
         case 5: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["كيهك 1", "كيهك 2", "كيهك 3", "كيهك 4", "كيهك 5", "كيهك 6"])
         case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["الصوم الكبير 1", "الصوم الكبير 2", "الصوم الكبير 3", "الصوم الكبير 4", "الصوم الكبير 5"])
-        case default: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, [f"العذراء ({bakerOR3ashyaORtasbha})"])
+        case default: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, [bakerOR3ashyaORtasbha])
 
 def find_section_Ids_with_names(excel_path, sheet, names):
     try:
@@ -1409,16 +1423,13 @@ def show_hide_insertImage_replaceText(ppt_file, excel_path, sheet_name,
     presentation.save(ppt_file)    
 
 # excel = relative_path(r"بيانات القداسات.xlsx")
-# sheet = "القداس"
-# arr =  ["تكملة على حسب المناسبة", "مزمور التوزيع", "مزمور التوزيع", "مرد توزيع القيامة",
-#                       "الانجيل", "المزمور", "الابركسيس", "الكاثوليكون", "البولس عربي",
-#                       "اجيوس القيامة", "اجيوس القيامة", "مرد انجيل القيامة",
-#                       "قسمة للآب في عيد القيامة والخمسين (أيها السيد الرب الإله ضابط الكل)"]
+# sheet = "رفع بخور"
+# arr = ["تكملة في حضور الاسقف", "طوبه هينا الكبيرة", "مارو اتشاسف"]
 # print(find_section_Ids_with_names(excel, sheet, arr))
 # arr2 = ['{2BCF4F8C-25F0-43C5-B224-6528B2EA3F2F}', '{F76B0D75-0474-45B5-B79F-7416F354543A}',
-#                               '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', 
-#                               '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{A9183893-7B7E-459F-8547-F7A8F7D2D521}', 
-#                               '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}']
+#         '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', 
+#         '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{A9183893-7B7E-459F-8547-F7A8F7D2D521}', 
+#         '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}']
 # print(find_section_names_with_ids(excel, sheet, arr2))
 # print(find_slide_num_v2(excel, sheet, "تكملة للملاك ميخائيل 1", 1, 1))
 # print(find_slide_nums_arrays_v2(excel, sheet, ['{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}'], 2, [1, 2, 1, 2]))

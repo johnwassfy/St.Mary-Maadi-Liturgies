@@ -3,14 +3,14 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBo
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 import win32com
+from commonFunctions import relative_path, load_background_image
+from NotificationBar import NotificationBar 
 
 class ellakanwindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # self.main_window = main_window  # Reference to the main window
-
-        self.setWindowTitle("Coptic Shasha")
+        self.setWindowTitle("St. Mary Maadi Liturgies")
         self.setGeometry(100, 100, 625, 600)
         self.setFixedSize(625, 600)
 
@@ -27,8 +27,15 @@ class ellakanwindow(QMainWindow):
         layout.addWidget(self.back_button, alignment=Qt.AlignBottom | Qt.AlignRight)  # Align the button to the top left corner
         self.back_button.clicked.connect(self.go_back)
 
+        # Add NotificationBar
+        self.notification_bar = NotificationBar(self)
+        self.notification_bar.setGeometry(0, 70, self.width(), 50)
+        
         # Load background image
-        self.load_background_image()
+        try:
+            load_background_image(self.central_widget)
+        except Exception as e:
+            self.notification_bar.show_message(f"خطأ في تحميل الخلفية: {str(e)}")
 
         frame0 = QFrame(self)
         frame0.setGeometry(0, 0, 625, 70)
@@ -36,7 +43,7 @@ class ellakanwindow(QMainWindow):
         # Add the picture to frame0
         image_label = QLabel(frame0)
         image_label.setGeometry(0, 0, 625, 70)
-        image_path = self.relative_path(r"Data\الصور\Untitled-2.png")
+        image_path = relative_path(r"Data\الصور\Untitled-2.png")
         pixmap = QPixmap(image_path)
         image_label.setPixmap(pixmap)
         image_label.setScaledContents(True)
@@ -62,7 +69,7 @@ class ellakanwindow(QMainWindow):
 
         # Add photo inside the first frame
         image_label = QLabel(frame)
-        pixmap = QPixmap(self.relative_path(r"Data\الصور\اللقان 2.png"))  # Replace with your image path
+        pixmap = QPixmap(relative_path(r"Data\الصور\اللقان 2.png"))  # Replace with your image path
         image_label.setPixmap(pixmap)
         image_label.setGeometry(30, 20, 210, 411)  # Adjust dimensions as needed
         image_label.setScaledContents(True)
@@ -122,7 +129,7 @@ class ellakanwindow(QMainWindow):
         )
 
     def open_presentation(self, file_name, slide_number=None):
-        file_path = self.relative_path(file_name)
+        file_path = relative_path(file_name)
         if slide_number is None:
             os.startfile(file_path)
         else:
@@ -145,18 +152,8 @@ class ellakanwindow(QMainWindow):
     def go_back(self):
         self.close()
 
-    def relative_path(self, relative_path):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        absolute_path = os.path.join(script_directory, relative_path)
-        return absolute_path
-
     def show_error_message(self, error_message):
         QMessageBox.critical(self, "Error", error_message)
-
-    def load_background_image(self):
-        pixmap = QPixmap(self.relative_path(r"Data\الصور\background.png"))
-        self.central_widget.setPixmap(pixmap)
-        self.central_widget.setScaledContents(True)
 
 # from sys import argv, exit
 # app = QApplication(argv)

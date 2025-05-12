@@ -10,7 +10,7 @@ from bibleWindow import bibleWindow
 from NotificationBar import NotificationBar
 import asyncio
 import os
-from commonFunctions import relative_path
+from commonFunctions import relative_path, load_background_image, open_presentation_relative_path
 
 class ClickableFrame(QFrame):
     clicked = pyqtSignal()
@@ -38,7 +38,11 @@ class MainWindow(QMainWindow):
             # Background label
             self.background_label = QLabel(self)
             self.background_label.setGeometry(0, 0, self.width(), self.height())
-            self.load_background_image()
+                # Load background image
+            try:
+                load_background_image(self.background_label)
+            except Exception as e:
+                self.notification_bar.show_message(f"خطأ في تحميل الخلفية: {str(e)}")
 
             frame0 = QFrame(self)
             frame0.setGeometry(0, 0, 625, 70)
@@ -78,7 +82,7 @@ class MainWindow(QMainWindow):
             asyncio.run(self.create_button("في حضور الأسقف", self.width() - 240, 566, self.open_bishop_window))
             asyncio.run(self.create_button("اضافة تعديل خاص", self.width() - 365, 566, self.open_bishop_window))
             asyncio.run(self.update_labels())
-
+            
             # Add NotificationBar
             self.notification_bar = NotificationBar(self)
             self.notification_bar.setGeometry(0, 70, self.width(), 50)
@@ -112,7 +116,7 @@ class MainWindow(QMainWindow):
             }
         """)
         if text == "صلاة السجدة":
-            button.clicked.connect(lambda _, p=action: self.open_presentation(p))
+            button.clicked.connect(lambda _, p=action: open_presentation_relative_path(p))
         else :
             button.clicked.connect(action)
         # Text Label for Button
@@ -120,9 +124,12 @@ class MainWindow(QMainWindow):
         label.setAlignment(Qt.AlignCenter)
         label.setGeometry(x, y + height - 5, width, 30)
         font = QFont()
-        font.setPointSize(12)
+        if text == "الكتاب المقدس":
+            font.setPointSize(10)
+        else:
+            font.setPointSize(12)
         label.setFont(font)
-        label.setStyleSheet("background-color: transparent; color: white; border: none;")
+        label.setStyleSheet("background-color: transparent; color: white; border: none; font-weight: bold;")
 
     async def create_button(self, text, x, y, action):
         button = QPushButton(text, self)
@@ -243,13 +250,6 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.show_error_message(str(e))
 
-    def load_background_image(self):
-        pixmap = QPixmap(relative_path(r"Data\الصور\background.png"))
-        if self.background_label:  # Check if background label exists
-            self.background_label.setPixmap(pixmap)
-            self.background_label.setScaledContents(True)
-            self.background_label.setObjectName("background_label")  # Set object name for the background label
-
     def season_picture(self):
         match self.season :
             case 0:
@@ -268,8 +268,10 @@ class MainWindow(QMainWindow):
                 return r"Data\الصور\سبت النور.JPG"
             case 22 | 24:
                 return r"Data\الصور\القيامة.jpg"
-            case 24.1 | 25:
+            case 23.3 | 24.1 | 25:
                 return r"Data\الصور\الصعود.jpg"
+            case 23.1 | 23:
+                return r"Data\الصور\دخول المسيح أرض مصر.jpg"
             case 29 :
                 return r"Data\الصور\التجلي.JPG"
         return r"Data\الصور\Aykona.png" 
@@ -419,9 +421,6 @@ class MainWindow(QMainWindow):
     def handle_3ashya_button_click(self):
         from Aashya import aashyaKiahk, aashyaSanawy
         try:
-            if(self.pptx_check(False, True) == False):
-                self.replace_presentation(False, False, False, True )
-            
             coptic_cal = CopticCalendar()
             copticDate = coptic_cal.coptic_to_gregorian(self.coptic_date)
             adam = False
@@ -565,10 +564,6 @@ class MainWindow(QMainWindow):
                 break
         return  corresponding_value
 
-    def open_presentation(self, file_name):
-        file_path = relative_path(file_name)
-        os.startfile(file_path)
-
     def add_back_button(self, parent, action):
         # Get frame geometry
         frame_geometry = parent.geometry()
@@ -656,10 +651,10 @@ class MainWindow(QMainWindow):
         from commonFunctions import read_excel_cell, write_to_excel_cell
         currentYear = read_excel_cell(relative_path(r"Tables.xlsx"), "المناسبات", "M2")
         if copticYear != currentYear:
-            from UpdateTable import a3yad, katamarsElsom, katamarsEl5amasyn
+            from UpdateTable import a3yad, ElsomElkbyr, katamarsEl5amasyn
             asyncio.run(write_to_excel_cell(relative_path(r"Tables.xlsx"), "المناسبات", "M2", copticYear))
             a3yad()
-            katamarsElsom()
+            ElsomElkbyr()
             katamarsEl5amasyn()
         else:
             return

@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt, QDateTime, pyqtSignal, QLocale
 from openpyxl import load_workbook
 from datetime import datetime
 from copticDate import CopticCalendar  # Import the CopticCalendar class
+from commonFunctions import relative_path  # Import the function to load background image
 
 class ChangeDate(QDialog):
     date_updated = pyqtSignal(str, str)  # Define a signal to emit the updated date and time
@@ -15,12 +16,17 @@ class ChangeDate(QDialog):
         try:
             # Set window title and icon
             self.setWindowTitle("إختيار التاريخ")
-            self.setWindowIcon(QIcon(self.relative_path(r"Data\الصور\Logo.ico")))
+            self.setWindowIcon(QIcon(relative_path(r"Data\الصور\Logo.ico")))
 
             # Load options from Excel and set up ComboBox
             self.load_options_from_excel()
             self.excel_dropdown = QComboBox()
-            self.excel_dropdown.addItems(self.options)
+            self.excel_dropdown.setStyleSheet("QComboBox { font-size: 14px; }")  # Set font size
+            
+            # Add a placeholder value to the dropdown menu
+            self.excel_dropdown.addItem("المناسبات")  # Placeholder value
+            self.excel_dropdown.addItems(self.options)  # Add the actual options
+            self.excel_dropdown.setCurrentIndex(0)  # Set the placeholder as the default selected value
 
             # Create submit and current date/time buttons
             self.submit_button = QPushButton("تعين")
@@ -44,6 +50,8 @@ class ChangeDate(QDialog):
             self.calendar_widget.setVerticalHeaderFormat(QCalendarWidget.NoVerticalHeader)  # Hide week numbers
             self.calendar_widget.setLocale(QLocale(QLocale.Arabic, QLocale.Egypt))  # Set Arabic locale for the calendar
 
+            # Set the calendar to open on the provided CurrentDate
+            self.calendar_widget.setSelectedDate(CurrentDate)
             self.calendar_widget.clicked.connect(self.update_coptic_date_label)  # Update date on calendar click
             layout.addWidget(self.calendar_widget)
 
@@ -93,15 +101,11 @@ class ChangeDate(QDialog):
         except Exception as e:
             self.show_error_message(str(e))
 
-    def relative_path(self, relative_path):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        return os.path.join(script_directory, relative_path)
-
     def load_options_from_excel(self):
         try:
             # Load options from Excel
             self.options = []
-            workbook_path = self.relative_path(r"Tables.xlsx")
+            workbook_path = relative_path(r"Tables.xlsx")
             wb = load_workbook(workbook_path)
             ws = wb["المناسبات"]
             for cell in ws['G'][1:]:
@@ -168,7 +172,7 @@ class ChangeDate(QDialog):
     def update_date_and_time_from_coptic(self, index):
         try:
             selected_value = self.excel_dropdown.itemText(index)
-            wb = load_workbook(self.relative_path(r"Tables.xlsx"))
+            wb = load_workbook(relative_path(r"Tables.xlsx"))
             ws = wb["المناسبات"]
             for row in range(2, ws.max_row + 1):
                 if ws.cell(row=row, column=7).value == selected_value:

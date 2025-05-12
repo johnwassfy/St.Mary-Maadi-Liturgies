@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QMouseEvent
 from NotificationBar import NotificationBar  # Assuming NotificationBar is in the same directory
 import win32com.client
+from commonFunctions import relative_path, load_background_image
 
 class CustomButton(QWidget):
     clicked = pyqtSignal()  # Signal to mimic QPushButton's clicked signal
@@ -49,7 +50,7 @@ class Taranymwindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("St. Mary Maadi Liturgies")
-        self.setWindowIcon(QIcon(self.relative_path(r"Data\الصور\Logo.ico")))
+        self.setWindowIcon(QIcon(relative_path(r"Data\الصور\Logo.ico")))
         self.setGeometry(400, 100, 625, 600)
         self.setFixedSize(625, 600)
 
@@ -60,9 +61,9 @@ class Taranymwindow(QMainWindow):
 
         # Load background image
         try:
-            self.load_background_image()
+            load_background_image(self.central_widget)
         except Exception as e:
-            self.show_error(f"خطأ في تحميل الخلفية: {str(e)}")
+            self.notification_bar(f"خطأ في تحميل الخلفية: {str(e)}")
 
         self.frame0 = QFrame(self)
         self.frame0.setGeometry(0, 0, 625, 70)
@@ -142,19 +143,11 @@ class Taranymwindow(QMainWindow):
         """Display an error message using the NotificationBar."""
         self.notification_bar.show_message(message, duration=5000)
 
-    def load_background_image(self):
-        try:
-            pixmap = QPixmap(self.relative_path(r"Data\الصور\background.png"))
-            self.central_widget.setPixmap(pixmap)
-            self.central_widget.setScaledContents(True)
-        except Exception as e:
-            raise RuntimeError(f"خطأ في تحميل صورة الخلفية: {str(e)}")
-
     def frame_background_image(self, frame, w, h, image_relative_path):
         try:
             image_label = QLabel(frame)
             image_label.setGeometry(0, 0, w, h)
-            image_path = self.relative_path(image_relative_path)
+            image_path = relative_path(image_relative_path)
             pixmap = QPixmap(image_path)
             image_label.setPixmap(pixmap)
             image_label.setScaledContents(True)
@@ -198,7 +191,7 @@ class Taranymwindow(QMainWindow):
     def load_excel_strings(self):
         try:
             # Replace with the path to your Excel file
-            excel_file_path = self.relative_path(r"بيانات القداسات.xlsx")
+            excel_file_path = relative_path(r"بيانات القداسات.xlsx")
 
             # Specify the sheet name where the search should be performed
             sheet_name = 'المدائح'  # Replace with the actual sheet name
@@ -240,23 +233,13 @@ class Taranymwindow(QMainWindow):
         except Exception as e:
             self.show_error(f"خطأ في تحميل بيانات الإكسل: {str(e)}")
 
-    def load_background_image(self):
-        pixmap = QPixmap(self.relative_path(r"Data\الصور\background.png"))
-        self.central_widget.setPixmap(pixmap)
-        self.central_widget.setScaledContents(True)
-
     def frame_background_image(self, frame, w, h, image_relative_path):
         image_label = QLabel(frame)
         image_label.setGeometry(0, 0, w, h)
-        image_path = self.relative_path(image_relative_path)
+        image_path = relative_path(image_relative_path)
         pixmap = QPixmap(image_path)
         image_label.setPixmap(pixmap)
         image_label.setScaledContents(True)
-
-    def relative_path(self, relative_path):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        absolute_path = os.path.join(script_directory, relative_path)
-        return absolute_path
 
     def create_scroll_areas(self):
         # Define the labels for each scroll area
@@ -319,7 +302,7 @@ class Taranymwindow(QMainWindow):
 
     def load_excel_strings(self):
         # Replace with the path to your Excel file
-        excel_file_path = self.relative_path(r"بيانات القداسات.xlsx")
+        excel_file_path = relative_path(r"بيانات القداسات.xlsx")
 
         # Specify the sheet name where the search should be performed
         sheet_name = 'المدائح'  # Replace with the actual sheet name
@@ -365,7 +348,7 @@ class Taranymwindow(QMainWindow):
 
             # Connect the click signal to the method with the slide index and checkbox state
             button.clicked.connect(lambda text=content, idx=index: self.open_or_goto_slide(
-                self.relative_path(r"كتاب المدائح.pptx"), idx, self.slideshow_checkbox.isChecked()
+                relative_path(r"كتاب المدائح.pptx"), idx, self.slideshow_checkbox.isChecked()
             ))
 
             # Add the button to the scroll area's layout
@@ -441,8 +424,8 @@ class Taranymwindow(QMainWindow):
         from openpyxl import load_workbook
         from pptx import Presentation
         try:
-            wb = load_workbook(self.relative_path(r"بيانات القداسات.xlsx"))
-            presentation = Presentation(self.relative_path(r"كتاب المدائح.pptx"))
+            wb = load_workbook(relative_path(r"بيانات القداسات.xlsx"))
+            presentation = Presentation(relative_path(r"كتاب المدائح.pptx"))
             sheet = wb["المدائح"]
 
             num_slides = len(presentation.slides)
@@ -471,7 +454,7 @@ class Taranymwindow(QMainWindow):
             elif not bool(last_non_empty_b_cell.value):  # Check if the value is False
                 # Change the value to True and save the change
                 last_non_empty_b_cell.value = True
-                wb.save(self.relative_path(r"بيانات القداسات.xlsx"))
+                wb.save(relative_path(r"بيانات القداسات.xlsx"))
                 return False
 
         except Exception as e:
@@ -481,8 +464,8 @@ class Taranymwindow(QMainWindow):
     def replace_presentation(self):
         from shutil import copy2
         from os import path, remove
-        old_presentation_path = self.relative_path(r"كتاب المدائح.pptx")
-        new_presentation_path = self.relative_path(r"Data\CopyData\كتاب المدائح.pptx")
+        old_presentation_path = relative_path(r"كتاب المدائح.pptx")
+        new_presentation_path = relative_path(r"Data\CopyData\كتاب المدائح.pptx")
         try:
             # Check if the old presentation file exists
             if path.exists(old_presentation_path):

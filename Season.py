@@ -1,12 +1,8 @@
 import datetime
 import copticDate
-from commonFunctions import read_excel_cell, read_excel_cells_by_array
+from commonFunctions import read_excel_cell, read_excel_cells_by_array, relative_path
 import os
 
-def relative_path(relative_path):
-    script_directory = os.path.dirname(os.path.abspath(__file__))
-    absolute_path = os.path.join(script_directory, relative_path)
-    return absolute_path
 
 workbook = relative_path(r"Tables.xlsx")
 sheetname = "المناسبات"

@@ -7,11 +7,6 @@ import pptx
 from spire.presentation import Presentation
 from openpyxl import load_workbook
 
-def relative_path(relative_path):
-    script_directory = os.path.dirname(os.path.abspath(__file__))
-    absolute_path = os.path.join(script_directory, relative_path)
-    return absolute_path
-
 file_path = relative_path(r"Tables.xlsx")
 sheet_name = "المناسبات" 
 copticDate = CopticCalendar()

@@ -3,7 +3,7 @@ import pandas as pd
 from PyQt5.QtWidgets import QApplication, QMainWindow, QProgressBar, QSizePolicy, QLineEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QWidget, QMessageBox, QComboBox
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
-from commonFunctions import relative_path
+from commonFunctions import relative_path, load_background_image
 from NotificationBar import NotificationBar
 import win32com.client
 from UpdateTable import All
@@ -73,7 +73,10 @@ class elfhrswindow(QMainWindow):
         button.clicked.connect(lambda _: self.update_katamars_files())
 
         # Load background image
-        self.load_background_image()
+        try:
+            load_background_image(self.central_widget)
+        except Exception as e:
+            self.notification_bar.show_message(f"خطأ في تحميل الخلفية: {str(e)}")
 
         self.frame0 = QFrame(self)
         self.frame0.setGeometry(0, 0, 625, 70)
@@ -179,11 +182,6 @@ class elfhrswindow(QMainWindow):
 
         # Ensure NotificationBar is on top
         self.notification_bar.raise_()
-
-    def load_background_image(self):
-        pixmap = QPixmap(relative_path(r"Data\الصور\background.png"))
-        self.central_widget.setPixmap(pixmap)
-        self.central_widget.setScaledContents(True)
 
     def add_buttons(self, button_names, sheet_names):
         for index, button in enumerate(button_names):
