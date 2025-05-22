@@ -9,7 +9,6 @@ from elLakanWindow import ellakanwindow
 from bibleWindow import bibleWindow
 from NotificationBar import NotificationBar
 import asyncio
-import os
 from commonFunctions import relative_path, load_background_image, open_presentation_relative_path
 
 class ClickableFrame(QFrame):
@@ -408,13 +407,13 @@ class MainWindow(QMainWindow):
             adam = True
         try:
             match self.season :
-                case 0:
+                case 0 | 27 | 30 | 31:
                     bakerSanawy(self.season, self.coptic_date, adam, self.bishop, self.GuestBishop)
                 case 5:
                     bakerKiahk(self.coptic_date, adam, self.bishop, self.GuestBishop)
                 case 28:
                     baker3ydElrosol(adam)
-                    self.open_presentation(r"Data\لقان عيد الرسل.pptx")
+                    open_presentation_relative_path(r"Data\لقان عيد الرسل.pptx")
         except Exception as e:
             self.show_error_message(str(e))
 
