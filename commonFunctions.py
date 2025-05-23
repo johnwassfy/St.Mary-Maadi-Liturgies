@@ -5,10 +5,9 @@ from pptx import Presentation
 import win32com.client
 
 def relative_path(relative_path):
-    """Returns the absolute path to a resource file, works in dev and in PyInstaller .exe"""
-    if getattr(sys, 'frozen', False):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
+    """Return absolute path to resource, for dev and PyInstaller"""
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
 
 def load_background_image(background_label, image_path=r"Data\الصور\background2.png"):
     from PyQt5.QtGui import QPixmap
@@ -1245,13 +1244,13 @@ def replacefile(old_file, new_file):
     from shutil import copy2
     from os import path, remove
     try:
-        # Check if the old presentation file exists
+        # If the old file exists, delete it
         if path.exists(old_file):
-            # If it exists, delete the old presentation
             remove(old_file)
-            
-            # Copy the new presentation to the location of the old presentation
-            copy2(new_file, old_file)
+        
+        # Copy the new file to the location of the old file
+        copy2(new_file, old_file)
+
     except Exception as e:
         # Print any errors that occur during the deletion and copying process
         print(f"Error: {str(e)}")

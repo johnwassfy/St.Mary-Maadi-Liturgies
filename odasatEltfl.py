@@ -656,9 +656,9 @@ def odasSanawy(copticdate, season):
         sanawy_hide_full_sections.extend(['{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{ECE652ED-1345-4C6D-B92D-5996CFA27AEE}'])
     
     if cd.weekday() == 6:
-        show_hide_replaceText(prs1, excel, des_sheet, sanawy_show_full_sections, sanawy_hide_full_sections, ["لأنك قمت","aktwnk", "آك طونك"])
+        show_hide_insertImage_replaceText(prs1, excel, des_sheet, sanawy_show_full_sections, sanawy_hide_full_sections, ["لأنك قمت","aktwnk", "آك طونك"])
     else:
-        show_hide(prs1, excel, des_sheet, sanawy_show_full_sections, sanawy_hide_full_sections)
+        show_hide_insertImage_replaceText(prs1, excel, des_sheet, sanawy_show_full_sections, sanawy_hide_full_sections)
 
     powerpoint = win32com.client.Dispatch("PowerPoint.Application")
     powerpoint.Visible = True  # Open PowerPoint application
@@ -795,7 +795,7 @@ def odasElSomElkbyr(copticdate, season):
     start_slides = [mrdMazmorEltawzy3, elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1]
     end_slides = [mrdMazmorEltawzy3, elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2]
 
-    show_hide_combined(prs1, excel, des_sheet, som_show_full_sections, som_hide_full_sections, [], som_hide_full_sections_ranges)
+    show_hide_insertImage_replaceText(prs1, excel, des_sheet, som_show_full_sections, som_hide_full_sections, [], som_hide_full_sections_ranges)
     
     som_show_values.extend([[EsmaElsomElkbyr1, EsmaElsomElkbyr1]])
 

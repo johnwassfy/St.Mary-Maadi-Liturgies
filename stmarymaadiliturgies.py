@@ -1,6 +1,8 @@
+import time
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFrame
 from PyQt5.QtGui import QPixmap, QFont, QIcon
 from PyQt5.QtCore import Qt, pyqtSignal
+from WorkerThread import WorkerThread
 from copticDate import CopticCalendar
 from Season import get_season_name, get_season
 from datetime import datetime
@@ -10,6 +12,8 @@ from bibleWindow import bibleWindow
 from NotificationBar import NotificationBar
 import asyncio
 from commonFunctions import relative_path, load_background_image, open_presentation_relative_path
+from sys import exit, argv
+from SplashScreen import ModernSplashScreen
 
 class ClickableFrame(QFrame):
     clicked = pyqtSignal()
@@ -658,8 +662,30 @@ class MainWindow(QMainWindow):
         else:
             return
 
-from sys import argv, exit
-app = QApplication(argv)
-window = MainWindow()
-window.show()
-exit(app.exec_())
+
+def load_initial_data(progress_callback):
+    # Simulate a task with 5 steps
+    for i in range(1, 6):
+        time.sleep(0.5)  # simulate workload
+        progress_callback(i * 20)  # 20%, 40%, ..., 100%
+
+if __name__ == "__main__":
+    app = QApplication(argv)
+
+    splash = ModernSplashScreen()
+    splash.show()
+
+    def on_progress(val):
+        splash.update_progress(val)
+
+    def on_finished():
+        window = MainWindow()
+        window.show()
+        splash.close()
+
+    worker = WorkerThread(load_initial_data)
+    worker.progress.connect(on_progress)
+    worker.finished.connect(on_finished)
+    worker.start()
+
+    exit(app.exec_())
