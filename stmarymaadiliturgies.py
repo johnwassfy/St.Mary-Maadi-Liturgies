@@ -91,6 +91,9 @@ class MainWindow(QMainWindow):
             self.notification_bar.setGeometry(0, 70, self.width(), 50)
 
         except Exception as e:
+            # Add NotificationBars
+            self.notification_bar = NotificationBar(self)
+            self.notification_bar.setGeometry(0, 70, self.width(), 50)
             self.notification_bar.show_message(str(e))
 
     async def add_button_with_image(self, parent, image_path, geometry, text, action=None):

@@ -1,97 +1,305 @@
 import os
-from PyQt5.QtWidgets import QLabel, QVBoxLayout, QDialog, QSpinBox, QPushButton, QMessageBox, QCalendarWidget, QHBoxLayout, QComboBox
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (QLabel, QVBoxLayout, QDialog, QSpinBox, QPushButton, 
+                            QMessageBox, QCalendarWidget, QHBoxLayout, QComboBox, 
+                            QFrame, QGraphicsDropShadowEffect)
+from PyQt5.QtGui import QIcon, QColor, QFont, QPalette
 from PyQt5.QtCore import Qt, QDateTime, pyqtSignal, QLocale
 from openpyxl import load_workbook
 from datetime import datetime
-from copticDate import CopticCalendar  # Import the CopticCalendar class
-from commonFunctions import relative_path  # Import the function to load background image
+from copticDate import CopticCalendar
+from commonFunctions import relative_path
 
 class ChangeDate(QDialog):
-    date_updated = pyqtSignal(str, str)  # Define a signal to emit the updated date and time
+    date_updated = pyqtSignal(str, str)
 
     def __init__(self, CurrentDate, CurrentTime):
         super().__init__()
 
         try:
-            # Set window title and icon
+            # Set window properties
             self.setWindowTitle("إختيار التاريخ")
             self.setWindowIcon(QIcon(relative_path(r"Data\الصور\Logo.ico")))
+            self.setStyleSheet("""
+                QDialog {
+                    background-color: #f0f5ff;
+                }
+                QLabel {
+                    color: #1a365d;
+                    font-weight: bold;
+                    font-size: 14px;
+                    margin-top: 5px;
+                }
+                QPushButton {
+                    background-color: #1a365d;
+                    color: white;
+                    border-radius: 5px;
+                    padding: 8px;
+                    font-weight: bold;
+                    font-size: 14px;
+                }
+                QPushButton:hover {
+                    background-color: #2a466d;
+                }
+                QPushButton:pressed {
+                    background-color: #0a264d;
+                }
+                QComboBox, QSpinBox {
+                    border: 1px solid #1a365d;
+                    border-radius: 5px;
+                    padding: 5px;
+                    background-color: white;
+                }
+                QComboBox::drop-down {
+                    border: none;
+                    width: 24px;
+                }
+                QSpinBox::up-button, QSpinBox::down-button {
+                    width: 20px;
+                    color: white;
+                }
+            """)
 
             # Load options from Excel and set up ComboBox
             self.load_options_from_excel()
             self.excel_dropdown = QComboBox()
-            self.excel_dropdown.setStyleSheet("QComboBox { font-size: 14px; }")  # Set font size
+            self.excel_dropdown.setStyleSheet("""
+                QComboBox {
+                    font-size: 14px;
+                    min-height: 30px;
+                }
+            """)
             
             # Add a placeholder value to the dropdown menu
-            self.excel_dropdown.addItem("المناسبات")  # Placeholder value
-            self.excel_dropdown.addItems(self.options)  # Add the actual options
-            self.excel_dropdown.setCurrentIndex(0)  # Set the placeholder as the default selected value
+            self.excel_dropdown.addItem("المناسبات")
+            self.excel_dropdown.addItems(self.options)
+            self.excel_dropdown.setCurrentIndex(0)
 
-            # Create submit and current date/time buttons
+            # Create styled buttons
             self.submit_button = QPushButton("تعين")
             self.submit_button.clicked.connect(self.submit_date_time)
+            
             self.current_date_time_button = QPushButton("مبـــاشر")
             self.current_date_time_button.clicked.connect(self.show_current_date_time)
+            
+            # Apply button effects
+            for button in [self.submit_button, self.current_date_time_button]:
+                shadow = QGraphicsDropShadowEffect()
+                shadow.setBlurRadius(10)
+                shadow.setColor(QColor(0, 0, 0, 60))
+                shadow.setOffset(2, 2)
+                button.setGraphicsEffect(shadow)
 
-            # Create QLabel for displaying Coptic date
+            # Create styled Coptic date label
             self.coptic_date_label = QLabel()
+            self.coptic_date_label.setStyleSheet("""
+                QLabel {
+                    background-color: #e6eeff;
+                    border: 1px solid #1a365d;
+                    border-radius: 5px;
+                    padding: 10px;
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #1a365d;
+                }
+            """)
 
             # Create CopticCalendar instance
             self.coptic_calendar = CopticCalendar()
 
             # Create the main layout
             layout = QVBoxLayout()
-            layout.addWidget(QLabel("اختر التاريخ:"))
+            layout.setSpacing(10)
+            layout.setContentsMargins(15, 15, 15, 15)
 
-            # Create and add the calendar widget directly to the layout
+            # Create header
+            header_label = QLabel("اختر التاريخ:")
+            header_label.setStyleSheet("font-size: 16px; color: #1a365d; font-weight: bold;")
+            layout.addWidget(header_label)
+
+            # Create calendar container frame
+            calendar_frame = QFrame()
+            calendar_frame.setStyleSheet("""
+                QFrame {
+                    border: 1px solid #1a365d;
+                    border-radius: 8px;
+                    background-color: white;
+                }
+            """)
+            calendar_layout = QVBoxLayout(calendar_frame)
+            calendar_layout.setContentsMargins(0, 0, 0, 0)  # Remove inner padding
+            
+            # Create and style the calendar widget
             self.calendar_widget = QCalendarWidget()
             self.calendar_widget.setGridVisible(True)
-            self.calendar_widget.setVerticalHeaderFormat(QCalendarWidget.NoVerticalHeader)  # Hide week numbers
-            self.calendar_widget.setLocale(QLocale(QLocale.Arabic, QLocale.Egypt))  # Set Arabic locale for the calendar
-
-            # Set the calendar to open on the provided CurrentDate
+            self.calendar_widget.setVerticalHeaderFormat(QCalendarWidget.NoVerticalHeader)
+            self.calendar_widget.setLocale(QLocale(QLocale.Arabic, QLocale.Egypt))
             self.calendar_widget.setSelectedDate(CurrentDate)
-            self.calendar_widget.clicked.connect(self.update_coptic_date_label)  # Update date on calendar click
-            layout.addWidget(self.calendar_widget)
+            self.calendar_widget.clicked.connect(self.update_coptic_date_label)
+            
+            # Style the calendar - remove the inner border by setting it to transparent
+            self.calendar_widget.setStyleSheet("""
+                QCalendarWidget {
+                    background-color: transparent;
+                    color: #1a365d;
+                    border: none;
+                }
+                QCalendarWidget QToolButton {
+                    color: #1a365d;
+                    background-color: #e6eeff;
+                    font-size: 14px;
+                }
+                QCalendarWidget QMenu {
+                    color: #1a365d;
+                    background-color: white;
+                }
+                QCalendarWidget QSpinBox {
+                    color: #1a365d;
+                    background-color: white;
+                }
+                QCalendarWidget QWidget#qt_calendar_navigationbar {
+                    background-color: #e6eeff;
+                    border-top-left-radius: 8px;
+                    border-top-right-radius: 8px;
+                }
+                QCalendarWidget QWidget { 
+                    alternate-background-color: #f0f5ff; 
+                }
+                QCalendarWidget QAbstractItemView:enabled {
+                    color: #1a365d;
+                    selection-background-color: #1a365d;
+                    selection-color: white;
+                    border: none;
+                }
+                QCalendarWidget QAbstractItemView:disabled {
+                    color: gray;
+                }
+            """)
 
-            layout.addWidget(QLabel("اختر الوقت (اليوم القبطي ينتهي 5:30 مساء)"))
+            calendar_layout.addWidget(self.calendar_widget)
+            layout.addWidget(calendar_frame)
 
-            # Create layout for time selection
-            time_layout = QHBoxLayout()
+            # Time section
+            time_label = QLabel("اختر الوقت (اليوم القبطي ينتهي 5:30 مساء)")
+            time_label.setAlignment(Qt.AlignCenter)
+            layout.addWidget(time_label)
+
+            # Create styled time selection container
+            time_frame = QFrame()
+            time_frame.setStyleSheet("""
+                QFrame {
+                    border: 1px solid #1a365d;
+                    border-radius: 5px;
+                    background-color: white;
+                    padding: 10px;
+                }
+            """)
+            time_layout = QHBoxLayout(time_frame)
+            time_layout.setSpacing(10)  # Add spacing between elements
+
+            # Style the spinboxes with modern up/down buttons
+            spinbox_style = """
+                QSpinBox {
+                    border: 1px solid #1a365d;
+                    border-radius: 5px;
+                    padding: 5px;
+                    font-size: 16px;
+                    min-width: 60px;
+                    min-height: 30px;
+                    background-color: white;
+                    selection-background-color: #1a365d;
+                    selection-color: white;
+                }
+            """
+
+            # Create a custom spinbox class for minutes to show "00" instead of "0"
+            class MinuteSpinBox(QSpinBox):
+                def textFromValue(self, value):
+                    return f"{value:02d}"  # Format with leading zero
 
             # Create SpinBoxes for hours and minutes
             self.hour_spin = QSpinBox()
-            self.hour_spin.setRange(0, 13)  # 1-12 for 12-hour format
-            self.hour_spin.setValue(int(CurrentTime.split(':')[0]) % 12 or 12)  # Default value
-            self.hour_spin.valueChanged.connect(self.handle_hour_change)  # Connect to update AM/PM
+            self.hour_spin.setRange(0, 13)
+            self.hour_spin.setValue(int(CurrentTime.split(':')[0]) % 12 or 12)
+            self.hour_spin.valueChanged.connect(self.handle_hour_change)
+            self.hour_spin.setStyleSheet(spinbox_style)
+            self.hour_spin.setAlignment(Qt.AlignCenter)  # Center align text
 
-            self.minute_spin = QSpinBox()
-            self.minute_spin.setRange(0, 60)  # 0 for 00 and 1 for 30
-            self.minute_spin.setValue(int(CurrentTime.split(':')[1].split()[0]))  # Default value
+            # Add colon label between hour and minute - removed borders/background
+            colon_label = QLabel(":")
+            colon_label.setStyleSheet("""
+                QLabel {
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #1a365d;
+                    background: transparent;
+                    border: none;
+                    margin: 0 2px;
+                    padding: 0;
+                }
+            """)
+            colon_label.setAlignment(Qt.AlignCenter)
+            
+            # Use custom MinuteSpinBox instead of regular QSpinBox
+            self.minute_spin = MinuteSpinBox()
+            self.minute_spin.setRange(0, 60)
+            self.minute_spin.setValue(int(CurrentTime.split(':')[1].split()[0]))
             self.minute_spin.valueChanged.connect(self.handle_minute_change)
+            self.minute_spin.setStyleSheet(spinbox_style)
+            self.minute_spin.setAlignment(Qt.AlignCenter)  # Center align text
 
-            # Determine if the current time is AM or PM
-            if "AM" in CurrentTime:
-                self.ampm_combo = QComboBox()
-                self.ampm_combo.addItems(["AM", "PM"])  # Add AM and PM options
-                self.ampm_combo.setCurrentIndex(0)  # Default to AM
-            else:
-                self.ampm_combo = QComboBox()
-                self.ampm_combo.addItems(["AM", "PM"])  # Add AM and PM options
-                self.ampm_combo.setCurrentIndex(1)  # Default to PM
+            # AM/PM Combo
+            self.ampm_combo = QComboBox()
+            self.ampm_combo.addItems(["AM", "PM"])
+            self.ampm_combo.setCurrentIndex(0 if "AM" in CurrentTime else 1)
+            self.ampm_combo.setStyleSheet("""
+                QComboBox {
+                    border: 1px solid #1a365d;
+                    border-radius: 5px;
+                    padding: 5px;
+                    font-size: 16px;
+                    min-width: 70px;
+                    min-height: 30px;
+                    text-align: center;
+                }
+                QComboBox::drop-down {
+                    subcontrol-origin: padding;
+                    subcontrol-position: center right;
+                    width: 24px;
+                    border-left-width: 1px;
+                    border-left-color: #1a365d;
+                    border-left-style: solid;
+                    border-top-right-radius: 5px;
+                    border-bottom-right-radius: 5px;
+                    color: #1a365d;
+                }
+            """)
+            self.ampm_combo.setEditable(False)
 
-            # Add SpinBoxes to time layout
+            self.ampm_combo.currentIndexChanged.connect(self.update_coptic_date_label)  # Default to AM
+
+            # Add widgets to time layout
+            time_layout.addStretch(1)  # Add stretch to center the time controls
             time_layout.addWidget(self.hour_spin)
+            time_layout.addWidget(colon_label)
             time_layout.addWidget(self.minute_spin)
             time_layout.addWidget(self.ampm_combo)
+            time_layout.addStretch(1)  # Add stretch to center the time controls            
+            layout.addWidget(time_frame)
 
-            layout.addLayout(time_layout)
-            layout.addWidget(QLabel("اختار المنــاسبة"))
+            # Occasion selection section
+            occasion_label = QLabel("اختار المنــاسبة")
+            occasion_label.setAlignment(Qt.AlignCenter)
+            layout.addWidget(occasion_label)
             layout.addWidget(self.excel_dropdown)
-            layout.addWidget(self.current_date_time_button)
+            
+            # Add Coptic date display
             layout.addWidget(self.coptic_date_label)
-            layout.addWidget(self.submit_button)
+            
+            # Button layout
+            button_layout = QHBoxLayout()
+            button_layout.addWidget(self.current_date_time_button)
+            button_layout.addWidget(self.submit_button)
+            layout.addLayout(button_layout)
 
             self.setLayout(layout)
 
@@ -213,24 +421,28 @@ class ChangeDate(QDialog):
 
     def show_error_message(self, error_message):
         QMessageBox.critical(self, "Error", error_message)
-
         
-# import sys
-# from PyQt5.QtWidgets import QApplication
+import sys
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QDate
 
-# Ensure the ChangeDate class code is already defined or imported here
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
 
-# if __name__ == "__main__":
-#     app = QApplication(sys.argv)
+    # Define initial date and time to display
+    initial_date = QDate.fromString("2024-05-27", "yyyy-MM-dd")  # Today's date
+    initial_time = "12:00 PM"    # Example initial time
 
-#     # Define initial date and time to display
-#     initial_date = "2024-10-29"  # Example initial date
-#     initial_time = "12:00 PM"    # Example initial time
-
-#     # Create and show ChangeDate dialog
-#     change_date_dialog = ChangeDate(initial_date, initial_time)
+    # Create and show ChangeDate dialog
+    change_date_dialog = ChangeDate(initial_date, initial_time)
     
-#     # Show the dialog
-#     change_date_dialog.exec_()
+    # Optional: Connect to handle the signal
+    def handle_date_updated(date, time):
+        print(f"Selected date: {date}, time: {time}")
+    
+    change_date_dialog.date_updated.connect(handle_date_updated)
+    
+    # Show the dialog as modal
+    change_date_dialog.exec_()
 
-#     sys.exit(app.exec_())
+    sys.exit(app.exec_())

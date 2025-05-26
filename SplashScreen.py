@@ -16,8 +16,9 @@ class ModernSplashScreen(QWidget):
         self.container.setStyleSheet("""
             background: qlineargradient(
                 x1: 0, y1: 0, x2: 1, y2: 1,
-                stop: 0 #0066cc,
-                stop: 1 white
+                stop: 0 #0f2e47,
+                stop: 0.6 #1e5b8a,
+                stop: 1 #8cd9ff
             );
             border-radius: 20px;
         """)
@@ -36,7 +37,7 @@ class ModernSplashScreen(QWidget):
 
         # Image (logo)
         pix = QPixmap(relative_path(r"Data/الصور/St Mary's Liturgies Logo.png"))
-        pix = pix.scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pix = pix.scaled(180, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         image_label = QLabel()
         image_label.setPixmap(pix)
         image_label.setAlignment(Qt.AlignCenter)
@@ -44,8 +45,8 @@ class ModernSplashScreen(QWidget):
         # Text
         self.text_label = QLabel("St Mary Maadi Liturgies\nLoading... 0%")
         self.text_label.setAlignment(Qt.AlignCenter)
-        self.text_label.setStyleSheet("color: #003366;")  # deep blue text
-        self.text_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        self.text_label.setStyleSheet("color: white; font-weight: bold;")
+        self.text_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
 
         layout.addWidget(image_label)
         layout.addWidget(self.text_label)
