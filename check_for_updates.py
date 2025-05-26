@@ -1,12 +1,9 @@
 import requests
 
-# Your current app version (can be imported or stored in a config)
 CURRENT_VERSION = "2.3.2"
 
-# Your GitHub access token (⚠️ Never hardcode in public production builds)
 GITHUB_TOKEN = "ghp_your_token_here"
 
-# Raw URL to version.json in your private GitHub repo
 VERSION_URL = "https://raw.githubusercontent.com/johnwassfy/St.Mary-Maadi-Liturgies/master/version.json"
 
 def get_latest_version():
