@@ -1,10 +1,11 @@
 import requests
+import os
 
 CURRENT_VERSION = "2.3.2"
 
-GITHUB_TOKEN = "ghp_your_token_here"
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
-VERSION_URL = "https://raw.githubusercontent.com/johnwassfy/St.Mary-Maadi-Liturgies/master/version.json"
+VERSION_URL = os.getenv("VERSION_URL")
 
 def get_latest_version():
     headers = {
