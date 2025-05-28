@@ -1421,7 +1421,7 @@ def show_hide_insertImage_replaceText(ppt_file, excel_path, sheet_name,
     # Save the modified presentation
     presentation.save(ppt_file)    
 
-# excel = relative_path(r"بيانات القداسات.xlsx")
+# excel = relative_path(r"Files Data.xlsx")
 # sheet = "رفع بخور"
 # arr = ["تكملة في حضور الاسقف", "طوبه هينا الكبيرة", "مارو اتشاسف"]
 # print(find_section_Ids_with_names(excel, sheet, arr))
@@ -1440,7 +1440,7 @@ def show_hide_insertImage_replaceText(ppt_file, excel_path, sheet_name,
 # from datetime import datetime
 # start = datetime.now()
 # ppt_file=relative_path(r"قداس.pptx")
-# excel_path=relative_path(r"بيانات القداسات.xlsx")
+# excel_path=relative_path(r"Files Data.xlsx")
 # sheet_name="القداس"
 # show_section_ids=['{BBBAC16F-044D-4F33-8068-620F498B59CD}', '{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}', '{03E2AC57-01DD-4702-A7A7-186D0E009F55}', '{59DBF0F6-1D86-41E8-B37A-8AA2368AA8AB}', '{E6CBA825-E339-438B-84B4-326FC5C299C1}', '{8DD599A1-D7AC-4AA8-A52B-31BFD527E68E}', '{DEDC0CCA-3854-4E18-8CB2-5D6FEC5BABCC}', '{D95C2E5C-8772-445E-AE3E-2F50770CFC61}', '{B7D98377-B994-4654-B49C-DE10E0DDE4F1}', '{C2F28915-B86E-4596-8EB2-7455EF4E91BD}', '{42181297-997B-4C4C-B43B-4E9D8A23858D}']
 # hide_section_ids=['{E107D25B-A642-458E-A4F3-B73FDB564A7C}', '{4D2B15D5-C978-467C-9D6C-726FE25128B8}', '{D5DB63D0-39EE-49CE-8855-58CE02719834}', '{31685B5B-48C4-437E-858C-CF8D225C0C26}', '{CD4B95FF-0E0E-42D3-8DC4-224C3DD732F7}', '{F13A48F2-238D-4617-B84E-9B0A694D9A18}', '{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{681FF6A7-4230-4171-8F41-83FD64E8C960}', '{507EFD97-98F8-4376-848B-20D72E16D2C1}', '{B9A30F5E-0C89-471B-A99A-23DBE7F58504}']

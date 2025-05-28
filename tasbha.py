@@ -7,7 +7,7 @@ def tasbha(copticdate, Aashya, season):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs = relative_path(r"الإبصلمودية.pptx")
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     sheet = "التسبحة"
     weekday = cd.weekday()
     show_array = [[1, 1]]
@@ -220,7 +220,7 @@ def kiahk(copticdate):
     prs_new = relative_path(r"Data\CopyData\الإبصلمودية الكيهكية.pptx")
     replacefile(prs, prs_new)
     replacefile(relative_path(r"الذكصولوجيات.pptx"), relative_path(r"Data\CopyData\الذكصولوجيات.pptx"))
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     sheet = "تسبحة كيهك"
     weekday = cd.weekday()
     if weekday==6:

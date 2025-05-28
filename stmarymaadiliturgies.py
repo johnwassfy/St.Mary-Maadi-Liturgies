@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
 
             self.frame2 = QFrame(self)
             self.restore_main_frame()
-            asyncio.run(self.create_button("تحديث بيانات القداسات", self.width() - 115, 566, self.update_section_names))
+            asyncio.run(self.create_button("تحديث Files Data", self.width() - 115, 566, self.update_section_names))
             asyncio.run(self.create_button("في حضور الأسقف", self.width() - 240, 566, self.open_bishop_window))
             asyncio.run(self.create_button("اضافة تعديل خاص", self.width() - 365, 566, self.open_bishop_window))
             asyncio.run(self.update_labels())
@@ -246,7 +246,7 @@ class MainWindow(QMainWindow):
                 (relative_path(r"Data\CopyData\كتاب المدائح.pptx"), "المدائح")
             ]
 
-            excel_file = relative_path(r'بيانات القداسات.xlsx')
+            excel_file = relative_path(r'Files Data.xlsx')
             
             extract_section_info2(file_sheet_pairs, excel_file)
 
@@ -449,7 +449,7 @@ class MainWindow(QMainWindow):
         from openpyxl import load_workbook
         from pptx import Presentation
         try:
-            wb = load_workbook(relative_path(r"بيانات القداسات.xlsx"))
+            wb = load_workbook(relative_path(r"Files Data.xlsx"))
             if odasEltfl == True:
                 presentation = Presentation(relative_path(r"قداس الطفل.pptx"))
                 sheet = wb["قداس الطفل"]
@@ -486,7 +486,7 @@ class MainWindow(QMainWindow):
             elif not bool(last_non_empty_b_cell.value):  # Check if the value is False
                 # Change the value to True and save the change
                 last_non_empty_b_cell.value = True
-                wb.save(relative_path(r"بيانات القداسات.xlsx"))
+                wb.save(relative_path(r"Files Data.xlsx"))
                 return False
 
         except Exception as e:

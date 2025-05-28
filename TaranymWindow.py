@@ -191,7 +191,7 @@ class Taranymwindow(QMainWindow):
     def load_excel_strings(self):
         try:
             # Replace with the path to your Excel file
-            excel_file_path = relative_path(r"بيانات القداسات.xlsx")
+            excel_file_path = relative_path(r"Files Data.xlsx")
 
             # Specify the sheet name where the search should be performed
             sheet_name = 'المدائح'  # Replace with the actual sheet name
@@ -229,7 +229,7 @@ class Taranymwindow(QMainWindow):
             for i in range(3):
                 self.populate_scroll_area(self.scroll_layouts[i], scroll_area_contents[i], scroll_area_indices[i])
         except FileNotFoundError:
-            self.show_error("ملف بيانات القداسات غير موجود.")
+            self.show_error("ملف Files Data غير موجود.")
         except Exception as e:
             self.show_error(f"خطأ في تحميل بيانات الإكسل: {str(e)}")
 
@@ -302,7 +302,7 @@ class Taranymwindow(QMainWindow):
 
     def load_excel_strings(self):
         # Replace with the path to your Excel file
-        excel_file_path = relative_path(r"بيانات القداسات.xlsx")
+        excel_file_path = relative_path(r"Files Data.xlsx")
 
         # Specify the sheet name where the search should be performed
         sheet_name = 'المدائح'  # Replace with the actual sheet name
@@ -424,7 +424,7 @@ class Taranymwindow(QMainWindow):
         from openpyxl import load_workbook
         from pptx import Presentation
         try:
-            wb = load_workbook(relative_path(r"بيانات القداسات.xlsx"))
+            wb = load_workbook(relative_path(r"Files Data.xlsx"))
             presentation = Presentation(relative_path(r"كتاب المدائح.pptx"))
             sheet = wb["المدائح"]
 
@@ -454,7 +454,7 @@ class Taranymwindow(QMainWindow):
             elif not bool(last_non_empty_b_cell.value):  # Check if the value is False
                 # Change the value to True and save the change
                 last_non_empty_b_cell.value = True
-                wb.save(relative_path(r"بيانات القداسات.xlsx"))
+                wb.save(relative_path(r"Files Data.xlsx"))
                 return False
 
         except Exception as e:

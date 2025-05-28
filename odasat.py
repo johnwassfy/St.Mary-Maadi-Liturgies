@@ -150,7 +150,7 @@ def odasSomElrosol (copticdate, Bishop=False, guestBishop=0):
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     prs2 = relative_path(r"Data\القداسات\قداس صوم و عيد الرسل.pptx")
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     source_sheet = "الرسل"
     des_sheet ="سنوي"
@@ -408,7 +408,7 @@ def odas3ydElrosol (Bishop=False, guestBishop=0):
     cd = CopticCalendar().coptic_to_gregorian([1740, 11, 5])
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     prs2 = relative_path(r"Data\القداسات\قداس صوم و عيد الرسل.pptx")
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     source_sheet = "الرسل"
     des_sheet ="سنوي"
@@ -650,7 +650,7 @@ def odas3ydElrosol (Bishop=False, guestBishop=0):
 def odasEltagaly (Bishop=False, guestBishop=0):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     prs2 = relative_path(r"Data\القداسات\قداس عيد التجلي.pptx")
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     source_sheet = "التجلي"
     des_sheet ="سنوي"
 
@@ -882,7 +882,7 @@ def odasElnayrooz (copticdate, Bishop=False, guestBishop=0):
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     prs2 = relative_path(r"Data\القداسات\قداس عيد النيروز و الصليب.pptx")
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="سنوي"
 
@@ -1140,7 +1140,7 @@ def odasKiahk (copticdate, Bishop=False, guestBishop=0):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = relative_path(r"قداس.pptx") 
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="سنوي"
 
@@ -1456,7 +1456,7 @@ def odas29thOfMonth (copticdate, Bishop=False, guestBishop=0):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = relative_path(r"قداس.pptx") 
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     # sunday(prs1)
@@ -1798,7 +1798,7 @@ def odasElsalyb(copticdate, Bishop=False, guestBishop=0):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     SlaybText = ["لأنك صُلِبتَ", "auask", "اف اشك"]
@@ -2096,7 +2096,7 @@ def odasElsalyb(copticdate, Bishop=False, guestBishop=0):
 
 def odasElmilad(Bishop=False, guestBishop=0):
     prs = relative_path(r"قداس.pptx")
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     image = relative_path(r"Data\Designs\الميلاد.png")
@@ -2397,7 +2397,7 @@ def odasSomNynawa(copticdate, Bishop=False, guestBishop=0):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs = relative_path(r"قداس.pptx")
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     replacefile(prs, relative_path(r"Data\CopyData\قداس.pptx"))
@@ -2657,7 +2657,7 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
@@ -2970,7 +2970,7 @@ def odasElSomElkbyr(copticdate, season, Bishop=False, guestBishop=0):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
@@ -3266,7 +3266,7 @@ def odasElSomElkbyr(copticdate, season, Bishop=False, guestBishop=0):
 
 def odasElbeshara(Bishop=False, guestBishop=0):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
@@ -3529,7 +3529,7 @@ def odasElbeshara(Bishop=False, guestBishop=0):
 
 def odasSbtLe3azr(copticdate, Bishop=False, guestBishop=0):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
@@ -3769,7 +3769,7 @@ def odasSbtLe3azr(copticdate, Bishop=False, guestBishop=0):
 
 def odasElsh3anyn(copticdate, Bishop=False, guestBishop=0):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     image = relative_path(r"Data\Designs\الشعانين.png")
@@ -4114,7 +4114,7 @@ def odasElsh3anyn(copticdate, Bishop=False, guestBishop=0):
 
 def odasEl2yama(copticdate, Bishop=False, guestBishop=0):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     image = relative_path(r"Data\Designs\القيامة.png")
@@ -4424,7 +4424,7 @@ def odasEl2yama(copticdate, Bishop=False, guestBishop=0):
 
 def odasEl5amasyn_2_39(copticdate, Bishop=False, guestBishop=0):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     image = relative_path(r"Data\Designs\القيامة.png")
@@ -4727,7 +4727,7 @@ def odasEl5amasyn_2_39(copticdate, Bishop=False, guestBishop=0):
 
 def odasElso3od(copticdate, Bishop=False, guestBishop=0, afterSo3od=False):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     image = relative_path(r"Data\Designs\القيامة.png")
@@ -5034,7 +5034,7 @@ def odasElso3od(copticdate, Bishop=False, guestBishop=0, afterSo3od=False):
 
 def odasEl3nsara(copticdate, Bishop=False, guestBishop=0):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
     image = relative_path(r"Data\Designs\القيامة.png")

@@ -198,7 +198,7 @@ class elfhrswindow(QMainWindow):
             self.buttons_layout.addWidget(button_name)
 
     def load_sheet_data(self, sheet_name, button_name):
-        excel_path = relative_path(r"بيانات القداسات.xlsx")
+        excel_path = relative_path(r"Files Data.xlsx")
         df = pd.read_excel(excel_path, sheet_name=sheet_name)
         column_data = df.iloc[:, 0].tolist()  # Get the first column data
         index = df.iloc[:, 2].tolist()  # Get the start index of every section
@@ -417,7 +417,7 @@ class elfhrswindow(QMainWindow):
                     (relative_path(r"Data\CopyData\كتاب المدائح.pptx"), "المدائح"),
                 ]
 
-                excel_file = relative_path(r'بيانات القداسات.xlsx')
+                excel_file = relative_path(r'Files Data.xlsx')
                 
                 # Call extract_section_info2 with progress_callback
                 extract_section_info2(file_sheet_pairs, excel_file, progress_callback)

@@ -5,7 +5,7 @@ def odasEltflSomElrosol (copticdate):
     from copticDate import CopticCalendar
     prs1 = r"قداس الطفل.pptx"  # Using the relative path
     prs3 = r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx"
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="قداس الطفل"
     katamars_sheet = "القطمارس السنوي القداس"
@@ -144,7 +144,7 @@ def odasEltflSomElrosol (copticdate):
 
 def odasEltfl3ydElrosol ():
     prs1 = relative_path(r"قداس الطفل.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="قداس الطفل"
 
@@ -256,7 +256,7 @@ def odasEltflElnayrooz(copticdate):
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = relative_path(r"قداس الطفل.pptx")  # Using the relative path
     prs2 = relative_path(r"Data\القداسات\قداس عيد النيروز و الصليب.pptx")
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="قداس الطفل"
  
@@ -427,7 +427,7 @@ def odasEltflElnayrooz(copticdate):
 
 def odasEltflKiahk(copticdate):
     prs1 = relative_path(r"قداس الطفل.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="قداس الطفل"
 
@@ -560,7 +560,7 @@ def odasSanawy(copticdate, season):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = relative_path(r"قداس الطفل.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="قداس الطفل"
     replacefile(prs1, relative_path(r"Data\CopyData\قداس الطفل.pptx"))
@@ -722,7 +722,7 @@ def odasElSomElkbyr(copticdate, season):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = relative_path(r"قداس الطفل.pptx")  # Using the relative path
-    excel = relative_path(r"بيانات القداسات.xlsx")
+    excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="قداس الطفل"
     replacefile(prs1, relative_path(r"Data\CopyData\قداس الطفل.pptx"))

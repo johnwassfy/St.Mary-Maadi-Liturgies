@@ -298,7 +298,7 @@ class elfhrswindow(QMainWindow):
                 (relative_path(r"Data\CopyData\الإبصلمودية الكيهكية.pptx"), "تسبحة كيهك"),
             ]
 
-            excel_file = relative_path(r'بيانات القداسات.xlsx')
+            excel_file = relative_path(r'Files Data.xlsx')
             
             extract_section_info2(file_sheet_pairs, excel_file)
 
