@@ -369,8 +369,7 @@ class Taranymwindow(QMainWindow):
                 break
         
         if not is_open:
-            if(self.pptx_check() == False):
-                self.replace_presentation()
+            self.replace_presentation()
             presentation = powerpoint.Presentations.Open(ppt_path)
         
         # Check if the presentation is already in slideshow mode
@@ -473,6 +472,9 @@ class Taranymwindow(QMainWindow):
                 remove(old_presentation_path)
                 
                 # Copy the new presentation to the location of the old presentation
+                copy2(new_presentation_path, old_presentation_path)
+            else:
+                # If the old presentation does not exist, copy the new one directly
                 copy2(new_presentation_path, old_presentation_path)
         except Exception as e:
             # Print any errors that occur during the deletion and copying process

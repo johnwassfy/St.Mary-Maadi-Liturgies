@@ -584,6 +584,8 @@ class elfhrswindow(QMainWindow):
                     if path.exists(old_presentation_path):
                         remove(old_presentation_path)  # Delete old presentation
                         copy2(new_presentation_path, old_presentation_path)  # Copy new file
+                    else:
+                        copy2(new_presentation_path, old_presentation_path)
 
                     completed_steps += 1
                     if progress_callback:

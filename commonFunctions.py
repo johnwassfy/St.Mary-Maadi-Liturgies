@@ -5,8 +5,13 @@ from pptx import Presentation
 import win32com.client
 
 def relative_path(relative_path):
-    """Return absolute path to resource, for dev and PyInstaller"""
-    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    """Return absolute path to resource, for dev and frozen apps"""
+    if getattr(sys, 'frozen', False):
+        # If the application is run as a bundle (PyInstaller or cx_Freeze)
+        base_path = sys._MEIPASS if hasattr(sys, '_MEIPASS') else os.path.dirname(sys.executable)
+    else:
+        # Running in a normal Python environment
+        base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
 def load_background_image(background_label, image_path=r"Data\الصور\background2.png"):
