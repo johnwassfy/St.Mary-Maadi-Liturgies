@@ -66,7 +66,7 @@ class MainWindow(QMainWindow):
             label1 = QLabel(self)
             label1.setObjectName("label1")
             label1.setAlignment(Qt.AlignCenter)
-            label1.setGeometry(50, 0, 585, 190)
+            label1.setGeometry(130, 0, 455, 190)
             label1.setParent(frame1)
 
             font = QFont()
@@ -81,9 +81,10 @@ class MainWindow(QMainWindow):
 
             self.frame2 = QFrame(self)
             self.restore_main_frame()
-            asyncio.run(self.create_button("تحديث Files Data", self.width() - 115, 566, self.update_section_names))
+            asyncio.run(self.create_button("تحديث الملفات", self.width() - 115, 566, self.update_section_names))
             asyncio.run(self.create_button("في حضور الأسقف", self.width() - 240, 566, self.open_bishop_window))
             asyncio.run(self.create_button("اضافة تعديل خاص", self.width() - 365, 566, self.open_bishop_window))
+            asyncio.run(self.create_button("تحديث البرنامج", self.width() - 490, 566, self.open_bishop_window))
             asyncio.run(self.update_labels())
             
             # Add NotificationBar
@@ -216,11 +217,10 @@ class MainWindow(QMainWindow):
 
     def open_elfhrs_window(self):
         from elfhrsNEWindow import elfhrswindow
-        if self.centralWidget():
-            self.clear_central_widget()
 
-        elfhrs_content = elfhrswindow()
-        self.setCentralWidget(elfhrs_content)
+        self.hide()
+        self.elfhrs_window = elfhrswindow(parent=self)  # Pass self as parent
+        self.elfhrs_window.show()
 
     def open_taranym_window(self):
         from TaranymWindow import Taranymwindow
@@ -314,6 +314,7 @@ class MainWindow(QMainWindow):
         return ''.join(arabic_digits[digit] if digit in arabic_digits else digit for digit in str(number))
 
     async def update_labels(self):
+        from PyQt5.QtGui import QFontMetrics
         label1 = self.findChild(QLabel, "label1")
         if label1:
             sesn = get_season_name(self.season)
@@ -324,8 +325,55 @@ class MainWindow(QMainWindow):
             c = f"{self.convert_to_arabic_digits(self.coptic_date[2])} {m}، {self.convert_to_arabic_digits(self.coptic_date[0])}"
             if self.current_date.time() > datetime.strptime('5:30 PM', '%I:%M %p').time():
                 c = f"({c})"
-            date = f"{sesn}\n{c}\n{ad}"
-            label1.setText(date)
+            
+            # Create a QFontMetrics object to measure text width
+            font = QFont()
+            font.setPointSize(30)  # Start with the original font size
+            font.setFamily("Calibri")
+            
+            # Format the complete text to measure the full content
+            date_text = f"{sesn}\n{c}\n{ad}"
+            
+            # Calculate available space
+            max_width = label1.width() - 20  # 10px padding on each side
+            max_height = label1.height() - 20  # 10px padding on top and bottom
+            
+            # Measure text dimensions with current font
+            font_metrics = QFontMetrics(font)
+            text_rect = font_metrics.boundingRect(0, 0, max_width, 1000, 
+                                            Qt.AlignCenter | Qt.TextWordWrap, 
+                                            date_text)
+            
+            text_width = font_metrics.width(sesn)  # Check if season name fits in one line
+            text_height = text_rect.height()
+            
+            # If text exceeds width or height, reduce font size
+            if text_width > max_width or text_height > max_height:
+                # Gradually decrease font size until text fits or min size reached
+                adjusted_size = 30  # Start with default
+                
+                while adjusted_size > 18 and (text_width > max_width or text_height > max_height):
+                    adjusted_size -= 2
+                    font.setPointSize(adjusted_size)
+                    font_metrics = QFontMetrics(font)
+                    
+                    # Recalculate dimensions with new font size
+                    text_width = font_metrics.width(sesn)
+                    text_rect = font_metrics.boundingRect(0, 0, max_width, 1000, 
+                                                    Qt.AlignCenter | Qt.TextWordWrap, 
+                                                    date_text)
+                    text_height = text_rect.height()
+                
+                # Update the label's font
+                label1.setFont(font)
+            else:
+                # If it fits, use the original size
+                font.setPointSize(30)
+                label1.setFont(font)
+            
+            # Set the text
+            label1.setText(date_text)
+        
         new_pixmap = QPixmap(relative_path(self.season_picture()))
         self.image_label.setPixmap(new_pixmap)
 
@@ -666,29 +714,31 @@ class MainWindow(QMainWindow):
             return
 
 
-def load_initial_data(progress_callback):
-    # Simulate a task with 5 steps
-    for i in range(1, 6):
-        time.sleep(0.5)  # simulate workload
-        progress_callback(i * 20)  # 20%, 40%, ..., 100%
-
 if __name__ == "__main__":
     app = QApplication(argv)
 
+    # Show splash screen
     splash = ModernSplashScreen()
     splash.show()
-
-    def on_progress(val):
-        splash.update_progress(val)
-
-    def on_finished():
+    
+    # Process events to make sure splash screen is displayed
+    app.processEvents()
+    
+    # Create a QTimer to delay the main window
+    from PyQt5.QtCore import QTimer
+    timer = QTimer()
+    timer.setSingleShot(True)
+    
+    def show_main_window():
+        # Create and show main window
         window = MainWindow()
         window.show()
+        
+        # Close splash screen
         splash.close()
-
-    worker = WorkerThread(load_initial_data)
-    worker.progress.connect(on_progress)
-    worker.finished.connect(on_finished)
-    worker.start()
+    
+    # Set timer to trigger after 3000ms (3 seconds)
+    timer.timeout.connect(show_main_window)
+    timer.start(4000)
 
     exit(app.exec_())

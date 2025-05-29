@@ -43,7 +43,7 @@ class ModernSplashScreen(QWidget):
         image_label.setAlignment(Qt.AlignCenter)
 
         # Text
-        self.text_label = QLabel("St Mary Maadi Liturgies\nLoading... 0%")
+        self.text_label = QLabel("St Mary Maadi Liturgies\nLoading...")
         self.text_label.setAlignment(Qt.AlignCenter)
         self.text_label.setStyleSheet("color: white; font-weight: bold;")
         self.text_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
@@ -63,5 +63,5 @@ class ModernSplashScreen(QWidget):
             (screen.height() - size.height()) // 2
         )
 
-    def update_progress(self, percent):
-        self.text_label.setText(f"St Mary Maadi Liturgies\nLoading... {percent}%")
+    def update_progress(self):
+        self.text_label.setText(f"St Mary Maadi Liturgies\nLoading...")

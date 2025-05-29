@@ -123,14 +123,14 @@ def get_season(date):
         season = 25 #عيد الصعود
     elif [month, day] == el3nsara :
         season = 26 # عيدالعنصرة
-    elif [month, day] == [9, 24]:
-        season = 23 #عيد دخول المسيح أرض مصر
     elif [month, day] == [9, 24] < el3nsara :
         season = 23.1 #عيد دخول المسيح أرض مصر في الخمسين
     elif [month, day] == [9, 24] == el3nsara :
         season = 23.2 # عيد دخول المسيح أرض مصر في العنصرة
     elif [month, day] == elso3od :
         season = 23.3 # عيد دخول المسيح أرض مصر في الصعود
+    elif [month, day] == [9, 24]:
+        season = 23 #عيد دخول المسيح أرض مصر
     elif El2yama < [month, day] < elso3od:
         season = 24 # فترة الخماسين المقدسة
     elif elso3od < [month, day] < el3nsara:
@@ -189,7 +189,7 @@ def get_season_name(season_number):
         21: "سبت النور",
         22: "عيد القيامة",
         23: "دخول المسيح أرض مصر",
-        23.1: "دخول المسيح أرض مصر",
+        23.1: "دخول المسيح أرض مصر والخمسين المقدسة",
         23.2: "عيد العنصرة ودخول المسيح أرض مصر",
         23.3: "عيد الصعود ودخول المسيح أرض مصر ",
         24: "الخمسين المقدسة",

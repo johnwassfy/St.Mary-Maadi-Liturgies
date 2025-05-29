@@ -1,20 +1,19 @@
 import os
 import pandas as pd
-from PyQt5.QtWidgets import QApplication, QMainWindow, QProgressBar, QSizePolicy, QLineEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QWidget, QMessageBox, QComboBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QSizePolicy, QLineEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QWidget, QMessageBox, QComboBox
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from commonFunctions import relative_path, load_background_image
 from NotificationBar import NotificationBar
 import win32com.client
 from UpdateTable import All
-from WorkerThread import WorkerThread
 
 class elfhrswindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, parent=None):
         super().__init__()
-
+        self.main_window = parent
         self.setWindowTitle("St. Mary Maadi Liturgies")
-        self.setGeometry(100, 100, 625, 600)
+        self.setGeometry(400, 100, 625, 600)
         self.setFixedSize(625, 600)
 
         # Create a central widget
@@ -32,29 +31,6 @@ class elfhrswindow(QMainWindow):
         self.overlay.setStyleSheet("background-color: rgba(0, 0, 0, 150);")  # Semi-transparent black
         self.overlay.setVisible(False)  # Hide by default
         self.overlay.raise_()  # Ensure the overlay is on top of all widgets
-
-        # Add a progress bar (centered in the window)
-        self.progress_bar = QProgressBar(self)
-        self.progress_bar.setFixedSize(400, 20)  # Set a fixed size for the progress bar
-        self.progress_bar.move((self.width() - self.progress_bar.width()) // 2, 
-                              (self.height() - self.progress_bar.height()) // 2)  # Center the progress bar
-        self.progress_bar.setVisible(False)  # Hide by default
-        self.progress_bar.setRange(0, 100)  # Set range to 0-100
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                border: 2px solid #333;
-                border-radius: 5px;
-                background-color: #f0f0f0;
-                text-align: center;
-                color: #333;
-                font-size: 14px;
-            }
-            QProgressBar::chunk {
-                background-color: #4CAF50;  /* Green color for progress */
-                border-radius: 5px;
-            }
-        """)
-        self.progress_bar.raise_()  # Ensure the progress bar is above the overlay
 
         # Create a vertical layout for the central widget
         self.main_layout = QVBoxLayout(self.central_widget)
@@ -76,7 +52,8 @@ class elfhrswindow(QMainWindow):
         try:
             load_background_image(self.central_widget)
         except Exception as e:
-            self.notification_bar.show_message(f"خطأ في تحميل الخلفية: {str(e)}")
+            if self.notification_bar and self.notification_bar.isVisible():
+                self.notification_bar.show_message(f"خطأ في تحميل الخلفية: {str(e)}")
 
         self.frame0 = QFrame(self)
         self.frame0.setGeometry(0, 0, 625, 70)
@@ -380,85 +357,45 @@ class elfhrswindow(QMainWindow):
                 break
 
         if is_open:
-            self.notification_bar.show_message("الملف مفتوح بالفعل!")
+            if self.notification_bar and self.notification_bar.isVisible():
+                self.notification_bar.show_message("الملف مفتوح بالفعل!")
         else:   
             # If the presentation is not open, open it
             powerpoint.Presentations.Open(relative_path(path))
 
     def update_katamars_files(self):
-        self.show_progress_ui("جاري التحديث...")
-
-        # Define a progress callback function
-        def progress_callback(progress):
-            self.progress_bar.setValue(progress)
-            QApplication.processEvents()  # Ensure the UI updates
-
-        # Run the All function with progress tracking
-        self.worker_thread = WorkerThread(All, progress_callback=progress_callback)
-        self.worker_thread.finished.connect(self.on_all_finished)
-        self.worker_thread.start()
+        try:
+            All()
+            if self.notification_bar and self.notification_bar.isVisible():
+                self.notification_bar.show_message("تم التحديث بنجاح!")
+        except Exception as e:
+            if self.notification_bar and self.notification_bar.isVisible():
+                self.notification_bar.show_message(f"خطأ: {str(e)}")
 
     def update_section_names(self):
-        # Show the progress bar and overlay
-        self.show_progress_ui("جاري تحديث أسماء الأقسام...")
-
-        # Define the task function for updating section names
-        def task_function(progress_callback):
+        try:
             from sectionNames import extract_section_info2
-            try:
-                file_sheet_pairs = [
-                    (relative_path(r"Data\CopyData\قداس.pptx"), "القداس"),
-                    (relative_path(r"Data\CopyData\قداس الطفل.pptx"), "قداس الطفل"),
-                    (relative_path(r"Data\CopyData\رفع بخور عشية و باكر.pptx"), "رفع بخور"),
-                    (relative_path(r"Data\CopyData\الذكصولوجيات.pptx"), "الذكصولوجيات"),
-                    (relative_path(r"Data\CopyData\في حضور الاسقف و اساقفة ضيوف.pptx"), "في حضور الأسقف"),
-                    (relative_path(r"Data\CopyData\الإبصلمودية.pptx"), "التسبحة"),
-                    (relative_path(r"Data\CopyData\الإبصلمودية الكيهكية.pptx"), "تسبحة كيهك"),
-                    (relative_path(r"Data\CopyData\كتاب المدائح.pptx"), "المدائح"),
-                ]
+            
+            file_sheet_pairs = [
+                (relative_path(r"Data\CopyData\قداس.pptx"), "القداس"),
+                (relative_path(r"Data\CopyData\قداس الطفل.pptx"), "قداس الطفل"),
+                (relative_path(r"Data\CopyData\رفع بخور عشية و باكر.pptx"), "رفع بخور"),
+                (relative_path(r"Data\CopyData\الذكصولوجيات.pptx"), "الذكصولوجيات"),
+                (relative_path(r"Data\CopyData\في حضور الاسقف و اساقفة ضيوف.pptx"), "في حضور الأسقف"),
+                (relative_path(r"Data\CopyData\الإبصلمودية.pptx"), "التسبحة"),
+                (relative_path(r"Data\CopyData\الإبصلمودية الكيهكية.pptx"), "تسبحة كيهك"),
+                (relative_path(r"Data\CopyData\كتاب المدائح.pptx"), "المدائح"),
+            ]
 
-                excel_file = relative_path(r'Files Data.xlsx')
-                
-                # Call extract_section_info2 with progress_callback
-                extract_section_info2(file_sheet_pairs, excel_file, progress_callback)
-
-                self.replace_presentation(progress_callback)
-
-                # Show success message
+            excel_file = relative_path(r'Files Data.xlsx')
+            
+            extract_section_info2(file_sheet_pairs, excel_file)
+            self.replace_presentation()
+            if self.notification_bar and self.notification_bar.isVisible():
                 self.notification_bar.show_message("تم التحديث بنجاح!")
-            except Exception as e:
-                self.notification_bar.show_message(str(e))
-
-        # Define a progress callback function
-        def progress_callback(progress):
-            self.progress_bar.setValue(progress)
-
-        # Run the task function with progress tracking
-        self.worker_thread = WorkerThread(task_function, progress_callback=progress_callback)
-        self.worker_thread.finished.connect(self.on_all_finished)
-        self.worker_thread.start()
-
-    def show_progress_ui(self, message):
-        # Show the overlay and progress bar
-        self.overlay.setVisible(True)
-        self.overlay.raise_()  # Ensure the overlay is on top of all widgets
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setValue(0)  # Reset progress
-        self.progress_bar.raise_()  # Ensure the progress bar is above the overlay
-        self.notification_bar.setText(message)
-        self.notification_bar.setVisible(True)
-        self.notification_bar.raise_()  # Ensure the notification bar is above the overlay
-        self.notification_bar.show()
-        self.frame0.raise_()
-
-    def on_all_finished(self):
-        # Hide the overlay and progress bar, and show completion message
-        self.overlay.setVisible(False)
-        self.progress_bar.setVisible(False)
-        self.notification_bar.hide()
-        self.notification_bar.setText("")
-        self.notification_bar.show_message("تم التحديث بنجاح!")
-
+        except Exception as e:
+            self.notification_bar.show_message(str(e))
+    
     def set_default_button_style(self, button):
         button.setStyleSheet(
             "QPushButton {"
@@ -550,7 +487,7 @@ class elfhrswindow(QMainWindow):
                 # Ensure buttons are always aligned to the top
                 layout.setAlignment(Qt.AlignTop)
     
-    def replace_presentation(self, progress_callback=None):
+    def replace_presentation(self):
         from shutil import copy2
         from os import path, remove
 
@@ -572,9 +509,6 @@ class elfhrswindow(QMainWindow):
             'default': (r"قداس.pptx", r"Data\CopyData\قداس.pptx")
         }
 
-        total_steps = sum(replace_flags.values())
-        completed_steps = 0
-
         for key, flag in replace_flags.items():
             if flag:
                 old_presentation_path = relative_path(presentations[key][0])
@@ -582,19 +516,15 @@ class elfhrswindow(QMainWindow):
 
                 try:
                     if path.exists(old_presentation_path):
-                        remove(old_presentation_path)  # Delete old presentation
-                        copy2(new_presentation_path, old_presentation_path)  # Copy new file
-                    else:
-                        copy2(new_presentation_path, old_presentation_path)
-
-                    completed_steps += 1
-                    if progress_callback:
-                        progress_callback(50 + int(completed_steps / total_steps * 50))  # Second 50% progress
-
+                        remove(old_presentation_path)
+                    copy2(new_presentation_path, old_presentation_path)
                 except Exception as e:
-                    self.notification_bar.show_message(f"Error: {e}")
+                    if self.notification_bar and self.notification_bar.isVisible():
+                        self.notification_bar.show_message(f"Error: {e}")
 
     def go_back(self):
+        if self.main_window:
+            self.main_window.show()
         self.close()
 
 # from sys import argv, exit
