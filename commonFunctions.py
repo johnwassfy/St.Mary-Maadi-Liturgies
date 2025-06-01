@@ -3,6 +3,8 @@ import sys
 from openpyxl import load_workbook, utils
 from pptx import Presentation
 import win32com.client
+from PyQt5.QtGui import QPixmap, QPainter, QColor, QLinearGradient
+from PyQt5.QtCore import Qt, QLineF, QPointF
 
 def relative_path(relative_path):
     """Return absolute path to resource, for dev and frozen apps"""
@@ -14,13 +16,33 @@ def relative_path(relative_path):
         base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
-def load_background_image(background_label, image_path=r"Data\الصور\background2.png"):
-    from PyQt5.QtGui import QPixmap
-    pixmap = QPixmap(relative_path(image_path))
-    if background_label:  # Check if the background label exists
-        background_label.setPixmap(pixmap)
-        background_label.setScaledContents(True)
-        background_label.setObjectName("background_label")  # Set object name for the background label
+def load_background_image(label):
+    # Create a gradient background instead of an image
+    gradient = QPixmap(label.width(), label.height())
+    gradient.fill(Qt.transparent)
+    
+    painter = QPainter(gradient)
+    painter.setRenderHint(QPainter.Antialiasing)
+    
+    gradient_bg = QLinearGradient(0, 0, 0, label.height())
+    gradient_bg.setColorAt(0, QColor(15, 46, 71))  # Dark blue
+    gradient_bg.setColorAt(0.7, QColor(30, 91, 138))  # Medium blue
+    gradient_bg.setColorAt(1, QColor(44, 125, 160))  # Lighter blue
+    
+    painter.fillRect(0, 0, label.width(), label.height(), gradient_bg)
+    
+    # Optional: Add subtle patterns or overlays
+    pattern = QPixmap(relative_path(r"Data\الصور\pattern.png"))
+    if pattern and not pattern.isNull():
+        painter.setOpacity(0.05)  # Very subtle
+        painter.drawTiledPixmap(0, 0, label.width(), label.height(), pattern)
+    
+    if label:  # Check if the background label exists
+        label.setPixmap(gradient)
+        label.setScaledContents(True)
+        label.setObjectName("background_label")  # Set object name for the background label
+
+    painter.end()
 
 def find_slide_num(excel_path, sheet_name, word, col_num):
     try:

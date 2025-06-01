@@ -1,8 +1,6 @@
-import os
-import sys
 import asyncio
 from PyQt5.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QWidget, QMessageBox
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt
 from commonFunctions import relative_path, load_background_image, open_presentation_relative_path
 from NotificationBar import NotificationBar
@@ -13,22 +11,44 @@ class elbas5aWindow(QMainWindow):
 
         self.main_window = main_window  # Reference to the main window
 
-        self.setWindowTitle("Coptic Shasha")
-        self.setGeometry(100, 100, 625, 600)
+        self.setWindowTitle("St. Mary Maadi Liturgies")
+        self.setWindowIcon(QIcon(relative_path(r"Data\الصور\Logo.ico")))
+        self.setGeometry(400, 100, 625, 600)
         self.setFixedSize(625, 600)
 
         # Create a central widget
         self.central_widget = QLabel(self)
         self.central_widget.setAlignment(Qt.AlignCenter)
+        self.central_widget.setGeometry(0, 0, self.width(), self.height())
         self.setCentralWidget(self.central_widget)
 
         # Create a vertical layout for the central widget
         layout = QVBoxLayout(self.central_widget)
 
+        button_width = 100
+        button_height = 30
+        button_x = self.width() - button_width - 10
+        button_y = self.height() - button_height - 10
+
         # Add back button
-        self.back_button = QPushButton("Back")
-        layout.addWidget(self.back_button, alignment=Qt.AlignBottom | Qt.AlignRight)  # Align the button to the top left corner
-        self.back_button.clicked.connect(self.go_back)
+        back_button = QPushButton("Back", self)
+        back_button.setGeometry(button_x, button_y, button_width, button_height)
+        back_button.clicked.connect(self.go_back)
+        back_button.setText("⬅ العودة")
+        back_button.setStyleSheet("""
+            QPushButton {
+                background-color: #e67e22;
+                color: white;
+                font-weight: bold;
+                border-radius: 12px;
+                padding: 6px 14px;
+                font-size: 11pt;
+            }
+            QPushButton:hover {
+                background-color: #d35400;
+            }
+        """)
+        layout.addWidget(back_button, alignment=Qt.AlignBottom | Qt.AlignRight)
 
         # Add NotificationBar
         self.notification_bar = NotificationBar(self)
@@ -41,15 +61,12 @@ class elbas5aWindow(QMainWindow):
             self.notification_bar.show_message(f"خطأ في تحميل الخلفية: {str(e)}")
 
         frame0 = QFrame(self)
-        frame0.setGeometry(0, 0, 625, 70)
-        frame0.setStyleSheet("background-color: #ffffff;")
-        # Add the picture to frame0
+        frame0.setGeometry(0, 0, 625, 80)
         image_label = QLabel(frame0)
-        image_label.setGeometry(0, 0, 625, 70)
-        image_path = relative_path(r"Data\الصور\Untitled-2.png")
+        image_label.setGeometry(0, 0, 625, 80)
+        image_path = relative_path(r"Data\الصور\Untitled-4.png")
         pixmap = QPixmap(image_path)
         image_label.setPixmap(pixmap)
-        image_label.setScaledContents(True)
 
         frame = QFrame(self)
         frame.setGeometry(20, 90, 585, 450)

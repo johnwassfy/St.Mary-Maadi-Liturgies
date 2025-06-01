@@ -12,13 +12,14 @@ class tasbhawindow(QMainWindow):
 
         # self.main_window = main_window  # Reference to the main window
 
-        self.setWindowTitle("Coptic Shasha")
+        self.setWindowTitle("St. Mary Maadi Liturgies")
         self.setGeometry(100, 100, 625, 600)
         self.setFixedSize(625, 600)
 
         # Create a central widget
         self.central_widget = QLabel(self)
         self.central_widget.setAlignment(Qt.AlignCenter)
+        self.central_widget.setGeometry(0, 0, self.width(), self.height())
         self.setCentralWidget(self.central_widget)
 
         # Create a vertical layout for the central widget
@@ -36,15 +37,13 @@ class tasbhawindow(QMainWindow):
             self.show_error(f"خطأ في تحميل الخلفية: {str(e)}")
 
         frame0 = QFrame(self)
-        frame0.setGeometry(0, 0, 625, 70)
-        frame0.setStyleSheet("background-color: #ffffff;")
-        # Add the picture to frame0
+        frame0.setGeometry(0, 0, 625, 80)
         image_label = QLabel(frame0)
-        image_label.setGeometry(0, 0, 625, 70)
-        image_path = relative_path(r"Data\الصور\Untitled-2.png")
+        image_label.setGeometry(0, 0, 625, 80)
+        image_path = relative_path(r"Data\الصور\Untitled-4.png")
         pixmap = QPixmap(image_path)
         image_label.setPixmap(pixmap)
-        image_label.setScaledContents(True)
+
 
         frame = QFrame(self)
         frame.setGeometry(20, 90, 585, 450)

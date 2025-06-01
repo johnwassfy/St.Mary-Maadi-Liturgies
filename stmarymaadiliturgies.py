@@ -1,8 +1,8 @@
-import time
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFrame
-from PyQt5.QtGui import QPixmap, QFont, QIcon
-from PyQt5.QtCore import Qt, pyqtSignal
-from WorkerThread import WorkerThread
+from PyQt5.QtGui import QPixmap, QFont, QIcon, QColor, QPainter, QPainterPath
+from PyQt5.QtCore import Qt, pyqtSignal, QSize
+from PyQt5.QtWidgets import QGraphicsDropShadowEffect
+from qtawesome import icon
 from copticDate import CopticCalendar
 from Season import get_season_name, get_season
 from datetime import datetime
@@ -14,6 +14,8 @@ import asyncio
 from commonFunctions import relative_path, load_background_image, open_presentation_relative_path
 from sys import exit, argv
 from SplashScreen import ModernSplashScreen
+from UpdatePrompt import UpdatePrompt
+import qtawesome as qta
 
 class ClickableFrame(QFrame):
     clicked = pyqtSignal()
@@ -37,30 +39,33 @@ class MainWindow(QMainWindow):
             self.setWindowIcon(QIcon(relative_path(r"Data\الصور\Logo.ico")))
             self.setGeometry(400, 100, 625, 600)
             self.setFixedSize(625, 600)
+            self.show_update_button = False
+            self.glow_effect_counter = 0
+
+            # Try checking for updates early
+            update_found, version = self.check_for_updates_silent()
+            if update_found:
+                self.show_update_button = True
+                self.glow_effect_counter = 1
 
             # Background label
             self.background_label = QLabel(self)
             self.background_label.setGeometry(0, 0, self.width(), self.height())
-                # Load background image
             try:
                 load_background_image(self.background_label)
             except Exception as e:
                 self.notification_bar.show_message(f"خطأ في تحميل الخلفية: {str(e)}")
 
             frame0 = QFrame(self)
-            frame0.setGeometry(0, 0, 625, 70)
-            frame0.setStyleSheet("background-color: #ffffff;")
-            # Add the picture to frame0
+            frame0.setGeometry(0, 0, 625, 80)
             image_label = QLabel(frame0)
-            image_label.setGeometry(0, 0, 625, 70)
-            image_path = relative_path(r"Data\الصور\Untitled-2.png")
+            image_label.setGeometry(0, 0, 625, 80)
+            image_path = relative_path(r"Data\الصور\Untitled-4.png")
             pixmap = QPixmap(image_path)
             image_label.setPixmap(pixmap)
-            image_label.setScaledContents(True)
 
             frame1 = ClickableFrame(self)
-            frame1.setGeometry(20, 86, 585, 190)
-            frame1.setStyleSheet("QFrame { background-color: rgba(107, 6, 6, 200); border: 2px solid black; }")
+            frame1.setGeometry(20, 80, 585, 190)
             frame1.clicked.connect(lambda: self.open_new_window())
 
             label1 = QLabel(self)
@@ -68,7 +73,6 @@ class MainWindow(QMainWindow):
             label1.setAlignment(Qt.AlignCenter)
             label1.setGeometry(130, 0, 455, 190)
             label1.setParent(frame1)
-
             font = QFont()
             font.setPointSize(30)
             font.setFamily("Calibri")
@@ -81,66 +85,347 @@ class MainWindow(QMainWindow):
 
             self.frame2 = QFrame(self)
             self.restore_main_frame()
-            asyncio.run(self.create_button("تحديث الملفات", self.width() - 115, 566, self.update_section_names))
-            asyncio.run(self.create_button("في حضور الأسقف", self.width() - 240, 566, self.open_bishop_window))
-            asyncio.run(self.create_button("اضافة تعديل خاص", self.width() - 365, 566, self.open_bishop_window))
-            asyncio.run(self.create_button("تحديث البرنامج", self.width() - 490, 566, self.open_bishop_window))
+
+            # Create the update button (single button for both states)
+            self.update_button = self.create_update_button(566)
+            self.create_button("تحديث الملفات", 566, self.update_section_names)
+            self.create_button("في حضور الأسقف", 566, self.open_bishop_window)
+            self.create_button("اضافة تعديل خاص", 566, self.open_bishop_window)
+            self.create_button("إعادة تشغيل", 566, self.restart_app)
+
             asyncio.run(self.update_labels())
-            
+
             # Add NotificationBar
             self.notification_bar = NotificationBar(self)
             self.notification_bar.setGeometry(0, 70, self.width(), 50)
 
+            # Frame styling (unchanged)
+            frame1.setStyleSheet("""
+                QFrame { 
+                    background: qlineargradient(
+                        x1: 0, y1: 0, x2: 1, y2: 1,
+                        stop: 0 rgba(15, 46, 71, 70),
+                        stop: 0.6 rgba(30, 91, 138, 70),
+                        stop: 1 rgba(140, 217, 255, 50)
+                    );
+                    border-radius: 10px;
+                    border: none;
+                }
+            """)
+            self.frame2.setStyleSheet("""
+                QFrame { 
+                    background: qlineargradient(
+                        x1: 0, y1: 0, x2: 1, y2: 1,
+                        stop: 0 rgba(15, 46, 71, 70),
+                        stop: 0.6 rgba(30, 91, 138, 70),
+                        stop: 1 rgba(140, 217, 255, 50)
+                    );
+                    border-radius: 10px;
+                    border: black 2px solid;
+                }
+            """)
+
+            for frame in [frame1, self.frame2]:
+                shadow = QGraphicsDropShadowEffect()
+                shadow.setBlurRadius(20)
+                shadow.setOffset(0)
+                shadow.setColor(QColor(0, 0, 0, 100))
+                frame.setGraphicsEffect(shadow)
+
         except Exception as e:
-            # Add NotificationBars
             self.notification_bar = NotificationBar(self)
             self.notification_bar.setGeometry(0, 70, self.width(), 50)
             self.notification_bar.show_message(str(e))
 
+    def create_update_button(self, y):
+        """Create the single update button with initial state."""
+        button_texts = ["تحديث الملفات", "في حضور الأسقف", "اضافة تعديل خاص", "تحديث", "إعادة تشغيل"]
+        button_width = 115
+        spacing = 10
+        total_width = (button_width * len(button_texts)) + (spacing * (len(button_texts) - 1))
+        start_x = (self.width() - total_width) / 2
+        button_index = button_texts.index("تحديث")
+        button_x = start_x + (button_index * (button_width + spacing))
+
+        button = QPushButton(self)
+        button.setGeometry(int(button_x), y, button_width, 30)
+
+        font = QFont()
+        font.setBold(True)
+        font.setPointSize(9 if self.show_update_button else 8)
+        button.setFont(font)
+
+        # Set initial state based on self.show_update_button
+        if self.show_update_button:
+            button.setText("تحديث البرنامج")
+            button.setToolTip("تحديث إلى أحدث إصدار من البرنامج")
+            button.setIcon(qta.icon('fa5s.download', color='white'))
+            button.clicked.connect(self.handle_update_prompt)
+            if self.glow_effect_counter > 0:
+                glow = QGraphicsDropShadowEffect(button)
+                glow.setOffset(0)
+                glow.setBlurRadius(30)
+                glow.setColor(QColor(0, 255, 0))
+                button.setGraphicsEffect(glow)
+        else:
+            button.setText("البحث عن تحديث")
+            button.setToolTip("التحقق من وجود تحديث")
+            button.setIcon(qta.icon('fa5s.sync-alt', color='white'))
+            button.clicked.connect(self.check_for_updates_active)
+
+        button.setIconSize(QSize(20 if self.show_update_button else 18, 20 if self.show_update_button else 18))
+        button.setLayoutDirection(Qt.RightToLeft)
+        button.setStyleSheet("""
+            QPushButton {
+                background-color: #1e5b8a;
+                color: white;
+                border-radius: 15px;
+                font-weight: bold;
+                padding: 3px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3498db;
+                color: white;
+            }
+            QPushButton:pressed {
+                background-color: #2980b9;
+                color: white;
+            }
+        """)
+        return button
+
+    def check_for_updates_active(self):
+        """Check for updates and update the single button's state."""
+        found, server_version = self.check_for_updates_silent()
+
+        if found:
+            self.show_update_button = True
+            self.glow_effect_counter = 1
+
+            # Update the existing button
+            self.update_button.setText("تحديث البرنامج")
+            self.update_button.setToolTip("تحديث إلى أحدث إصدار من البرنامج")
+            self.update_button.setIcon(qta.icon('fa5s.download', color='white'))
+            self.update_button.setIconSize(QSize(20, 20))
+            font = QFont()
+            font.setBold(True)
+            font.setPointSize(9)
+            self.update_button.setFont(font)
+
+            # Disconnect previous signal and connect to new handler
+            try:
+                self.update_button.clicked.disconnect()
+            except Exception:
+                pass
+            self.update_button.clicked.connect(self.handle_update_prompt)
+
+            # Add glow effect
+            glow = QGraphicsDropShadowEffect(self.update_button)
+            glow.setOffset(0)
+            glow.setBlurRadius(30)
+            glow.setColor(QColor(0, 255, 0))
+            self.update_button.setGraphicsEffect(glow)
+
+            self.notification_bar.show_message(f"✅ تحديث جديد متوفر (الإصدار {server_version})!", duration=5000)
+        else:
+            # Revert to "Check for Updates" if not already in that state
+            if self.show_update_button:
+                self.show_update_button = False
+                self.glow_effect_counter = 0
+                self.update_button.setText("البحث عن تحديث")
+                self.update_button.setToolTip("التحقق من وجود تحديث")
+                self.update_button.setIcon(qta.icon('fa5s.sync-alt', color='white'))
+                self.update_button.setIconSize(QSize(18, 18))
+                font = QFont()
+                font.setBold(True)
+                font.setPointSize(8)
+                self.update_button.setFont(font)
+                self.update_button.setGraphicsEffect(None)
+                try:
+                    self.update_button.clicked.disconnect()
+                except Exception:
+                    pass
+                self.update_button.clicked.connect(self.check_for_updates_active)
+
+            self.notification_bar.show_message("أنت تستخدم أحدث إصدار أو لا يوجد اتصال.", duration=4000)
+
+        # Refresh the UI
+        self.update_button.show()
+        self.update()
+        self.repaint()
+
     async def add_button_with_image(self, parent, image_path, geometry, text, action=None):
         x, y, width, height = geometry
 
-        # Image Label
-        image_label = QLabel(parent)
-        pixmap = QPixmap(relative_path(image_path))
-        image_label.setPixmap(pixmap)
-        image_label.setGeometry(x, y, width, height)
-        image_label.setScaledContents(True)
-
-        # Button
-        button = QPushButton(parent)
-        button.setGeometry(x, y, width, height)
+        # Create a container frame for the button with rounded corners
+        container = QFrame(parent)
+        container.setGeometry(x, y, width, height + 20)
+        container.setStyleSheet("""
+            QFrame {
+                background-color: rgba(31, 91, 138, 70);
+                border-radius: 10px;
+            }
+        """)
+        
+        # Image Label - Use the full width and height available
+        image_label = QLabel(container)
+        image_label.setGeometry(5, 5, width - 10, height - 10)
+        image_label.setStyleSheet("background: transparent; border-radius: 10px;")
+        
+        try:
+            # Load and prepare image with proper sizing
+            pixmap = QPixmap(relative_path(image_path))
+            if not pixmap.isNull():
+                # Scale pixmap to fill the entire label
+                pixmap = pixmap.scaled(width - 10, height - 10, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                
+                # Center the image in the label
+                image_label.setScaledContents(True)
+                image_label.setPixmap(pixmap)
+    
+        except Exception as e:
+            print(f"Error loading image {image_path}: {str(e)}")
+            # Create a placeholder with text if image loading fails
+            placeholder = QPixmap(width - 10, height - 10)
+            placeholder.fill(QColor(60, 120, 190))
+            image_label.setPixmap(placeholder)
+        
+        # Position the text label closer to the image
+        label = QLabel(text, container)
+        label.setAlignment(Qt.AlignCenter)
+        # Move the label up to be closer to the image (reduced spacing)
+        label.setGeometry(0, height-10, width, 30)
+        
+        # Apply font size based on text content
+        font = QFont()
+        if text == "الكتاب المقدس":
+            font.setPointSize(10)
+        else:
+            font.setPointSize(12)
+        font.setBold(True)
+        label.setFont(font)
+        label.setStyleSheet("background-color: transparent; color: white; border: none; font-weight: bold;")
+        
+        # Button with improved hover effect
+        button = QPushButton(container)
+        button.setGeometry(0, 0, width, height + 30)
         button.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
                 border: none;
             }
             QPushButton:hover {
-                background-color: rgba(173, 216, 230, 50);
+                background-color: rgba(255, 255, 255, 25);
+                border-radius: 10px;
             }
             QPushButton:pressed {
-                background-color: rgba(173, 216, 230, 100);
+                background-color: rgba(255, 255, 255, 50);
             }
         """)
+        
         if text == "صلاة السجدة":
             button.clicked.connect(lambda _, p=action: open_presentation_relative_path(p))
-        else :
-            button.clicked.connect(action)
-        # Text Label for Button
-        label = QLabel(text, parent)
-        label.setAlignment(Qt.AlignCenter)
-        label.setGeometry(x, y + height - 5, width, 30)
-        font = QFont()
-        if text == "الكتاب المقدس":
-            font.setPointSize(10)
         else:
-            font.setPointSize(12)
-        label.setFont(font)
-        label.setStyleSheet("background-color: transparent; color: white; border: none; font-weight: bold;")
+            button.clicked.connect(action)
 
-    async def create_button(self, text, x, y, action):
+    def create_button(self, text, y, action):
+        button_texts = ["تحديث الملفات", "في حضور الأسقف", "اضافة تعديل خاص"]
+        if self.show_update_button:
+            button_texts.append("تحديث البرنامج")
+        else:
+            button_texts.append("البحث عن تحديث")
+        button_texts.append("إعادة تشغيل")
+
+        button_width = 115
+        spacing = 10
+        total_width = (button_width * len(button_texts)) + (spacing * (len(button_texts) - 1))
+        start_x = (self.width() - total_width) / 2
+
+        try:
+            button_index = button_texts.index(text)
+        except ValueError:
+            button_index = 0
+
+        button_x = start_x + (button_index * (button_width + spacing))
+
         button = QPushButton(text, self)
-        button.setGeometry(x, y, 115, 30)
+        button.setGeometry(int(button_x), y, button_width, 30)
+        # Font sizing
+        font = QFont()
+        font.setBold(True)
+        font_size = 14
+        if len(text) > 10:
+            font_size = 9
+        if len(text) > 14:
+            font_size = 8
+        font.setPointSize(font_size)
+        button.setFont(font)
+
+        # Default style
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #1e5b8a;
+                color: white;
+                border-radius: 15px;
+                font-weight: bold;
+                padding: 3px;
+                border: none;
+                font-size: {font_size}pt;
+            }}
+            QPushButton:hover {{
+                background-color: #3498db;
+                color: white;
+            }}
+            QPushButton:pressed {{
+                background-color: #2980b9;
+                color: white;
+            }}
+        """)
+
+        # Special buttons
+        if text == "تحديث البرنامج":
+            import qtawesome as qta
+            button.setToolTip("تحديث إلى أحدث إصدار من البرنامج")
+            button.setLayoutDirection(Qt.RightToLeft)
+            button.setIcon(qta.icon('fa5s.download', color='white'))
+            button.setIconSize(QSize(20, 20))
+            if self.glow_effect_counter > 0:
+                glow = QGraphicsDropShadowEffect(button)
+                glow.setOffset(0)
+                glow.setBlurRadius(30)
+                glow.setColor(QColor(0, 255, 0))
+                button.setGraphicsEffect(glow)
+
+        elif text == "البحث عن تحديث":
+            import qtawesome as qta
+            button.setToolTip("التحقق من وجود تحديث")
+            button.setLayoutDirection(Qt.RightToLeft)
+            button.setIcon(qta.icon('fa5s.sync-alt', color='white'))
+            button.setIconSize(QSize(18, 18))
+
+        elif text == "إعادة تشغيل":
+            button.setToolTip("إعادة تشغيل البرنامج")
+            button.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: #e74c3c;
+                    color: white;
+                    border-radius: 15px;
+                    font-weight: bold;
+                    padding: 3px;
+                    border: none;
+                    font-size: {font_size}pt;
+                }}
+                QPushButton:hover {{
+                    background-color: #c0392b;
+                    color: white;
+                }}
+                QPushButton:pressed {{
+                    background-color: #a93226;
+                    color: white;
+                }}
+            """)
+
         button.clicked.connect(action)
 
     def open_bishop_window(self):
@@ -181,16 +466,39 @@ class MainWindow(QMainWindow):
         self.replace_presentation(False, False, True)
 
     def open_elmonasbat_Window(self):
+        # Remove old frame
         self.frame2.deleteLater()
+
+        # Create new frame
         self.frame2 = QFrame(self)
         self.frame2.setGeometry(20, 286, 585, 275)
-        self.frame2.setStyleSheet("QFrame { background-color: rgba(107, 6, 6, 200); border: 2px solid black; }")
+        self.frame2.setStyleSheet("""
+                QFrame { 
+                    background: qlineargradient(
+                        x1: 0, y1: 0, x2: 1, y2: 1,
+                        stop: 0 rgba(15, 46, 71, 70),
+                        stop: 0.6 rgba(30, 91, 138, 70),
+                        stop: 1 rgba(140, 217, 255, 50)
+                    );
+                    border-radius: 10px;
+                    border: black 2px solid;
+                }
+        """)
 
-        # Add back button
-        self.back_button = QPushButton("Back")
-        asyncio.run(self.add_button_with_image(self.frame2, "Data/الصور/البصخة.jpg", (20, 20, 100, 100), "اسبوع الالام", self.open_elbas5a_window))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\السجدة.jpg", (140, 20, 100, 100), "صلاة السجدة", "Data\صلاة السجدة عيد العنصرة.pptx"))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\اللقان.jpg", (260, 20, 100, 100), "اللقان", self.open_ellakan_window))
+        # Animated fade-in effect
+        self.fade_in_widget(self.frame2)
+
+        # Buttons with enhanced layout
+        buttons = [
+            ("Data/الصور/البصخة.jpg", (13, 15, 100, 100), "اسبوع الالام", self.open_elbas5a_window),
+            ("Data/الصور/السجدة.jpg", (126, 15, 100, 100), "صلاة السجدة", "Data/صلاة السجدة عيد العنصرة.pptx"),
+            ("Data/الصور/اللقان.jpg", (239, 15, 100, 100), "اللقان", self.open_ellakan_window),
+        ]
+
+        for img, geo, label, action in buttons:
+            asyncio.run(self.add_button_with_image(self.frame2, img, geo, label, action))
+
+        # Styled back button
         self.add_back_button(self.frame2, self.restore_main_frame)
         self.frame2.show()
 
@@ -212,8 +520,8 @@ class MainWindow(QMainWindow):
         if self.centralWidget():
             self.clear_central_widget()
         
-        ellakan_content = bibleWindow()
-        self.setCentralWidget(ellakan_content)
+        bible_content = bibleWindow()
+        self.setCentralWidget(bible_content)
 
     def open_elfhrs_window(self):
         from elfhrsNEWindow import elfhrswindow
@@ -328,7 +636,7 @@ class MainWindow(QMainWindow):
             
             # Create a QFontMetrics object to measure text width
             font = QFont()
-            font.setPointSize(30)  # Start with the original font size
+            font.setPointSize(30)
             font.setFamily("Calibri")
             
             # Format the complete text to measure the full content
@@ -428,28 +736,29 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message(str(e))
 
     def handle_qadas_eltfl_button_click(self):
-        from odasatEltfl import (odasElSomElkbyr, odasEltflSomElrosol, odasEltfl3ydElrosol, odasSanawy, 
-                                 odasEltflElnayrooz, odasEltflKiahk)
-        try:
-            if(self.pptx_check(True) == False):
-                self.replace_presentation(True)
-            match self.season:
-                case 0 | 6 | 30 | 31:
-                    odasSanawy(self.coptic_date, self.season)
-                case 1:
-                    odasEltflElnayrooz(self.coptic_date)
-                case 5:
-                    odasEltflKiahk(self.coptic_date)
-                case 15 | 15.1:
-                    odasElSomElkbyr(self.coptic_date, self.season)
-                case 27:
-                    odasEltflSomElrosol(self.coptic_date)
-                case 28:
-                    odasEltfl3ydElrosol()
-                case default :
-                    self.notification_bar.show_message(f"قداس {get_season_name(self.season)} غير متوفر حاليا")
-        except Exception as e:
-            self.show_error_message(str(e))
+        # from odasatEltfl import (odasElSomElkbyr, odasEltflSomElrosol, odasEltfl3ydElrosol, odasSanawy, 
+        #                          odasEltflElnayrooz, odasEltflKiahk)
+        # try:
+        #     if(self.pptx_check(True) == False):
+        #         self.replace_presentation(True)
+        #     match self.season:
+        #         case 0 | 6 | 30 | 31:
+        #             odasSanawy(self.coptic_date, self.season)
+        #         case 1:
+        #             odasEltflElnayrooz(self.coptic_date)
+        #         case 5:
+        #             odasEltflKiahk(self.coptic_date)
+        #         case 15 | 15.1:
+        #             odasElSomElkbyr(self.coptic_date, self.season)
+        #         case 27:
+        #             odasEltflSomElrosol(self.coptic_date)
+        #         case 28:
+        #             odasEltfl3ydElrosol()
+        #         case default :
+        #             self.notification_bar.show_message(f"قداس {get_season_name(self.season)} غير متوفر حاليا")
+        # except Exception as e:
+        #     self.show_error_message(str(e))
+        return
 
     def handle_baker_button_click(self):
         from openpyxl import load_workbook
@@ -631,38 +940,47 @@ class MainWindow(QMainWindow):
         back_button = QPushButton("Back", parent)
         back_button.setGeometry(button_x, button_y, button_width, button_height)
         back_button.clicked.connect(action)
+        back_button.setText("⬅ العودة")
         back_button.setStyleSheet("""
             QPushButton {
-                background-color: #ff5733;
+                background-color: #e67e22;
                 color: white;
-                border-radius: 5px;
-                border: none;
+                font-weight: bold;
+                border-radius: 12px;
+                padding: 6px 14px;
+                font-size: 11pt;
             }
             QPushButton:hover {
-                background-color: #ff704d;
-            }
-            QPushButton:pressed {
-                background-color: #ff8566;
+                background-color: #d35400;
             }
         """)
+
+    def fade_in_widget(self, widget, duration=400): 
+        from PyQt5.QtCore import QPropertyAnimation
+        widget.setWindowOpacity(0)
+        anim = QPropertyAnimation(widget, b"windowOpacity")
+        anim.setDuration(duration)
+        anim.setStartValue(0)
+        anim.setEndValue(1)
+        anim.start()
+        widget.anim = anim  # Keep a reference so it's not garbage collected
 
     def restore_main_frame(self):
         self.frame2.deleteLater()
         self.frame2 = QFrame(self)
-        self.frame2.setGeometry(20, 286, 585, 275)
-        self.frame2.setStyleSheet("QFrame { background-color: rgba(107, 6, 6, 200); border: 2px solid black; }")
+        self.frame2.setGeometry(20, 280, 585, 275)
 
         # Use asyncio.run to run async methods
-        asyncio.run(self.add_button_with_image(self.frame2, "Data/الصور/القداس.JPG", (13, 20, 100, 100), "القداس", self.handle_qadas_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data/الصور/قداس الطفل.png", (126, 20, 100, 100), "قداس الطفل", self.handle_qadas_eltfl_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\باكر.jpg", (239, 20, 100, 100), "باكر", self.handle_baker_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\عشية.jpg", (352, 20, 100, 100), "عشية", self.handle_3ashya_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data/الصور/الكتاب المقدس.png", (465, 20, 100, 100), "الكتاب المقدس", self.open_bible_window))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الأجبية.jpg", (13, 150, 100, 100), "الأجبية", self.handle_agbya_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\داود 1.jpg", (126, 150, 100, 100), "الإبصلمودية", self.open_tasbha_Window))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الفهرس.jpg", (239, 150, 100, 100), "الفهرس", self.open_elfhrs_window))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\المدائح2.jpg", (352, 150, 100, 100), "المدائح", self.open_taranym_window))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الصليب القبطي.jpg", (465, 150, 100, 100), "المناسبات", self.open_elmonasbat_Window))
+        asyncio.run(self.add_button_with_image(self.frame2, "Data/الصور/القداس.JPG", (13, 15, 100, 100), "القداس", self.handle_qadas_button_click))
+        asyncio.run(self.add_button_with_image(self.frame2, "Data/الصور/قداس الطفل.png", (126, 15, 100, 100), "قداس الطفل", self.handle_qadas_eltfl_button_click))
+        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\باكر.jpg", (239, 15, 100, 100), "باكر", self.handle_baker_button_click))
+        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\عشية.jpg", (352, 15, 100, 100), "عشية", self.handle_3ashya_button_click))
+        asyncio.run(self.add_button_with_image(self.frame2, "Data/الصور/الكتاب المقدس.png", (465, 15, 100, 100), "الكتاب المقدس", self.open_bible_window))
+        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الأجبية.jpg", (13, 148, 100, 100), "الأجبية", self.handle_agbya_button_click))
+        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\داود 1.jpg", (126, 148, 100, 100), "الإبصلمودية", self.open_tasbha_Window))
+        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الفهرس.jpg", (239, 148, 100, 100), "الفهرس", self.open_elfhrs_window))
+        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\المدائح2.jpg", (352, 148, 100, 100), "المدائح", self.open_taranym_window))
+        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الصليب القبطي.jpg", (465, 148, 100, 100), "المناسبات", self.open_elmonasbat_Window))
 
         self.frame2.show()
 
@@ -712,6 +1030,183 @@ class MainWindow(QMainWindow):
             katamarsEl5amasyn()
         else:
             return
+
+    def check_for_updates_silent(self):
+        import socket, requests
+        try:
+            def have_internet_connection():
+                try:
+                    socket.create_connection(("8.8.8.8", 53), timeout=3)
+                    return True
+                except OSError:
+                    return False
+
+            if not have_internet_connection():
+                return False, None
+
+            local_version = "2.3.2"
+            dropbox_url = "https://www.dropbox.com/scl/fi/tumjwytg8ptr88zs5pojd/version.json?rlkey=4fukyqxjx9lii0j0tunwxwpi7&st=sqk5fl08&dl=1"
+            response = requests.get(dropbox_url, timeout=5)
+            response.raise_for_status()
+            server_version = response.json().get("version", "1.0.0")
+
+            return (server_version > local_version), server_version
+
+        except Exception as e:
+            print(f"Update check failed: {e}")
+            return False, None
+
+    def _pulse_glow(self, effect):
+        if self._increasing:
+            self._blur += 1
+            if self._blur >= 45:
+                self._increasing = False
+        else:
+            self._blur -= 1
+            if self._blur <= 30:
+                self._increasing = True
+        effect.setBlurRadius(self._blur)
+
+    def handle_update_prompt(self):
+        import requests
+        import socket
+
+        def have_internet_connection():
+            try:
+                socket.create_connection(("8.8.8.8", 53), timeout=3)
+                return True
+            except OSError:
+                return False
+
+        if not have_internet_connection():
+            self.notification_bar.show_message("⚠ لا يوجد اتصال بالإنترنت. تحقق من الاتصال وحاول مرة أخرى.", duration=5000)
+            return
+
+        try:
+            url = "https://www.dropbox.com/scl/fi/tumjwytg8ptr88zs5pojd/version.json?rlkey=4fukyqxjx9lii0j0tunwxwpi7&st=sqk5fl08&dl=1"
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+
+            version = data.get("version", "??")
+            notes = data.get("description", "لا توجد تفاصيل.")
+            exe_url = data.get("download_url")
+
+            dialog = UpdatePrompt(version, notes, self)
+            dialog.update_button.clicked.connect(lambda: self.download_update(exe_url))
+            dialog.cancel_button.clicked.connect(dialog.close)
+            dialog.exec_()
+
+        except requests.exceptions.ConnectionError:
+            self.notification_bar.show_message("⚠ تعذر الاتصال بالخادم. تحقق من اتصال الإنترنت.", duration=5000)
+        except requests.exceptions.Timeout:
+            self.notification_bar.show_message("⚠ انتهت مهلة الاتصال بالخادم. حاول لاحقًا.", duration=5000)
+        except requests.exceptions.HTTPError as e:
+            self.notification_bar.show_message(f"⚠ خطأ في الخادم: {e.response.status_code}", duration=5000)
+        except requests.exceptions.RequestException:
+            self.notification_bar.show_message("⚠ حدث خطأ أثناء التحقق من التحديث.", duration=5000)
+        except ValueError:
+            self.notification_bar.show_message("⚠ ملف التحديث غير صالح أو لا يمكن تحليله.", duration=5000)
+        except Exception as e:
+            self.notification_bar.show_message(f"⚠ خطأ غير متوقع: {str(e)}", duration=5000)
+    
+    def download_update(self, installer_url):
+        import requests
+        import os
+        from PyQt5.QtWidgets import QMessageBox
+        from PyQt5.QtCore import QStandardPaths
+        from PyQt5.QtGui import QDesktopServices
+        from PyQt5.QtCore import QUrl
+        import socket
+
+        def have_internet_connection():
+            try:
+                socket.create_connection(("8.8.8.8", 53), timeout=3)
+                return True
+            except OSError:
+                return False
+
+        if not have_internet_connection():
+            self.notification_bar.show_message("⚠ لا يوجد اتصال بالإنترنت. لا يمكن تحميل التحديث.", duration=5000)
+            return
+
+        try:
+            self.notification_bar.show_message("📦 جاري تحميل التحديث...", duration=4000)
+
+            download_dir = QStandardPaths.writableLocation(QStandardPaths.TempLocation)
+            installer_path = os.path.join(download_dir, "StMaryUpdater.exe")
+
+            with requests.get(installer_url, stream=True, timeout=20) as r:
+                r.raise_for_status()
+                with open(installer_path, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+
+            QMessageBox.information(
+                self,
+                "تم تحميل التحديث",
+                "✅ تم تحميل التحديث بنجاح. سيتم الآن تثبيته، وسيتم إغلاق البرنامج.",
+                QMessageBox.Ok
+            )
+
+            QDesktopServices.openUrl(QUrl.fromLocalFile(installer_path))
+            QApplication.quit()
+
+        except requests.exceptions.ConnectionError:
+            self.notification_bar.show_message("⚠ تعذر الاتصال بالخادم. تحقق من اتصال الإنترنت.", duration=5000)
+        except requests.exceptions.Timeout:
+            self.notification_bar.show_message("⚠ انتهت مهلة التحميل. حاول مرة أخرى.", duration=5000)
+        except requests.exceptions.HTTPError as e:
+            self.notification_bar.show_message(f"⚠ خطأ في التحميل: {e.response.status_code}", duration=5000)
+        except requests.exceptions.RequestException:
+            self.notification_bar.show_message("⚠ حدث خطأ أثناء تحميل التحديث.", duration=5000)
+        except Exception as e:
+            self.notification_bar.show_message(f"⚠ خطأ غير متوقع: {str(e)}", duration=5000)
+
+    def restart_app(self):
+        """Restarts the current Python script with proper cleanup and hardcoded path."""
+        import sys
+        import subprocess
+        
+        # Show notification that app is restarting
+        self.notification_bar.show_message("جاري إعادة تشغيل البرنامج...")
+        
+        # Process events to ensure the message is displayed
+        QApplication.processEvents()
+        
+        try:
+            # Close any open PowerPoint instances
+            if self.is_powerpoint_open():
+                import win32com.client
+                import pythoncom
+                pythoncom.CoInitialize()
+                try:
+                    powerpoint = win32com.client.GetActiveObject("PowerPoint.Application")
+                    powerpoint.Quit()
+                except Exception:
+                    pass
+                finally:
+                    pythoncom.CoUninitialize()
+            
+            # Delay slightly to allow resources to be released
+            from time import sleep
+            sleep(0.5)
+            
+            # Hardcoded file path for development
+            script_path = r"F:\5dmt Shashat\Codes and Files\stmarymaadiliturgies.py"
+            
+            # Close the current application
+            QApplication.quit()
+            
+            # Use subprocess to start a new instance
+            subprocess.Popen([sys.executable, script_path])
+            
+            # Exit the current process
+            sys.exit(0)
+        except Exception as e:
+            # If restart fails, show error and continue
+            self.notification_bar.show_message(f"فشل إعادة التشغيل: {str(e)}")
 
 
 if __name__ == "__main__":

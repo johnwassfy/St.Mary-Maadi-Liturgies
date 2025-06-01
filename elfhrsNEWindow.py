@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from PyQt5.QtWidgets import QApplication, QMainWindow, QSizePolicy, QLineEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QWidget, QMessageBox, QComboBox
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt, QTimer
 from commonFunctions import relative_path, load_background_image
 from NotificationBar import NotificationBar
@@ -19,6 +19,7 @@ class elfhrswindow(QMainWindow):
         # Create a central widget
         self.central_widget = QLabel(self)
         self.central_widget.setAlignment(Qt.AlignCenter)
+        self.central_widget.setGeometry(0, 0, self.width(), self.height())
         self.setCentralWidget(self.central_widget)
 
         # Add NotificationBar
@@ -35,18 +36,39 @@ class elfhrswindow(QMainWindow):
         # Create a vertical layout for the central widget
         self.main_layout = QVBoxLayout(self.central_widget)
 
-        # Add back button
-        self.back_button = QPushButton("Back")
-        self.main_layout.addWidget(self.back_button, alignment=Qt.AlignBottom | Qt.AlignRight)
-        self.back_button.clicked.connect(self.go_back)
+        buttons = [
+            ("تحديث ملفات القطمارس", self.update_katamars_files, 160),
+            ("تحديث ملفات الصلوات", self.update_section_names, 170),
+            ("⬅ العودة", self.go_back, 110),
+        ]
 
-        button = QPushButton("تحديث ملفات الصلوات", self)
-        button.setGeometry(self.width() - 200, 566, 115, 25)
-        button.clicked.connect(lambda _: self.update_section_names())
+        spacing = 15
+        total_width = sum(w for _, _, w in buttons) + spacing * (len(buttons) - 1)
+        start_x = self.width() - total_width - 10  # 10px margin from right
+        y = self.height() - 40
 
-        button = QPushButton("تحديث ملفات القطمارس", self)
-        button.setGeometry(self.width() - 321, 566, 120, 25)
-        button.clicked.connect(lambda _: self.update_katamars_files())
+        x = start_x
+        for text, callback, width in buttons:
+            btn = QPushButton(text, self)
+            btn.setGeometry(int(x), y, width, 30)
+            if text == "⬅ العودة":
+                btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #e67e22;
+                        color: white;
+                        font-weight: bold;
+                        border-radius: 12px;
+                        padding: 6px 14px;
+                        font-size: 11pt;
+                    }
+                    QPushButton:hover {
+                        background-color: #d35400;
+                    }
+                """)
+            else:
+                self.style_main_button(btn)
+            btn.clicked.connect(callback)
+            x += width + spacing
 
         # Load background image
         try:
@@ -55,17 +77,13 @@ class elfhrswindow(QMainWindow):
             if self.notification_bar and self.notification_bar.isVisible():
                 self.notification_bar.show_message(f"خطأ في تحميل الخلفية: {str(e)}")
 
-        self.frame0 = QFrame(self)
-        self.frame0.setGeometry(0, 0, 625, 70)
-        self.frame0.setStyleSheet("background-color: #ffffff;")
-        
-        # Add the picture to frame0
-        image_label = QLabel(self.frame0)
-        image_label.setGeometry(0, 0, 625, 70)
-        image_path = relative_path(r"Data\الصور\Untitled-2.png")
+        frame0 = QFrame(self)
+        frame0.setGeometry(0, 0, 625, 80)
+        image_label = QLabel(frame0)
+        image_label.setGeometry(0, 0, 625, 80)
+        image_path = relative_path(r"Data\الصور\Untitled-4.png")
         pixmap = QPixmap(image_path)
         image_label.setPixmap(pixmap)
-        image_label.setScaledContents(True)
 
         frame = QFrame(self)
         frame.setGeometry(20, 90, 585, 450)
@@ -167,6 +185,28 @@ class elfhrswindow(QMainWindow):
             button_name.clicked.connect(lambda _, sheet=sheet_names[index], name=button: self.load_sheet_data(sheet, name))
             self.buttons_layout.addWidget(button_name)
 
+    def style_main_button(self, button, font_size=10):
+        button.setFont(QFont("Segoe UI", font_size, QFont.Bold))
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #1e5b8a;
+                color: white;
+                border-radius: 15px;
+                font-weight: bold;
+                padding: 3px;
+                border: none;
+                font-size: {font_size}pt;
+            }}
+            QPushButton:hover {{
+                background-color: #3498db;
+                color: white;
+            }}
+            QPushButton:pressed {{
+                background-color: #2980b9;
+                color: white;
+            }}
+        """)
+    
     def add_buttons_with_paths(self, button_names, paths):
         for index, button in enumerate(button_names):
             button_name = QPushButton(button)

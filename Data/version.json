@@ -1,3 +1,8 @@
 {
-  "version": "2.3.2"
+  "version": "2.3.3",
+  "description":[ "تعديل نظام التحديث، مع السماح للمستخدم بالبحث عن التحديثات يدويًا.",
+                  "إصلاح مشكلة عدم ظهور التحديثات في بعض الأحيان.", 
+                  "تعديل بعض الوجهات "],
+  "release_date": "2025-6-1",
+  "download_url": "https://www.dropbox.com/scl/fi/vlmqosss1abj3hu1m3rm4/StMaryMaadiInstaller.exe?rlkey=8grdzt6bij4ayc03bvys7rg2q&st=5c9e68ue&dl=1"
 }

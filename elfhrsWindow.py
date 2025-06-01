@@ -39,7 +39,7 @@ class elfhrswindow(QMainWindow):
         # Add the picture to frame0
         image_label = QLabel(frame0)
         image_label.setGeometry(0, 0, 625, 70)
-        image_path = relative_path(r"Data\الصور\Untitled-2.png")
+        image_path = relative_path(r"Data\الصور\Untitled-4.png")
         pixmap = QPixmap(image_path)
         image_label.setPixmap(pixmap)
         image_label.setScaledContents(True)

@@ -57,6 +57,7 @@ class Taranymwindow(QMainWindow):
         # Create a central widget
         self.central_widget = QLabel(self)
         self.central_widget.setAlignment(Qt.AlignCenter)
+        self.central_widget.setGeometry(0, 0, self.width(), self.height())
         self.setCentralWidget(self.central_widget)
 
         # Load background image
@@ -65,15 +66,13 @@ class Taranymwindow(QMainWindow):
         except Exception as e:
             self.notification_bar(f"خطأ في تحميل الخلفية: {str(e)}")
 
-        self.frame0 = QFrame(self)
-        self.frame0.setGeometry(0, 0, 625, 70)
-        self.frame0.setStyleSheet("background-color: #ffffff;")
-
-        # Add the picture to frame0
-        try:
-            self.frame_background_image(self.frame0, 625, 70, r"Data\الصور\Untitled-2.png")
-        except Exception as e:
-            self.show_error(f"خطأ في تحميل صورة الإطار: {str(e)}")
+        frame0 = QFrame(self)
+        frame0.setGeometry(0, 0, 625, 80)
+        image_label = QLabel(frame0)
+        image_label.setGeometry(0, 0, 625, 80)
+        image_path = relative_path(r"Data\الصور\Untitled-4.png")
+        pixmap = QPixmap(image_path)
+        image_label.setPixmap(pixmap)
 
         self.frame = QFrame(self)
         self.frame.setGeometry(20, 90, 585, 450)
@@ -92,25 +91,37 @@ class Taranymwindow(QMainWindow):
         except Exception as e:
             self.show_error(f"خطأ في إنشاء مناطق التمرير: {str(e)}")
 
-        # Create a container for the search box and checkbox
+        # Create a styled container for the search bar and checkbox
         container_widget = QWidget(self)
-        container_widget.setGeometry(20, 560, 260, 40)  # Adjust position and size as needed
-        
-        # Set the container background color to white
-        container_widget.setStyleSheet("background-color: rgba(255, 255, 255, 250); ")
+        container_widget.setGeometry(10, 550, 330, 40)  # Wider and slightly taller
+        container_widget.setStyleSheet("""
+            QWidget {
+                background-color: rgba(255, 255, 255, 230);
+                border: 1px solid #ccc;
+                border-radius: 15px;
+            }
+        """)
+
         container_layout = QHBoxLayout(container_widget)
+        container_layout.setContentsMargins(10, 5, 10, 5)
+        container_layout.setSpacing(8)
         
         # Create and add the checkbox
         self.slideshow_checkbox = QCheckBox("slideshow", self)  # "Enter Slideshow Mode" in Arabic
-        self.slideshow_checkbox.setChecked(False)  # Default to unchecked
-        container_layout.addWidget(self.slideshow_checkbox)
-
+        self.slideshow_checkbox.setChecked(False)
+        self.slideshow_checkbox.setStyleSheet("""
+            QCheckBox {
+                font-size: 12px;
+                color: #2c3e50;
+                padding: 0 5px;
+            }
+        """)
         # Create and add the search bar
         # Update the search bar styling in Taranymwindow
         self.search_bar = QLineEdit(self)
         self.search_bar.setPlaceholderText("ابحث على المديح")
-        self.search_bar.setFixedHeight(30)  # Match the height of the search bar in elfhrswindow
-        self.search_bar.setLayoutDirection(Qt.RightToLeft)  # Set layout direction to right-to-left
+        self.search_bar.setFixedHeight(30)
+        self.search_bar.setLayoutDirection(Qt.RightToLeft)
         self.search_bar.setStyleSheet("""
             QLineEdit {
                 text-align: center;
@@ -125,15 +136,34 @@ class Taranymwindow(QMainWindow):
                 border-color: #a0a0ff;
                 background-color: #ffffff;
             }
-        """)  # Match the style from elfhrswindow
+        """)
         self.search_bar.textChanged.connect(self.filter_buttons)  # Connect the textChanged signal to the filter function
-        container_layout.addWidget(self.search_bar)
+        container_layout.addWidget(self.slideshow_checkbox)
+        container_layout.addWidget(self.search_bar, stretch=1)
 
-        # Add back button
-        self.back_button = QPushButton("Back")
         layout = QVBoxLayout(self.central_widget)
-        layout.addWidget(self.back_button, alignment=Qt.AlignBottom | Qt.AlignRight)
-        self.back_button.clicked.connect(self.close)
+        button_width = 100
+        button_height = 30
+        button_x = self.width() - button_width - 10
+        button_y = self.height() - button_height - 10
+        back_button = QPushButton("Back", self)
+        back_button.setGeometry(button_x, button_y, button_width, button_height)
+        back_button.clicked.connect(self.close)
+        back_button.setText("⬅ العودة")
+        back_button.setStyleSheet("""
+            QPushButton {
+                background-color: #e67e22;
+                color: white;
+                font-weight: bold;
+                border-radius: 12px;
+                padding: 6px 14px;
+                font-size: 11pt;
+            }
+            QPushButton:hover {
+                background-color: #d35400;
+            }
+        """)
+        layout.addWidget(back_button, alignment=Qt.AlignBottom | Qt.AlignRight)
 
         # Add NotificationBar for error messages
         self.notification_bar = NotificationBar(self)
@@ -142,17 +172,6 @@ class Taranymwindow(QMainWindow):
     def show_error(self, message):
         """Display an error message using the NotificationBar."""
         self.notification_bar.show_message(message, duration=5000)
-
-    def frame_background_image(self, frame, w, h, image_relative_path):
-        try:
-            image_label = QLabel(frame)
-            image_label.setGeometry(0, 0, w, h)
-            image_path = relative_path(image_relative_path)
-            pixmap = QPixmap(image_path)
-            image_label.setPixmap(pixmap)
-            image_label.setScaledContents(True)
-        except Exception as e:
-            raise RuntimeError(f"خطأ في تحميل صورة الإطار: {str(e)}")
 
     def create_scroll_areas(self):
         try:
@@ -232,14 +251,6 @@ class Taranymwindow(QMainWindow):
             self.show_error("ملف Files Data غير موجود.")
         except Exception as e:
             self.show_error(f"خطأ في تحميل بيانات الإكسل: {str(e)}")
-
-    def frame_background_image(self, frame, w, h, image_relative_path):
-        image_label = QLabel(frame)
-        image_label.setGeometry(0, 0, w, h)
-        image_path = relative_path(image_relative_path)
-        pixmap = QPixmap(image_path)
-        image_label.setPixmap(pixmap)
-        image_label.setScaledContents(True)
 
     def create_scroll_areas(self):
         # Define the labels for each scroll area
