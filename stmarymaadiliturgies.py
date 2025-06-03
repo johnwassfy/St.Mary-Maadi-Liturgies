@@ -17,6 +17,27 @@ from SplashScreen import ModernSplashScreen
 from UpdatePrompt import UpdatePrompt
 import qtawesome as qta
 
+from PyQt5.QtNetwork import QLocalSocket, QLocalServer
+
+class SingleInstance:
+    def __init__(self, key):
+        self.key = key
+        self.server = None
+
+    def is_running(self):
+        # Try to connect to an existing local socket
+        socket = QLocalSocket()
+        socket.connectToServer(self.key)
+        running = socket.waitForConnected(1000)
+        socket.close()
+        return running
+
+    def start(self):
+        # Start the local server to block further instances
+        self.server = QLocalServer()
+        self.server.removeServer(self.key)  # Just in case it's still lingering
+        return self.server.listen(self.key)
+
 class ClickableFrame(QFrame):
     clicked = pyqtSignal()
 
@@ -1044,7 +1065,7 @@ class MainWindow(QMainWindow):
             if not have_internet_connection():
                 return False, None
 
-            local_version = "2.3.2"
+            local_version = "2.3.3"
             dropbox_url = "https://www.dropbox.com/scl/fi/tumjwytg8ptr88zs5pojd/version.json?rlkey=4fukyqxjx9lii0j0tunwxwpi7&st=sqk5fl08&dl=1"
             response = requests.get(dropbox_url, timeout=5)
             response.raise_for_status()
@@ -1210,6 +1231,15 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
+    import sys
+    instance_checker = SingleInstance("stmary_maadi_app")
+
+    if instance_checker.is_running():
+        print("🚫 App is already running.")
+        sys.exit(0)
+
+    # Start locking this instance
+    instance_checker.start()
     app = QApplication(argv)
 
     # Show splash screen
