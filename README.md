@@ -1,6 +1,6 @@
 # St.Mary-Maadi-Liturgies
 
-![St.Mary Maadi Liturgies Logo](Data/الصور/St Mary's Liturgies Logo.png)
+![St.Mary Maadi Liturgies Logo](Data/Logo.ico)
 
 ## Description
 
