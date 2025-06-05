@@ -62,7 +62,6 @@ class NotificationBar(QFrame):
         self.horizontal_padding = 20
         self.adjust_size()
         self.show()
-        print("NotificationBar: Showing message:", message)
         self.timer.start(duration)
 
     def adjust_size(self):

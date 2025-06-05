@@ -720,7 +720,7 @@ class MainWindow(QMainWindow):
 
     def handle_qadas_button_click(self):
         from odasat import (odasElSomElkbyr, odasElsh3anyn, odasSbtLe3azr, odasElbeshara, odasEl2yama, odasEl5amasyn_2_39, 
-                            odasElso3od, odasSanawy, odasElsalyb, odasEl3nsara)
+                            odasElso3od, odasSanawy, odasElsalyb, odasEl3nsara, odasSomElRosol)
         try:
             match self.season:
                 case 0 | 6 | 13 | 30 | 31:
@@ -751,6 +751,8 @@ class MainWindow(QMainWindow):
                     odasElso3od(self.coptic_date, self.bishop, self.GuestBishop)
                 case 26:
                     odasEl3nsara(self.coptic_date, self.bishop, self.GuestBishop)
+                case 27:
+                    odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop)
                 case default :
                     self.notification_bar.show_message(f"قداس {get_season_name(self.season)} غير متوفر حاليا")
         except Exception as e:
@@ -1065,7 +1067,7 @@ class MainWindow(QMainWindow):
             if not have_internet_connection():
                 return False, None
 
-            local_version = "2.3.3"
+            local_version = "2.3.4"
             dropbox_url = "https://www.dropbox.com/scl/fi/tumjwytg8ptr88zs5pojd/version.json?rlkey=4fukyqxjx9lii0j0tunwxwpi7&st=sqk5fl08&dl=1"
             response = requests.get(dropbox_url, timeout=5)
             response.raise_for_status()

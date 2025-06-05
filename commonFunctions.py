@@ -1464,6 +1464,8 @@ def show_hide_insertImage_replaceText(ppt_file, excel_path, sheet_name,
 # image_file = r"Data\Designs\القيامة.png"  # Path to the image file
 # insert_image_to_slides_same_file(pptx_file, image_file)
 
+# print(get_slide_ids_by_number(relative_path(r"قداس.pptx"), 2799))  # Example usage
+
 # from datetime import datetime
 # start = datetime.now()
 # ppt_file=relative_path(r"قداس.pptx")

@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from PyQt5.QtWidgets import QApplication, QMainWindow, QSizePolicy, QLineEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QWidget, QMessageBox, QComboBox
-from PyQt5.QtGui import QPixmap, QFont
+from PyQt5.QtGui import QPixmap, QFont, QIcon
 from PyQt5.QtCore import Qt, QTimer
 from commonFunctions import relative_path, load_background_image
 from NotificationBar import NotificationBar
@@ -13,6 +13,7 @@ class elfhrswindow(QMainWindow):
         super().__init__()
         self.main_window = parent
         self.setWindowTitle("St. Mary Maadi Liturgies")
+        self.setWindowIcon(QIcon(relative_path(r"Data\الصور\Logo.ico")))
         self.setGeometry(400, 100, 625, 600)
         self.setFixedSize(625, 600)
 
@@ -405,9 +406,11 @@ class elfhrswindow(QMainWindow):
 
     def update_katamars_files(self):
         try:
+            self.overlay.setVisible(True)  # Show the overlay
+            self.notification_bar.show_message("جاري تحديث ملفات القطمارس...")
             All()
-            if self.notification_bar and self.notification_bar.isVisible():
-                self.notification_bar.show_message("تم التحديث بنجاح!")
+            self.overlay.setVisible(False)  # Hide the overlay after completion
+            self.notification_bar.show_message("تم التحديث بنجاح!")
         except Exception as e:
             if self.notification_bar and self.notification_bar.isVisible():
                 self.notification_bar.show_message(f"خطأ: {str(e)}")
