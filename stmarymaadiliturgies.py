@@ -484,7 +484,6 @@ class MainWindow(QMainWindow):
         
         tasbha_content = tasbhawindow(self.coptic_date, self.season)
         self.setCentralWidget(tasbha_content)
-        self.replace_presentation(False, False, True)
 
     def open_elmonasbat_Window(self):
         # Remove old frame
@@ -719,22 +718,23 @@ class MainWindow(QMainWindow):
         self.notification_bar.show_message(message, duration=3000)
 
     def handle_qadas_button_click(self):
-        from odasat import (odasElSomElkbyr, odasElsh3anyn, odasSbtLe3azr, odasElbeshara, odasEl2yama, odasEl5amasyn_2_39, 
-                            odasElso3od, odasSanawy, odasElsalyb, odasEl3nsara, odasSomElRosol)
+        import odasat
         try:
             match self.season:
                 case 0 | 6 | 13 | 30 | 31:
-                    odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop)
+                    odasat.odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop)
                 case 2:
-                    odasElsalyb(self.coptic_date, self.bishop, self.GuestBishop)
+                    odasat.odasElsalyb(self.coptic_date, self.bishop, self.GuestBishop)
+                case 4:
+                    odasat.odasElmilad(self.bishop, self.GuestBishop)
                 case 14:
-                    odasElbeshara(self.bishop, self.GuestBishop)
+                    odasat.odasElbeshara(self.bishop, self.GuestBishop)
                 case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11:
-                    odasElSomElkbyr(self.coptic_date, self.season, self.bishop, self.GuestBishop)
+                    odasat.odasElSomElkbyr(self.coptic_date, self.season, self.bishop, self.GuestBishop)
                 case 16:
-                    odasSbtLe3azr(self.coptic_date, self.bishop, self.GuestBishop)
+                    odasat.odasSbtLe3azr(self.coptic_date, self.bishop, self.GuestBishop)
                 case 17:
-                    odasElsh3anyn(self.coptic_date, self.bishop, self.GuestBishop)
+                    odasat.odasElsh3anyn(self.coptic_date, self.bishop, self.GuestBishop)
                 case 19:
                     self.notification_bar.show_message("صلوات خميس العهد متوفرة في ملف واحد: المناسبات > اسبوع الالام > خميس العهد", 10000)
                 case 20:
@@ -742,17 +742,19 @@ class MainWindow(QMainWindow):
                 case 21:
                     self.notification_bar.show_message("صلوات سبت الفرح متوفرة في ملف واحد: المناسبات > اسبوع الالام > ليلة ابوغلمسيس", 10000)
                 case 22:
-                    odasEl2yama(self.coptic_date, self.bishop, self.GuestBishop)
+                    odasat.odasEl2yama(self.coptic_date, self.bishop, self.GuestBishop)
                 case 24:
-                    odasEl5amasyn_2_39(self.coptic_date, self.bishop, self.GuestBishop)
+                    odasat.odasEl5amasyn_2_39(self.coptic_date, self.bishop, self.GuestBishop)
                 case 24.1:
-                    odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, True)
+                    odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, True)
                 case 25:
-                    odasElso3od(self.coptic_date, self.bishop, self.GuestBishop)
+                    odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop)
                 case 26:
-                    odasEl3nsara(self.coptic_date, self.bishop, self.GuestBishop)
+                    odasat.odasEl3nsara(self.coptic_date, self.bishop, self.GuestBishop)
                 case 27:
-                    odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop)
+                    odasat.odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop)
+                case 32:
+                    odasat.odas29thOfMonth(self.coptic_date, self.bishop, self.GuestBishop)
                 case default :
                     self.notification_bar.show_message(f"قداس {get_season_name(self.season)} غير متوفر حاليا")
         except Exception as e:
@@ -814,7 +816,7 @@ class MainWindow(QMainWindow):
                 adam = True
 
             match (self.season) :
-                case 0 | 29 | 30 | 31: 
+                case 0 | 27 | 29 | 30 | 31: 
                     aashyaSanawy(self.season, self.coptic_date, adam, self.bishop, self.GuestBishop)
                 case 5 :
                     aashyaKiahk (self.coptic_date, adam, self.bishop, self.GuestBishop)
@@ -824,54 +826,6 @@ class MainWindow(QMainWindow):
 
     def handle_agbya_button_click(self):
         return
-
-    def pptx_check(self, odasEltfl=False, aashya_baker=False):
-        from openpyxl import load_workbook
-        from pptx import Presentation
-        try:
-            wb = load_workbook(relative_path(r"Files Data.xlsx"))
-            if odasEltfl == True:
-                presentation = Presentation(relative_path(r"قداس الطفل.pptx"))
-                sheet = wb["قداس الطفل"]
-            elif aashya_baker == True:
-                presentation = Presentation(relative_path(r"رفع بخور عشية و باكر.pptx"))
-                sheet = wb["رفع بخور"]
-            else:
-                presentation = Presentation(relative_path(r"قداس.pptx"))
-                sheet = wb["سنوي"]
-
-            num_slides = len(presentation.slides)
-            intpptx = num_slides
-
-            # Reading the second-to-last non-empty value from column 'C'
-            last_non_empty_c = None
-            second_last_non_empty_c = None
-            for cell in sheet['C']:
-                if cell.value is not None:
-                    second_last_non_empty_c = last_non_empty_c
-                    last_non_empty_c = cell.value
-
-            if second_last_non_empty_c is None:
-                return False
-            elif second_last_non_empty_c != intpptx:
-                return False
-
-            last_non_empty_b_cell = None
-            for cell in sheet['B']:
-                if cell.value is not None:
-                    last_non_empty_b_cell = cell
-
-            if last_non_empty_b_cell is None:
-                return False
-            elif not bool(last_non_empty_b_cell.value):  # Check if the value is False
-                # Change the value to True and save the change
-                last_non_empty_b_cell.value = True
-                wb.save(relative_path(r"Files Data.xlsx"))
-                return False
-
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            return None
 
     def replace_presentation(self, odasEltfl = False, baker = False, tasbha = False, aashya = False):
         from shutil import copy2
@@ -1007,24 +961,6 @@ class MainWindow(QMainWindow):
 
         self.frame2.show()
 
-    def closeEvent(self, event):
-        # Check if the copticdate is a Sunday
-        if self.current_date.weekday() == 6:
-            
-            # Check if any PowerPoint application is open
-            if self.is_powerpoint_open():
-                self.show_error_message(f"PowerPoint is currently open. Please close the application and try again.")
-                event.ignore()
-                return
-
-            try:
-                self.replace_presentation()
-            except Exception as e:
-                self.show_error_message(e)
-                event.ignore()
-                return
-        event.accept()
-
     def is_powerpoint_open(self):
         import pythoncom
         import win32com
@@ -1067,7 +1003,7 @@ class MainWindow(QMainWindow):
             if not have_internet_connection():
                 return False, None
 
-            local_version = "2.3.4"
+            local_version = "2.3.6"
             dropbox_url = "https://www.dropbox.com/scl/fi/tumjwytg8ptr88zs5pojd/version.json?rlkey=4fukyqxjx9lii0j0tunwxwpi7&st=sqk5fl08&dl=1"
             response = requests.get(dropbox_url, timeout=5)
             response.raise_for_status()
@@ -1266,6 +1202,6 @@ if __name__ == "__main__":
     
     # Set timer to trigger after 3000ms (3 seconds)
     timer.timeout.connect(show_main_window)
-    timer.start(4000)
+    timer.start(3000)
 
     exit(app.exec_())

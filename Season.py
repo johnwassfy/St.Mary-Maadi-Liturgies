@@ -59,8 +59,12 @@ def get_season(date):
         season = 4.1 # اليوم الثاني من الميلاد
     elif month == 4:
         season = 5  # كيهك
-    elif day == 29 and (month < 4 or month > 7) and (El2yama > [month, day] > el3nsara):
-        season = 32 # تذكار الاعياد السيدية
+    elif (
+        day == 29
+        and month not in [5, 6]
+        and not (El2yama <= [month, day] <= el3nsara)
+    ):
+        season = 32  # تذكار الاعياد السيدية
     elif [SomElmilad_start[1], SomElmilad_start[2]] <=  [month, day] < [4, 1]:
         season = 6 # صوم الميلاد
     elif [5, 6] > [month, day] > [Elmilad[1], Elmilad[2]]:

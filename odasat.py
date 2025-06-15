@@ -145,250 +145,6 @@ def agbya(presentation, slide_number, custom_show_number):
 
 "_____________________________________OLD CODE_DESIGN_____________________________________"
 
-def odas3ydElrosol (Bishop=False, guestBishop=0):
-    from copticDate import CopticCalendar
-    cd = CopticCalendar().coptic_to_gregorian([1740, 11, 5])
-    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    prs2 = relative_path(r"Data\القداسات\قداس صوم و عيد الرسل.pptx")
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    source_sheet = "الرسل"
-    des_sheet ="سنوي"
-
-    if cd.weekday() == 6:
-        # sunday(prs1)
-        prs3 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
-        katamars_sheet = "قطمارس الاحاد للقداس"
-        km, kd = 11, 1
-    else: 
-        prs3 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-        katamars_sheet = "القطمارس السنوي القداس"
-        km, kd = 11, 5
-
-    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [3, 4, 5, 6, 7, 8])
-    elbouls1 = katamars_values[0]
-    elkatholikon1 = katamars_values[1]
-    elebrksis1 = katamars_values[2]
-    elmzmor = katamars_values[3]
-    elengil = katamars_values[4]
-    elbouls2 = elkatholikon1 - 1
-    elkatholikon2 = elebrksis1 - 1
-    elebrksis2 = elmzmor - 1
-    elengil2 = katamars_values[5]
-
-    des_sheet_values = find_slide_nums_arrays(excel, des_sheet, ["جي اف اسماروؤت", "جي اف اسماروؤت",
-                                                                "قسمة - أيها السيد الرب إلهنا", "قسمة - أيها السيد الرب إلهنا",
-                                                                "قسمة للإبن تقال في صوم الرسل - أنت هو كلمة الآب", 
-                                                                "قسمة للإبن تقال في صوم الرسل - أنت هو كلمة الآب",
-                                                                "ايها الرب ـ الاسبسمس الواطس", "الاسبسمس الادام",
-                                                                "ربع يقال في عيد الرسل", "ربع يقال في عيد الرسل",
-                                                                "المزمور و الانجيل", "المزمور و الانجيل", "الابركسيس", "مرد ابركسيس عيد الرسل", "مرد ابركسيس عيد الرسل",
-                                                                "الكاثوليكون", "لحن اندوس", "لحن اندوس", "البولس عربي", "الهيتنيات",
-                                                                "تي شوري", "تي شوري", "الليلويا جي افمفئي", "الليلويا جي افمفئي", 
-                                                                "طاي شوري", "طاي شوري", "الليلويا فاي بيبي", "الليلويا فاي بيبي"], 
-                                                                [1, 2, 1, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2, 2, 1, 2, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2])
-
-    
-    #التوزيع
-    jefsmarot = des_sheet_values[0]
-    jefsmarot2 = des_sheet_values[1]
-
-    #القسمة
-    el2smaSanawy = des_sheet_values[2]
-    el2smaSanawy2 = des_sheet_values[3]
-    el2smaRosol = des_sheet_values[4]
-    el2smaRosol2 = des_sheet_values[5]
-
-    #الاواشي
-    seasonbasyly = find_slide_num(excel, des_sheet, "اوشية المياة", 1)
-    seasonbasyly2 = find_slide_num(excel, des_sheet, "اوشية المياة", 2)
-    season8r8ory = find_slide_num(excel, des_sheet, "اوشية المياة غ", 1)
-    season8r8ory2 = find_slide_num(excel, des_sheet, "اوشية المياة غ", 2) 
-
-    #مرد الانجيل
-    mrdelengilRosol = des_sheet_values[8]
-    mrdelengilRosol2 = des_sheet_values[9]
-
-    #المزمور و الانجيل
-    elengil3 = des_sheet_values[11]
-    elmzmor1 = des_sheet_values[10] + 2
-
-    #القرائات
-    elebrksis3 =  des_sheet_values[12]
-    mrdelebrksisRosol = des_sheet_values[13]
-    mrdelebrksisRosol2 = des_sheet_values[14]
-    elkatholikon3 = des_sheet_values[15]
-    ondos = des_sheet_values[16]
-    ondos2 = des_sheet_values[17]
-    elbouls3 = des_sheet_values[18]
-
-    #الهيتنيات
-    elhiteniat = des_sheet_values[19]
-
-    #تي شوري و الليلويا جي اف ميفي
-    if cd.weekday() == 6 :
-        shory1 = des_sheet_values[24]
-        shory2 = des_sheet_values[25]
-        allyloya1 = des_sheet_values[26]
-        allyloya2 = des_sheet_values[27]
-    else:
-        shory1 = des_sheet_values[20]
-        shory2 = des_sheet_values[21]
-        allyloya1 = des_sheet_values[22]
-        allyloya2 = des_sheet_values[23]
-
-    if Bishop == True:
-        prs4 = relative_path(r"Data\حضور الأسقف.pptx")
-        sheet = "في حضور الأسقف"
-
-        bishop_values = find_slide_nums_arrays(excel, sheet, ["صلاة الشكر", "صلاة الشكر", "بهموت غار الصغيرة", "بهموت غار الصغيرة"
-                                                             "الهيتنيات", "الهيتنيات"], 
-                                                             [1, 2, 1, 2, 1, 2])
-        
-        bishopDes_values = find_slide_nums_arrays(excel, des_sheet, ["صلاة الشكر", "ني سافيف تيرو", "ني سافيف تيرو", "باهموت غار الصغيرة",
-                                                                    "امبين يوت اتطايوت", "امبين يوت اتطايوت", "الهيتنيات", 
-                                                                    "اوشية الاباء (ب)", "اوشية الاباء غ"],
-                                                                    [2, 1, 2, 2, 1, 2, 2, 2, 1])
-
-        elshokr1 = bishop_values[0]
-        elshokrDes = bishopDes_values[0] - 1
-
-        nysaviv = bishopDes_values[1]
-        nysaviv2 = bishopDes_values[2]
-
-        bhmot8ar1 = bishop_values[2]
-        bhmot8arDes = bishopDes_values[3] - 1
-
-        embiniot = bishopDes_values[4] 
-        embiniot2 = bishopDes_values[5]
-
-        bishopHyten1 = bishop_values[4]
-        bishopHytenDes = bishopDes_values[6] + 1
-
-        elaba2basyly = bishopDes_values[7] - 1
-        elaba28or8ory = bishopDes_values[8] - 1
-
-        if guestBishop > 0:
-            if guestBishop == 1:
-                elshokr2 = bishop_values[1] - 1
-                bhmot8ar2 = bishop_values[3] - 1
-                bishopHyten2 = bishop_values[5] - 3
-                elaba2 = elshokr2
-                elaba22 = elshokr2
-            
-            elif guestBishop == 2:
-                elshokr2 = bishop_values[1]
-                bhmot8ar2 = bishop_values[3]
-                bishopHyten2 = bishop_values[5]
-                elaba2 = elshokr2 - 1
-                elaba22 = elshokr2
-
-            start_positions = [elaba28or8ory, elaba2basyly, elengil3, elmzmor1, elebrksis3, elkatholikon3, elbouls3, bhmot8arDes, bishopHytenDes, embiniot2, elshokrDes]
-            start_slides = [elaba2, elaba2, elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1, bhmot8ar1, bishopHyten1, bhmot8ar1, elshokr1]
-            end_slides = [elaba22, elaba22, elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2, bhmot8ar2, bishopHyten2, bhmot8ar2, elshokr2]
-
-        else:
-            elshokr2 = bishop_values[1] - 2
-            start_positions = [elengil3, elmzmor1, elebrksis3, elkatholikon3, elbouls3, elshokrDes]
-            start_slides = [elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1, elshokr1]
-            end_slides = [elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2, elshokr2]
-        show_array = [[jefsmarot, jefsmarot2], [el2smaRosol, el2smaRosol2], [season8r8ory, season8r8ory2], 
-                      [seasonbasyly, seasonbasyly2], [mrdelengilRosol, mrdelengilRosol2], [mrdelebrksisRosol, mrdelebrksisRosol2], 
-                      [ondos, ondos2], [embiniot, embiniot2], [shory1, shory2], [nysaviv, nysaviv2], [allyloya1, allyloya2]]
-            
-    else:
-        start_positions = [elengil3, elmzmor1, elebrksis3, elkatholikon3, elbouls3]
-        start_slides = [elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1]
-        end_slides = [elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2]
-        show_array = [[jefsmarot, jefsmarot2], [el2smaRosol, el2smaRosol2], [season8r8ory, season8r8ory2], 
-                      [seasonbasyly, seasonbasyly2], [mrdelengilRosol, mrdelengilRosol2], [mrdelebrksisRosol, mrdelebrksisRosol2], 
-                      [ondos, ondos2], [shory1, shory2], [allyloya1, allyloya2]]
-
-    hide_array = [[el2smaSanawy, el2smaSanawy2]]
-
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
-    presentation1 = open_presentation_relative_path(prs1)
-    presentation2 = open_presentation_relative_path(prs2)
-    presentation3 = open_presentation_relative_path(prs3)
-    pnpRob3 = find_slide_index_by_title(presentation1, "بصلوات سيدي الأبوين الرسولين أبينا بطرس ومعلمنا بولس:", elhiteniat)
-    show_array.append([pnpRob3, pnpRob3+1])
-    if Bishop == True:
-        presentation4 = open_presentation_relative_path(prs4)
-
-    hide_slides(presentation1, hide_array)
-    show_slides(presentation1, show_array)
-
-    # Initialize variables for current position, slide, and end index
-    current_position = start_positions[0]
-    current_start_slide = int(start_slides[0])
-    current_end_slide = int(end_slides[0])
-
-    # Initialize index for start position, slide, and end slide
-    position_index = 1
-    slide_index = 1
-    end_index = 1
-
-    while current_start_slide <= current_end_slide and slide_index <= presentation1.Slides.Count:
-        if (current_position == elengil3 or current_position == elmzmor1 or current_position == elebrksis3 
-            or current_position == elkatholikon3 or current_position == elbouls3):
-            source_slide = presentation3.Slides(current_end_slide)
-            source_slide.Copy()
-            new_slide = presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
-            current_end_slide -= 1
-            if(current_start_slide > current_end_slide):
-                current_position += 1
-
-        elif Bishop == True and (current_position == elaba28or8ory or current_position == elaba2basyly or 
-                                 current_position == bhmot8arDes or current_position == bishopHytenDes or 
-                                 current_position == embiniot2 or current_position == elshokrDes):
-            source_slide = presentation4.Slides(current_end_slide)
-            source_slide.Copy()
-            new_slide = presentation1.Slides.Paste(current_position)
-            new_slide.SlideShowTransition.Hidden = False
-            current_end_slide -= 1
-            if(current_start_slide > current_end_slide):
-                current_position += 1
-
-        else:
-            source_slide = presentation2.Slides(current_start_slide)
-            source_slide.Copy()
-            new_slide = presentation1.Slides.Paste(current_position)
-            new_slide.SlideShowTransition.Hidden = False
-            current_start_slide += 1
-            current_position += 1
-
-        # Move to the next round if all slides in the current range have been processed
-        if current_start_slide > current_end_slide:
-            # Check if there are more rounds
-            if position_index < len(start_positions):
-                # Update variables for the next round
-                current_position = start_positions[position_index]
-                current_start_slide = start_slides[slide_index]
-                current_end_slide = end_slides[end_index]
-                position_index += 1
-                slide_index += 1
-                end_index += 1
-
-    sections = {presentation1.SectionProperties.Name(i): i for i in range(1, presentation1.SectionProperties.Count + 1)}
-        
-    # Get section indices
-    move_index = sections["جي اف اسماروؤت"]
-    target_index = sections["مزمور التوزيع"]
-    
-    # Adjust target_index if move_index is greater, because the section will be removed before insertion
-    if move_index < target_index:
-        target_index -= 1
-    
-    # Move section_to_move to the position before target_section
-    presentation1.SectionProperties.Move(move_index, target_index + 1)
-
-    # Close presentations
-    presentation2.Close()
-    presentation3.Close()
-    if Bishop == True:
-        presentation4.Close()
-
 def odasEltagaly (Bishop=False, guestBishop=0):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     prs2 = relative_path(r"Data\القداسات\قداس عيد التجلي.pptx")
@@ -1194,347 +950,323 @@ def odasKiahk (copticdate, Bishop=False, guestBishop=0):
     if Bishop:
         presentation3.Close()
 
-# def odas29thOfMonth (copticdate, Bishop=False, guestBishop=0):
-#     from copticDate import CopticCalendar
-#     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-#     prs1 = relative_path(r"قداس.pptx") 
-#     excel = relative_path(r"Files Data.xlsx")
-#     excel2 = relative_path(r"Tables.xlsx")
-#     des_sheet ="القداس"
-#     # sunday(prs1)
-#     if cd.weekday() == 6 :
-#         if copticdate[1] == 1:
-#             prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
-#             katamars_sheet = "قطمارس الاحاد للقداس"
-#             km = 1
-#             kd = 4
-#         else:
-#             prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-#             katamars_sheet = "القطمارس السنوي القداس"
-#             km = 7
-#             kd = 29
-#     else: 
-#         prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-#         katamars_sheet = "القطمارس السنوي القداس"
-#         km, kd = find_Readings_Date(copticdate[1], copticdate[2])
-
-#     katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [3, 4, 5, 6, 7, 8])
-#     elbouls1 = katamars_values[0]
-#     elkatholikon1 = katamars_values[1]
-#     elebrksis1 = katamars_values[2]
-#     elmzmor = katamars_values[3]
-#     elengil = katamars_values[4]
-#     elbouls2 = elkatholikon1 - 1
-#     elkatholikon2 = elebrksis1 - 1
-#     elebrksis2 = elmzmor - 1
-#     elengil2 = katamars_values[5]
-
-#     '''
-#         arr = ["تكملة على حسب المناسبة", "مدائح ال29 من الشهر", "بي اويك", "بي اويك", "اك اسماروؤت", "اك اسماروؤت",
-#         "مزمور التوزيع", "مزمور التوزيع", "مرد توزيع البشارة", "مرد توزيع الميلاد", "مرد توزيع القيامة",
-#         "قسمة - أيها السيد الرب إلهنا", "قسمة - أيها السيد الرب إلهنا",
-#         "تذكار البشارة والميلاد والقيامة - نسبح ونمجد إله الآلهة ورب الأرباب", 
-#         "تذكار البشارة والميلاد والقيامة - نسبح ونمجد إله الآلهة ورب الأرباب",
-#         "مرد انجيل ال29 من الشهر", "مرد انجيل ال29 من الشهر", "مرد الانجيل", "مرد الانجيل", 
-#         "فاي اريه بي اوو", "فاي اريه بي اوو", "المزمور و الانجيل", "المزمور و الانجيل",
-#         "مرد مزمور ال29 من الشهر", "مرد مزمور ال29 من الشهر", "مرد المزمور", 
-#         "مرد ابركسيس سنوي", "مرد ابركسيس سنوي", "مرد ابركسيس البشارة", "مرد ابركسيس البشارة", 
-#         "مرد ابركسيس الميلاد", "مرد ابركسيس الميلاد", "مرد ابركسيس القيامة", "مرد ابركسيس القيامة",
-#         "الابركسيس", "الكاثوليكون", "البولس عربي", "الهيتنيات", 
-#         "طاي شوري", "طاي شوري", "الليلويا فاي بيبي", "الليلويا فاي بيبي"]
-
-#     '''
-
-#     twentyNine_values = find_slide_nums_arrays(excel, des_sheet, ["تكملة على حسب المناسبة", "مدائح ال29 من الشهر", "بي اويك", "بي اويك", "اك اسماروؤت", "اك اسماروؤت",
-#                                                                      "مزمور التوزيع", "مزمور التوزيع", "مرد توزيع البشارة", "مرد توزيع الميلاد", "مرد توزيع القيامة",
-#                                                                      "قسمة - أيها السيد الرب إلهنا", "قسمة - أيها السيد الرب إلهنا",
-#                                                                      "تذكار البشارة والميلاد والقيامة - نسبح ونمجد إله الآلهة ورب الأرباب", 
-#                                                                      "تذكار البشارة والميلاد والقيامة - نسبح ونمجد إله الآلهة ورب الأرباب",
-#                                                                      "مرد انجيل ال29 من الشهر", "مرد انجيل ال29 من الشهر", "مرد الانجيل", "مرد الانجيل", 
-#                                                                      "فاي اريه بي اوو", "فاي اريه بي اوو", "المزمور و الانجيل", "المزمور و الانجيل",
-#                                                                      "مرد مزمور ال29 من الشهر", "مرد مزمور ال29 من الشهر", "مرد المزمور", 
-#                                                                      "مرد ابركسيس سنوي", "مرد ابركسيس سنوي", "مرد ابركسيس البشارة", "مرد ابركسيس البشارة", 
-#                                                                      "مرد ابركسيس الميلاد", "مرد ابركسيس الميلاد", "مرد ابركسيس القيامة", "مرد ابركسيس القيامة",
-#                                                                      "الابركسيس", "الكاثوليكون", "البولس عربي", "الهيتنيات", 
-#                                                                      "طاي شوري", "طاي شوري", "الليلويا فاي بيبي", "الليلويا فاي بيبي"], 
-#                                                                     [2, 1, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1, 2])
-    
-#     print(twentyNine_values)
-
-#     #الختام
-#     elkhetam = twentyNine_values[0]
-
-#     #التوزيع
-#     elmaday7 = twentyNine_values[1]
-#     byoyk = twentyNine_values[2]
-#     byoyk2 = twentyNine_values[3]
-#     ekesmarot = twentyNine_values[4]
-#     ekesmarot2 = twentyNine_values[5]
-    
-#     #مزمور التوزيع
-#     fs = twentyNine_values[6] + 1 
-#     ls = twentyNine_values[7] - 1
-#     sn1 = twentyNine_values[8]
-#     sn2 = twentyNine_values[9]
-#     sn3 = twentyNine_values[10]
-
-#     #القسمة
-#     el2smaElsanawy = twentyNine_values[11]
-#     el2smaElsanawy2 = twentyNine_values[12]
-#     el2sma29 = twentyNine_values[13]
-#     el2sma292 = twentyNine_values[14]
-
-#     #الاواشي
-#     if copticdate == None:
-#         copticdate = CopticCalendar().gregorian_to_coptic()
-#         season = CopticCalendar().get_coptic_date_range(copticdate)
-#     else:
-#         season = CopticCalendar().get_coptic_date_range(copticdate)
-#     if season == "Air":
-#         elawashy_values = find_slide_nums_arrays_v2(excel, des_sheet, ['{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}'], 2, [1, 2, 1, 2])
-#         seasonbasyly = elawashy_values[0]
-#         seasonbasyly2 = elawashy_values[1]
-#         season8r8ory = elawashy_values[2]
-#         season8r8ory2 = elawashy_values[3]
-#     elif season == 'Tree':
-#         elawashy_values = find_slide_nums_arrays_v2(excel, des_sheet, ['{F94B3D1F-649D-4839-BD2E-19439E173129}', '{F94B3D1F-649D-4839-BD2E-19439E173129}', '{3D4C118C-E6FF-4DF8-8E8F-B0CDF0FDBA54}', '{3D4C118C-E6FF-4DF8-8E8F-B0CDF0FDBA54}'], 2, [1, 2, 1, 2])
-#         seasonbasyly = elawashy_values[0]
-#         seasonbasyly2 = elawashy_values[1]
-#         season8r8ory = elawashy_values[2]
-#         season8r8ory2 = elawashy_values[3]
-#     else:
-#         elawashy_values = find_slide_nums_arrays_v2(excel, des_sheet, ['{C7FC170A-D45F-4D4E-BD01-F17CADBFB65C}', '{C7FC170A-D45F-4D4E-BD01-F17CADBFB65C}', '{5DD6BABA-9FE4-4D33-9F90-0C865CB95EE4}', '{5DD6BABA-9FE4-4D33-9F90-0C865CB95EE4}'], 2, [1, 2, 1, 2])
-#         seasonbasyly = elawashy_values[0]
-#         seasonbasyly2 = elawashy_values[1]
-#         season8r8ory = elawashy_values[2]
-#         season8r8ory2 = elawashy_values[3]
-
-#     #مرد الإنجيل
-#     mrdengil29 = twentyNine_values[15]
-#     mrdengil292 = twentyNine_values[16]
-#     mrdengil = twentyNine_values[17]
-#     mrdengil2 = twentyNine_values[18]
-#     fayerby = twentyNine_values[19]
-#     fayerby2 = twentyNine_values[20]
-
-#     #المزمور و الانجيل
-#     elengil3 = twentyNine_values[22]
-#     elmazmor2 = twentyNine_values[21] + 2
-
-#     #مرد المزمور
-#     mrdElmzmor29 = twentyNine_values[23]
-#     mrdElmzmor292 = twentyNine_values[24]
-#     mrdElmzmor = twentyNine_values[25]
-
-#     #مرد الابركسيس
-#     mrdelebrksis = twentyNine_values[26]
-#     mrdelebrksis2 = twentyNine_values[27]
-#     mrdelebrksisElbshara = twentyNine_values[28]
-#     mrdelebrksisElbshara2 = twentyNine_values[29]
-#     mrdelebrksisElmilad = twentyNine_values[30]
-#     mrdelebrksisElmilad2 = twentyNine_values[31]
-#     mrdelebrksisEl2yama = twentyNine_values[32]
-#     mrdelebrksisEl2yama2 = twentyNine_values[33]
-
-#     #القرائات
-#     elebrksis3 =  twentyNine_values[34]
-#     elkatholikon3 = twentyNine_values[35]
-#     elbouls3 = twentyNine_values[36]
-
-#     #ما قبل القرائات
-#     elhitnyat = twentyNine_values[37]
-#     shory = twentyNine_values[38]
-#     shory2 = twentyNine_values[39]
-#     allylouya = twentyNine_values[40]
-#     allylouya2 = twentyNine_values[41]
-    
-#     if Bishop == True:
-#         prs3 = relative_path(r"Data\حضور الأسقف.pptx")
-#         sheet = "في حضور الأسقف"
-
-#         bishop_values = find_slide_nums_arrays_v2(excel, sheet, ['{D1378DB5-29D1-4800-9D96-10F2535EEB57}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{6851F163-CBEF-4014-A853-CE100557BA6A}', '{6851F163-CBEF-4014-A853-CE100557BA6A}'], 
-#                                                              2, [1, 2, 1, 2, 1, 2, 1, 2])
-        
-#         bishopDes_values = find_slide_nums_arrays_v2(excel, des_sheet, ['{A9183893-7B7E-459F-8547-F7A8F7D2D521}', '{A9183893-7B7E-459F-8547-F7A8F7D2D521}', '{474487EB-4554-4A30-B351-6EF762D2F2D6}', '{74A33555-8E08-47DF-B3CD-A1B4C7AF2B4E}', '{22F83DFC-792B-4148-8AED-E77703B6E7BB}', '{21891CBB-A1EC-4974-B0B6-F74A4B502BC2}', '{79CED7F3-DA1D-467F-AA09-4187C8DE51E8}', '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}', '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}', '{40B60A3B-1E1C-423C-A2AC-B3081CEEE693}'],
-#                                                                     2, [2, 1, 2, 2, 1, 2, 2, 2, 1, 2, 1, 2])
-
-#         elshokr1 = bishop_values[0]
-#         elshokrDes = bishopDes_values[0] - 1
-
-#         nysaviv = bishopDes_values[1]
-#         nysaviv2 = bishopDes_values[2]
-
-#         bhmot8ar1 = bishop_values[2]
-#         bhmot8arDes = bishopDes_values[3] - 1
-
-#         embiniot = bishopDes_values[4] 
-#         embiniot2 = bishopDes_values[5]
-
-#         bishopHyten1 = bishop_values[4]
-#         bishopHytenDes = bishopDes_values[6] + 1
-
-#         elaba2basyly = bishopDes_values[7] - 1
-#         elaba28or8ory = bishopDes_values[8] - 1
-
-#         elkhetamBishop = bishopDes_values[10]
-#         elkhetamBishop2 = bishopDes_values[11]
-
-#         if guestBishop > 0:
-#             elesbsmosDes = bishopDes_values[9]
-#             elesbsmos = bishop_values[6]
-#             if guestBishop == 1:
-#                 elshokr2 = bishop_values[1] - 1
-#                 bhmot8ar2 = bishop_values[3] - 1
-#                 bishopHyten2 = bishop_values[5] - 3
-#                 elaba2 = elshokr2
-#                 elaba22 = elshokr2
-#                 elesbsmos2 = bishop_values[7] - 2
-            
-#             elif guestBishop == 2:
-#                 elshokr2 = bishop_values[1]
-#                 bhmot8ar2 = bishop_values[3]
-#                 bishopHyten2 = bishop_values[5]
-#                 elaba2 = elshokr2 - 1
-#                 elaba22 = elshokr2
-#                 elesbsmos2 = bishop_values[7]
-
-#             start_positions = [fs, elaba28or8ory, elaba2basyly, elesbsmosDes, elengil3, elmazmor2, elebrksis3, elkatholikon3, elbouls3, bhmot8arDes, bishopHytenDes, embiniot2, elshokrDes]
-#             start_slides = [sn3, elaba2, elaba2, elesbsmos, elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1, bhmot8ar1, bishopHyten1, bhmot8ar1, elshokr1]
-#             end_slides = [sn3, elaba22, elaba22, elesbsmos2, elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2, bhmot8ar2, bishopHyten2, bhmot8ar2, elshokr2]
-
-#         else:
-#             elshokr2 = bishop_values[1] - 2
-#             start_positions = [fs, elengil3, elmazmor2, elebrksis3, elkatholikon3, elbouls3, elshokrDes]
-#             start_slides = [sn3, elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1, elshokr1]
-#             end_slides = [sn3, elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2, elshokr2]
-#         show_array = [[elmaday7, elmaday7], [el2sma29, el2sma292], [season8r8ory, season8r8ory2], [seasonbasyly, seasonbasyly2], 
-#                       [mrdengil29, mrdengil292], [fayerby, fayerby2], [mrdElmzmor29, mrdElmzmor292], 
-#                       [mrdelebrksisElbshara, mrdelebrksisElbshara2], [mrdelebrksisElmilad, mrdelebrksisElmilad2], 
-#                       [mrdelebrksisEl2yama, mrdelebrksisEl2yama2], [embiniot, embiniot2], [shory, shory2], 
-#                       [nysaviv, nysaviv2], [allylouya, allylouya2], [elkhetamBishop, elkhetamBishop2]]
-
-#     else:
-#         start_positions = [fs, elengil3, elmazmor2, elebrksis3, elkatholikon3, elbouls3]
-#         start_slides = [sn3, elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1]
-#         end_slides = [sn3, elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2]
-#         show_array = [[elmaday7, elmaday7], [el2sma29, el2sma292], [season8r8ory, season8r8ory2], [seasonbasyly, seasonbasyly2],
-#                       [mrdengil29, mrdengil292], [fayerby, fayerby2], [mrdElmzmor29, mrdElmzmor292], 
-#                       [mrdelebrksisElbshara, mrdelebrksisElbshara2], [mrdelebrksisElmilad, mrdelebrksisElmilad2], 
-#                       [mrdelebrksisEl2yama, mrdelebrksisEl2yama2], [shory, shory2], [allylouya, allylouya2]]
-
-#     hide_array = [[byoyk, byoyk2], [ekesmarot, ekesmarot2], [el2smaElsanawy, el2smaElsanawy2], [mrdengil, mrdengil2],
-#                   [mrdElmzmor, mrdElmzmor], [mrdelebrksis, mrdelebrksis2]]
-
-#     powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-#     powerpoint.Visible = True  # Open PowerPoint application
-#     presentation1 = open_presentation_relative_path(prs1)
-#     presentation2 = open_presentation_relative_path(prs2)
-    
-#     if Bishop == True:
-#         presentation3 = open_presentation_relative_path(prs3)
-
-#     khetam29 = find_slide_index_by_title(presentation1, "تذكار الاعياد السيدية", elkhetam, "up")
-#     khetam292 = find_slide_index_by_title(presentation1, "تذكار الاعياد السيدية 2", elkhetam, "up")
-
-#     hitniat_values = find_slide_indices_by_ordered_labels(presentation1, ["الملاك ميخائيل الخماسين", "الملاك ميخائيل الخماسين 2",
-#     "الملاك غبريال", "الملاك غبريال 2", "الميلاد", "الميلاد 2", "القيامة", "القيامة 2"], elhitnyat)
-#     hitniatElmalakMikhael2yama = hitniat_values[0]
-#     hitniatElmalakMikhael2yama2 = hitniat_values[1]
-#     hitniatElmalakGhobrial = hitniat_values[2]
-#     hitniatElmalakGhobiral2 = hitniat_values[3]
-#     hitniatElmilad = hitniat_values[4]
-#     hitniatElmilad2 = hitniat_values[5]
-#     hitniatEl2yama = hitniat_values[6]
-#     hitniatEl2yama2 = hitniat_values[7]
-#     show_array.extend([[khetam29, khetam292], [hitniatElmalakMikhael2yama, hitniatElmalakMikhael2yama2], [hitniatElmalakGhobrial, hitniatElmalakGhobiral2],
-#                        [hitniatElmilad, hitniatElmilad2], [hitniatEl2yama, hitniatEl2yama2]])
-
-#     show_slides(presentation1, show_array)
-#     hide_slides(presentation1, hide_array)
-#     run_vba_with_slide_id(excel, des_sheet, prs1, presentation1)
-    
-#     # Initialize variables for current position, slide, and end index
-#     current_position = start_positions[0]
-#     current_start_slide = int(start_slides[0])
-#     current_end_slide = int(end_slides[0])
-
-#     # Initialize index for start position, slide, and end slide
-#     position_index = 1
-#     slide_index = 1
-#     end_index = 1
-
-#     while current_start_slide <= current_end_slide and slide_index <= presentation1.Slides.Count:
-#         if current_position == fs:
-#             slide_index1 = ls
-#             while slide_index1 >= current_position:
-#                 source_slide = presentation1.Slides(current_start_slide)
-#                 source_slide.Copy()
-#                 new_slide = presentation1.Slides.Paste(slide_index1).SlideShowTransition.Hidden = False
-#                 slide_index1 -= 1
-
-#                 if current_start_slide == sn3:
-#                     current_start_slide = sn2
-#                 elif current_start_slide == sn2:
-#                     current_start_slide = sn1
-#                 else:
-#                     current_start_slide = sn3 
-                
-#             current_start_slide += 1
-
-#         elif (current_position == elengil3 or current_position == elmazmor2 or current_position == elebrksis3 
-#             or current_position == elkatholikon3 or current_position == elbouls3):
-#             source_slide = presentation2.Slides(current_end_slide)
-#             source_slide.Copy()
-#             new_slide = presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
-#             current_end_slide -= 1
-#             if(current_start_slide > current_end_slide):
-#                 current_position += 1
-
-#         elif Bishop == True and (current_position == elaba28or8ory or current_position == elaba2basyly or 
-#                                  current_position == bhmot8arDes or current_position == bishopHytenDes or 
-#                                  current_position == embiniot2 or current_position == elshokrDes):
-#             source_slide = presentation3.Slides(current_end_slide)
-#             source_slide.Copy()
-#             new_slide = presentation1.Slides.Paste(current_position)
-#             new_slide.SlideShowTransition.Hidden = False
-#             current_end_slide -= 1
-#             if(current_start_slide > current_end_slide):
-#                 current_position += 1
-
-#         else:
-#             source_slide = presentation2.Slides(current_start_slide)
-#             is_hidden = source_slide.SlideShowTransition.Hidden
-#             source_slide.Copy()
-#             new_slide = presentation1.Slides.Paste(current_position)
-#             if is_hidden:
-#                 new_slide.SlideShowTransition.Hidden = True
-#             current_start_slide += 1
-#             current_position += 1
-
-#         # Move to the next round if all slides in the current range have been processed
-#         if current_start_slide > current_end_slide:
-#             # Check if there are more rounds
-#             if position_index < len(start_positions):
-#                 # Update variables for the next round
-#                 current_position = start_positions[position_index]
-#                 current_start_slide = start_slides[slide_index]
-#                 current_end_slide = end_slides[end_index]
-#                 position_index += 1
-#                 slide_index += 1
-#                 end_index += 1
-
-#     move_section_names = ['{4E0564C4-BDF3-47D3-8EAF-B0110F0233DA}']
-#     target_section_names = ['{01F61BFD-210C-4F99-A7C7-7308CFAA93F4}']
-
-#     # Call the function once for all moves
-#     move_sections_v2(presentation1, move_section_names, target_section_names)
-
-#     presentation2.Close()
-#     if Bishop:
-#         presentation3.Close()
-
-
 "_____________________________________NEW_CODE_DESIGN_____________________________________"
+
+def odasSanawy(copticdate, season, Bishop=False, guestBishop=0):
+    from copticDate import CopticCalendar
+    cd = CopticCalendar().coptic_to_gregorian(copticdate)
+    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
+    excel = relative_path(r"Files Data.xlsx")
+    excel2 = relative_path(r"Tables.xlsx")
+    des_sheet ="القداس"
+    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
+
+    if season == 13:
+        prs2 = relative_path(r"Data\القطمارس\الصوم الكبير و صوم نينوى\قرائات صوم نينوى و فصح يونان.pptx")
+        katamars_sheet = "صوم نينوى و فصح يونان"
+        km = copticdate[1]
+        kd = copticdate[2]
+        katamars_offsets = [10, 11, 12, 13, 14, 15]
+    if season == 15.2:
+        prs2 = relative_path(r"Data\القطمارس\قطمارس الصوم الكبير (القداس).pptx")
+        katamars_sheet = "قطمارس الصوم الكبير"
+        km = copticdate[1]
+        kd = copticdate[2]
+        katamars_offsets = [3, 4, 5, 6, 7, 8]
+    elif cd.weekday() == 6:
+        prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
+        katamars_sheet = "قطمارس الاحاد للقداس"
+        km = copticdate[1]
+        kd = (copticdate[2] - 1) // 7 + 1
+        katamars_offsets = [3, 4, 5, 6, 7, 8]
+    else: 
+        prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
+        katamars_sheet = "القطمارس السنوي القداس"
+        km, kd = find_Readings_Date(copticdate[1], copticdate[2])
+        katamars_offsets = [3, 4, 5, 6, 7, 8]
+
+    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, katamars_offsets)
+    elbouls1 = katamars_values[0]
+    elkatholikon1 = katamars_values[1]
+    elebrksis1 = katamars_values[2]
+    elmzmor = katamars_values[3]
+    elengil = katamars_values[4]
+    elbouls2 = elkatholikon1 - 1
+    elkatholikon2 = elebrksis1 - 1
+    elebrksis2 = elmzmor - 1
+    elengil2 = katamars_values[5]
+
+    sanawy_show_full_sections = []
+    sanawy_hide_full_sections = []
+    sanawy_show_values = []
+    sanawy_hide_values = []
+
+    #sanawy_values = ["تكملة على حسب المناسبة", "الانجيل", "المزمور", "الابركسيس", "الكاثوليكون", "البولس عربي"]
+    sanawy_values = find_slide_nums_arrays_v2(excel, des_sheet, 
+                       ['{A18EDC94-F257-4FAC-99C7-0A8EA70F0FAF}', '{C7D4A109-F792-4661-BAD0-075FD1A1909F}', '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{E234C6C7-3837-4CE4-A541-CDC9627AAAC2}', '{6D4B3F52-63BF-435F-BF0C-C9D41120C2A3}', '{D88055F5-EAA0-4C8E-8249-C364A572BF7B}'], 
+                       2, [1, 2, 2, 2, 2, 2])
+    
+    #الختام
+    elkhetam = sanawy_values[0]
+    #الاواشي
+    AwashySeason = CopticCalendar().get_coptic_date_range(copticdate)
+    match AwashySeason:
+        case "Air": sanawy_show_full_sections.extend(['{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}']),
+        case "Tree": sanawy_show_full_sections.extend(['{F94B3D1F-649D-4839-BD2E-19439E173129}', '{5DD6BABA-9FE4-4D33-9F90-0C865CB95EE4}'])
+        case "Water": sanawy_show_full_sections.extend(['{C7FC170A-D45F-4D4E-BD01-F17CADBFB65C}', '{3D4C118C-E6FF-4DF8-8E8F-B0CDF0FDBA54}'])
+    #القرائات
+    elengil3 = sanawy_values[1]
+    elmazmor3 = sanawy_values[2]
+    elebrksis3 = sanawy_values[3]
+    elkatholikon3 = sanawy_values[4]
+    elbouls3 = sanawy_values[5]
+
+    #تي شوري و الليلويا جي اف ميفي
+    if cd.weekday() == 2 or cd.weekday() == 4 or season == 6 or season == 30:
+        sanawy_show_full_sections.extend(['{F8B8BD1A-9861-4FDC-A89B-06B55C0795E8}', '{43B74D4E-929B-4654-8DB7-4675EFF27370}'])
+    else:
+        sanawy_show_full_sections.extend(['{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}'])
+
+    if Bishop == True:
+        prs3 = relative_path(r"Data\حضور الأسقف.pptx")
+        sheet = "في حضور الأسقف"
+
+        # bishop_show_values = ['في حضور الاسقف', 'المزمور', 'مارو اتشاسف', 'امبين يوت اتطايوت', 
+        #                       'ني سافيف تيرو', 'تكملة في حضور الاسقف', 'لحن اك اسمارؤوت']
+
+        #bishop_hide_values = ['سوتيس امين']
+
+        bishop_show_values = ['{2BCF4F8C-25F0-43C5-B224-6528B2EA3F2F}', '{F76B0D75-0474-45B5-B79F-7416F354543A}',
+                              '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', 
+                              '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{A9183893-7B7E-459F-8547-F7A8F7D2D521}', 
+                              '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}']
+        
+        bishop_hide_values = ['{4D2B15D5-C978-467C-9D6C-726FE25128B8}']
+        
+        sanawy_show_full_sections.extend(bishop_show_values)
+        sanawy_hide_full_sections.extend(bishop_hide_values)
+
+        if guestBishop > 0:
+            # bishop_values = ["صلاة الشكر", "صلاة الشكر", "طوبه هينا الكبيرة", "طوبه هينا الكبيرة", 
+            #                  "نيم بينيوت", "نيم بينيوت", "الهيتنيات", "الهيتنيات",
+            #                  "اي اغابي", "اي اغابي", "مرد الكاثوليكون", "مرد الكاثوليكون",
+            #                  "الاسبسمس", "الاسبسمس"]
+
+            # bishopDes_values = ["تكملة في حضور الاسقف", "طوبه هينا الكبيرة",
+            #                     "امبين يوت اتطايوت", "تكملة الهيتنيات", "بى اهموت غار الصغيرة",
+            #                     "تو ماكريو", "اي اغابي", "ابيت جيك ايفول", "مارو اتشاسف",
+            #                     "الاسبسمس الادام السنوي+الختام", "ختام الاسبسمس الادام",
+            #                     "اوشية الاباء (ب)", "اوشية الاباء غ"]
+            
+            bishop_values = find_slide_nums_arrays_v2(excel, sheet, 
+                            ['{6851F163-CBEF-4014-A853-CE100557BA6A}', '{6851F163-CBEF-4014-A853-CE100557BA6A}', '{B084BC40-61E1-4477-98DA-15CFB06AEE91}', '{B084BC40-61E1-4477-98DA-15CFB06AEE91}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{D0234C99-69FE-407A-82A9-D7A676919E93}', '{D0234C99-69FE-407A-82A9-D7A676919E93}', '{0B519645-F935-43AE-A9CE-6E2FC03833BB}', '{0B519645-F935-43AE-A9CE-6E2FC03833BB}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}'], 
+                            2, [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2])
+
+            bishopDes_values = find_slide_nums_arrays_v2(excel, des_sheet, 
+                               ['{F76B0D75-0474-45B5-B79F-7416F354543A}', '{8DD21CDE-CB6B-4D5B-B995-D2747AB69ED1}', '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{646A8184-7F05-453A-A2F1-EB9A77D7F0EE}', '{21891CBB-A1EC-4974-B0B6-F74A4B502BC2}', '{12B7D244-BF4C-401B-A65A-D1621D7DD953}', '{F69B50D8-FB5E-4E8C-AE5C-6DCB4790AFAF}', '{38267404-7625-47AA-B0C8-31BCA5D0435D}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', '{0C7A7725-643D-4F7E-A2F0-0C8A36C2A594}', '{1CDFD5FF-8DF5-48CF-A773-F5EEBD56469C}', '{74A33555-8E08-47DF-B3CD-A1B4C7AF2B4E}', '{474487EB-4554-4A30-B351-6EF762D2F2D6}'],                  
+                               2, [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
+
+            elshokr = bishopDes_values[0]
+            elshokr1 = bishop_values[0]
+            elshokr2 = bishop_values[1]
+
+            tobhyna = bishopDes_values[1]
+            tobhyna1 = bishop_values[2]
+            tobhyna2 = bishop_values[3]
+
+            embiniot = bishopDes_values[2]
+            embiniot1 = bishop_values[4]
+            embiniot2 = bishop_values[5]
+
+            hytynyat = bishopDes_values[3]
+            hytynyat1 = bishop_values[6]
+            hytynyat2 = bishop_values[7]
+
+            byhmot8ar = bishopDes_values[4]-1
+            byhmot8ar1 = bishop_values[4]
+            byhmot8ar2 = bishop_values[5]
+
+            tomakario = bishopDes_values[5] - 1
+            tomakario1 = bishop_values[4]
+            tomakario2 = bishop_values[5]
+
+            eya8aby = bishopDes_values[6] - 1
+            eya8aby1 = bishop_values[8]
+            eya8aby2 = bishop_values[9]
+
+            mrdElkatholikon = bishopDes_values[7]
+            mrdElkatholikon1 = bishop_values[10]
+            mrdElkatholikon2 = bishop_values[11]
+
+            maro = bishopDes_values[8]
+            maro1 = bishop_values[4]
+            maro2 = bishop_values[5]
+
+            esbasmos1 = bishopDes_values[9]
+            esbasmos11 = bishop_values[12]
+            esbasmos12 = bishop_values[13]
+
+            esbasmos2 = bishopDes_values[10]
+            esbasmos21 = bishop_values[12]
+            esbasmos22 = bishop_values[13]
+
+            elaba2basyly = bishopDes_values[11] - 1
+            elaba2basyly1 = bishop_values[0]
+            elaba2basyly2 = bishop_values[1]
+
+            elaba28yry8ory = bishopDes_values[12] - 1
+            elaba28yry8ory1 = bishop_values[0]
+            elaba28yry8ory2 = bishop_values[1]
+
+            if guestBishop < 2:
+                elshokr2 = elshokr2-1
+                tobhyna2 = tobhyna2-2
+                embiniot2 = embiniot2-1
+                hytynyat2 = hytynyat2-3
+                byhmot8ar2 = byhmot8ar2-1
+                tomakario2 = tomakario2-1
+                eya8aby2 = eya8aby2-2
+                mrdElkatholikon2 = mrdElkatholikon2-1
+                maro2 = maro2-1
+                esbasmos12 = esbasmos12-2
+                esbasmos22 = esbasmos22-2
+                elaba2basyly2 = elaba2basyly2-1
+                elaba28yry8ory2 = elaba28yry8ory2-1
+        
+            start_positions = [elaba28yry8ory, elaba2basyly, esbasmos2, esbasmos1, elengil3, elmazmor3, maro, elebrksis3, elkatholikon3, mrdElkatholikon, elbouls3, eya8aby, tomakario, byhmot8ar, hytynyat, embiniot, tobhyna, elshokr]
+            start_slides = [elaba28yry8ory1, elaba2basyly1, esbasmos21, esbasmos11, elengil, elmzmor, maro1, elebrksis1, elkatholikon1, mrdElkatholikon1, elbouls1, eya8aby1, tomakario1, byhmot8ar1, hytynyat1, embiniot1, tobhyna1, elshokr1]
+            end_slides = [elaba28yry8ory2, elaba2basyly2, esbasmos22, esbasmos12, elengil2, elmzmor, maro2, elebrksis2, elkatholikon2, mrdElkatholikon2, elbouls2, eya8aby2, tomakario2, byhmot8ar2, hytynyat2, embiniot2, tobhyna2, elshokr2]
+
+    if guestBishop == 0:
+        start_positions = [elengil3, elmazmor3, elebrksis3, elkatholikon3, elbouls3]
+        start_slides = [elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1]
+        end_slides = [elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2]
+
+    El3adraAndAngels = False 
+    
+    if season == 30 or season == 31 or copticdate[2]==21 or (copticdate[1]==9 and copticdate[2]==1) :
+        El3adraAndAngels == True
+        # el3adra_show_values = ["مرد انجيل كيهك 2 و صوم العذراء", 
+        #                        "قسمة أعياد الملائكة والسيدة العذراء وسنوى (هوذا كائن معنا على هذه)",
+        #                        "اطاي بارثينوس"]
+        # el3adra_hide_values = ["مرد الانجيل", "قسمة القداس الباسيلي (أيها السيد الرب إلهنا)"]
+        el3adra_show_values = ['{71232865-63AA-40C5-8F02-BABBFE7297D3}', '{18835C90-087E-4BAC-9D66-708BC1E04983}', '{D5E69BAC-0157-4B69-9255-B6775E2EE11D}' ]
+        el3adra_hide_values = ['{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{681FF6A7-4230-4171-8F41-83FD64E8C960}']
+        sanawy_hide_full_sections.extend(el3adra_hide_values)
+        sanawy_show_full_sections.extend(el3adra_show_values)
+
+    elif copticdate[2] == 12:
+        El3adraAndAngels == True
+        # elmalakmikhael_values = ["مرد ابركسيس الملاك ميخائيل", "تكملة للملاك ميخائيل 2",
+        #                               "ربع للملاك ميخائيل" , "هيتينية الملاك ميخائيل"],
+        
+        elmalakmikhael_show_values = ['{E95B1DDC-4235-4C02-91A4-DCB7A2808C33}', '{9EF543FB-A75B-4171-B358-2EB549C98411}', '{71232865-63AA-40C5-8F02-BABBFE7297D3}']
+        elmalakmikhael_hide_values = ['{681FF6A7-4230-4171-8F41-83FD64E8C960}']
+        sanawy_show_full_sections.extend(elmalakmikhael_show_values)
+        sanawy_hide_full_sections.extend(elmalakmikhael_hide_values)
+        elmalakmikhael_values = find_slide_nums_arrays_v2(excel, des_sheet, 
+                                ["{4329E910-BD2C-4FBB-8FF3-A59F06EE9D45}", "{5BB65881-3E8A-4130-839D-6EB6F9D5FAFA}"],
+                                2, [1, 2])
+        mrdebrksis = elmalakmikhael_values[0]
+        mrdebrksis3 = elmalakmikhael_values[1]
+        if copticdate[1] == 3:
+            mrdebrksis2 = find_slide_num_v2(excel, des_sheet, "{14A3F09D-ACCA-461F-AD67-08484F44D518}", 2, 1)
+        elif copticdate[1] == 10:
+            mrdebrksis2 = find_slide_num_v2(excel, des_sheet, "{02EBDDE5-1CBF-452A-A12A-A3F76FE68DDC}", 2, 1)
+        else:
+            mrdebrksis2 = find_slide_num_v2(excel, des_sheet, "{56E5BC0D-5FFC-4411-AC9C-78085E58A9E3}", 2, 1)
+        sanawy_show_values.extend([[mrdebrksis, mrdebrksis], [mrdebrksis2, mrdebrksis2], [mrdebrksis3, mrdebrksis3]])
+    
+    elif season == 13:
+        sanawy_show_full_sections.extend(['{EB470874-9124-4BDB-8075-189A7B264402}', '{4A03C859-F4BF-49C0-8ACD-88213CF6D13D}'])
+        sanawy_hide_full_sections.extend(['{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{ECE652ED-1345-4C6D-B92D-5996CFA27AEE}'])
+    
+    if cd.weekday() == 6:
+        show_hide_insertImage_replaceText(prs1, excel, des_sheet, sanawy_show_full_sections, sanawy_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
+    else:
+        show_hide_insertImage_replaceText(prs1, excel, des_sheet, sanawy_show_full_sections, sanawy_hide_full_sections)
+
+    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+    powerpoint.Visible = True  # Open PowerPoint application
+    presentation1 = open_presentation_relative_path(prs1)
+    presentation2 = open_presentation_relative_path(prs2)
+
+    if guestBishop>0:
+        presentation3 = open_presentation_relative_path(prs3)
+
+    khetamValue = 0
+    if season == 6:
+        khetamValue = find_slide_index_by_title(presentation1, "صوم الميلاد", elkhetam)
+    elif season == "Air" :
+        khetamValue = find_slide_index_by_title(presentation1, "الاهوية", elkhetam)
+    elif season == "Water" :
+        khetamValue = find_slide_index_by_title(presentation1, "المياة", elkhetam)
+    else:
+        khetamValue = find_slide_index_by_title(presentation1, "الزروع", elkhetam)
+    
+    sanawy_show_values.append([khetamValue, khetamValue])
+    show_slides(presentation1, sanawy_show_values)
+
+    run_vba_with_slide_id(excel, des_sheet, prs1, presentation1)
+
+    # Initialize variables for current position, slide, and end index
+    current_position = start_positions[0]
+    current_start_slide = int(start_slides[0])
+    current_end_slide = int(end_slides[0])
+
+    # Initialize index for start position, slide, and end slide
+    position_index = 1
+    slide_index = 1
+    end_index = 1
+
+    while current_start_slide <= current_end_slide and slide_index <= presentation1.Slides.Count:
+        if (current_position == elengil3 or current_position == elmazmor3 or current_position == elebrksis3 
+            or current_position == elkatholikon3 or current_position == elbouls3):
+            source_slide = presentation2.Slides(current_end_slide)
+            source_slide.Copy()
+            presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
+            current_end_slide -= 1
+            if current_start_slide > current_end_slide:
+                current_position += 1
+
+        elif Bishop and current_position in {elaba28yry8ory, elaba2basyly, byhmot8ar, hytynyat, embiniot, 
+                                             elshokr, tomakario, eya8aby, esbasmos1, esbasmos2, maro, 
+                                             mrdElkatholikon, tobhyna}:
+            source_slide = presentation3.Slides(current_end_slide)
+            source_slide.Copy()
+            if current_position in {elaba28yry8ory, elaba2basyly, byhmot8ar, hytynyat, embiniot, elshokr, maro}:
+                presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
+            else:
+                presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = True
+            current_end_slide -= 1
+            if(current_start_slide > current_end_slide):
+                current_position += 1
+
+        # Move to the next round if all slides in the current range have been processed
+        if current_start_slide > current_end_slide:
+            # Check if there are more rounds
+            if position_index < len(start_positions):
+                # Update variables for the next round
+                current_position = start_positions[position_index]
+                current_start_slide = start_slides[slide_index]
+                current_end_slide = end_slides[end_index]
+                position_index += 1
+                slide_index += 1
+                end_index += 1
+
+    if El3adraAndAngels :
+        move_sections_v2(presentation1, ['{71232865-63AA-40C5-8F02-BABBFE7297D3}'], ['{01F61BFD-210C-4F99-A7C7-7308CFAA93F4}'])
+    elif season == 6:
+        move_sections_v2(presentation1, ['{C2F28915-B86E-4596-8EB2-7455EF4E91BD}'], ['{01F61BFD-210C-4F99-A7C7-7308CFAA93F4}'])
+    
+    presentation2.Close()
+    if guestBishop>0:
+        presentation3.Close()
+
+    presentation1.SlideShowSettings.Run()
+
+def odasElnayrooz(copticdate, Bishop=False, guestBishop=0):
+    return False
 
 def odasElsalyb(copticdate, Bishop=False, guestBishop=0):
     from copticDate import CopticCalendar
@@ -1718,7 +1450,7 @@ def odasElsalyb(copticdate, Bishop=False, guestBishop=0):
         start_slides = [mrdMazmorEltawzy3, elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [mrdMazmorEltawzy3, elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2]
 
-    show_hide_insertImage_replaceText(prs, excel, des_sheet, salyb_show_full_sections, salyb_hide_full_sections, newText=SlaybText)
+    show_hide_insertImage_replaceText(prs, excel, des_sheet, salyb_show_full_sections, salyb_hide_full_sections, new_Text=SlaybText)
 
     powerpoint = win32com.client.Dispatch("PowerPoint.Application")
     powerpoint.Visible = True  # Open PowerPoint application
@@ -1835,6 +1567,9 @@ def odasElsalyb(copticdate, Bishop=False, guestBishop=0):
         presentation3.Close()
 
     presentation1.SlideShowSettings.Run()
+
+def odasKiahk(copticdate, Bishop=False, guestBishop=0):
+    return False
 
 def odasElmilad(Bishop=False, guestBishop=0):
     prs = relative_path(r"قداس.pptx")
@@ -2135,6 +1870,21 @@ def odasElmilad(Bishop=False, guestBishop=0):
 
     presentation1.SlideShowSettings.Run()
 
+def odasAfterElmilad(copticdate, Bishop=False, guestBishop=0):
+    return False
+
+def odasEl5etan(copticdate, Bishop=False, guestBishop=0):
+    return False
+
+def odasEl8ytas(copticdate, Bishop=False, guestBishop=0):
+    return False
+
+def odas3orsKanaElgalyl(copticdate, Bishop=False, guestBishop=0):
+    return False
+
+def odasDo5olElhykal(copticdate, Bishop=False, guestBishop=0):
+    return False
+
 def odasSomNynawa(copticdate, Bishop=False, guestBishop=0):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
@@ -2391,319 +2141,6 @@ def odasSomNynawa(copticdate, Bishop=False, guestBishop=0):
 
     presentation2.Close()
     if Bishop:
-        presentation3.Close()
-
-    presentation1.SlideShowSettings.Run()
-
-def odasSanawy(copticdate, season, Bishop=False, guestBishop=0):
-    from copticDate import CopticCalendar
-    cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
-    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
-
-    if season == 13:
-        prs2 = relative_path(r"Data\القطمارس\الصوم الكبير و صوم نينوى\قرائات صوم نينوى و فصح يونان.pptx")
-        katamars_sheet = "صوم نينوى و فصح يونان"
-        km = copticdate[1]
-        kd = copticdate[2]
-        katamars_offsets = [10, 11, 12, 13, 14, 15]
-    if season == 15.2:
-        prs2 = relative_path(r"Data\القطمارس\قطمارس الصوم الكبير (القداس).pptx")
-        katamars_sheet = "قطمارس الصوم الكبير"
-        km = copticdate[1]
-        kd = copticdate[2]
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
-    elif cd.weekday() == 6:
-        prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
-        katamars_sheet = "قطمارس الاحاد للقداس"
-        km = copticdate[1]
-        kd = (copticdate[2] - 1) // 7 + 1
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
-    else: 
-        prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-        katamars_sheet = "القطمارس السنوي القداس"
-        km, kd = find_Readings_Date(copticdate[1], copticdate[2])
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
-
-    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, katamars_offsets)
-    elbouls1 = katamars_values[0]
-    elkatholikon1 = katamars_values[1]
-    elebrksis1 = katamars_values[2]
-    elmzmor = katamars_values[3]
-    elengil = katamars_values[4]
-    elbouls2 = elkatholikon1 - 1
-    elkatholikon2 = elebrksis1 - 1
-    elebrksis2 = elmzmor - 1
-    elengil2 = katamars_values[5]
-
-    sanawy_show_full_sections = []
-    sanawy_hide_full_sections = []
-    sanawy_show_values = []
-    sanawy_hide_values = []
-
-    #sanawy_values = ["تكملة على حسب المناسبة", "الانجيل", "المزمور", "الابركسيس", "الكاثوليكون", "البولس عربي"]
-    sanawy_values = find_slide_nums_arrays_v2(excel, des_sheet, 
-                       ['{A18EDC94-F257-4FAC-99C7-0A8EA70F0FAF}', '{C7D4A109-F792-4661-BAD0-075FD1A1909F}', '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{E234C6C7-3837-4CE4-A541-CDC9627AAAC2}', '{6D4B3F52-63BF-435F-BF0C-C9D41120C2A3}', '{D88055F5-EAA0-4C8E-8249-C364A572BF7B}'], 
-                       2, [1, 2, 2, 2, 2, 2])
-    
-    #الختام
-    elkhetam = sanawy_values[0]
-    #الاواشي
-    AwashySeason = CopticCalendar().get_coptic_date_range(copticdate)
-    match AwashySeason:
-        case "Air": sanawy_show_full_sections.extend(['{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}']),
-        case "Tree": sanawy_show_full_sections.extend(['{F94B3D1F-649D-4839-BD2E-19439E173129}', '{5DD6BABA-9FE4-4D33-9F90-0C865CB95EE4}'])
-        case "Water": sanawy_show_full_sections.extend(['{C7FC170A-D45F-4D4E-BD01-F17CADBFB65C}', '{3D4C118C-E6FF-4DF8-8E8F-B0CDF0FDBA54}'])
-    #القرائات
-    elengil3 = sanawy_values[1]
-    elmazmor3 = sanawy_values[2]
-    elebrksis3 = sanawy_values[3]
-    elkatholikon3 = sanawy_values[4]
-    elbouls3 = sanawy_values[5]
-
-    #تي شوري و الليلويا جي اف ميفي
-    if cd.weekday() == 2 or cd.weekday() == 4 or season == 6 or season == 30:
-        sanawy_show_full_sections.extend(['{F8B8BD1A-9861-4FDC-A89B-06B55C0795E8}', '{43B74D4E-929B-4654-8DB7-4675EFF27370}'])
-    else:
-        sanawy_show_full_sections.extend(['{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}'])
-
-    if Bishop == True:
-        prs3 = relative_path(r"Data\حضور الأسقف.pptx")
-        sheet = "في حضور الأسقف"
-
-        # bishop_show_values = ['في حضور الاسقف', 'المزمور', 'مارو اتشاسف', 'امبين يوت اتطايوت', 
-        #                       'ني سافيف تيرو', 'تكملة في حضور الاسقف', 'لحن اك اسمارؤوت']
-
-        #bishop_hide_values = ['سوتيس امين']
-
-        bishop_show_values = ['{2BCF4F8C-25F0-43C5-B224-6528B2EA3F2F}', '{F76B0D75-0474-45B5-B79F-7416F354543A}',
-                              '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', 
-                              '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{A9183893-7B7E-459F-8547-F7A8F7D2D521}', 
-                              '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}']
-        
-        bishop_hide_values = ['{4D2B15D5-C978-467C-9D6C-726FE25128B8}']
-        
-        sanawy_show_full_sections.extend(bishop_show_values)
-        sanawy_hide_full_sections.extend(bishop_hide_values)
-
-        if guestBishop > 0:
-            # bishop_values = ["صلاة الشكر", "صلاة الشكر", "طوبه هينا الكبيرة", "طوبه هينا الكبيرة", 
-            #                  "نيم بينيوت", "نيم بينيوت", "الهيتنيات", "الهيتنيات",
-            #                  "اي اغابي", "اي اغابي", "مرد الكاثوليكون", "مرد الكاثوليكون",
-            #                  "الاسبسمس", "الاسبسمس"]
-
-            # bishopDes_values = ["تكملة في حضور الاسقف", "طوبه هينا الكبيرة",
-            #                     "امبين يوت اتطايوت", "تكملة الهيتنيات", "بى اهموت غار الصغيرة",
-            #                     "تو ماكريو", "اي اغابي", "ابيت جيك ايفول", "مارو اتشاسف",
-            #                     "الاسبسمس الادام السنوي+الختام", "ختام الاسبسمس الادام",
-            #                     "اوشية الاباء (ب)", "اوشية الاباء غ"]
-            
-            bishop_values = find_slide_nums_arrays_v2(excel, sheet, 
-                            ['{6851F163-CBEF-4014-A853-CE100557BA6A}', '{6851F163-CBEF-4014-A853-CE100557BA6A}', '{B084BC40-61E1-4477-98DA-15CFB06AEE91}', '{B084BC40-61E1-4477-98DA-15CFB06AEE91}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{D0234C99-69FE-407A-82A9-D7A676919E93}', '{D0234C99-69FE-407A-82A9-D7A676919E93}', '{0B519645-F935-43AE-A9CE-6E2FC03833BB}', '{0B519645-F935-43AE-A9CE-6E2FC03833BB}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}'], 
-                            2, [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2])
-
-            bishopDes_values = find_slide_nums_arrays_v2(excel, des_sheet, 
-                               ['{F76B0D75-0474-45B5-B79F-7416F354543A}', '{8DD21CDE-CB6B-4D5B-B995-D2747AB69ED1}', '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{646A8184-7F05-453A-A2F1-EB9A77D7F0EE}', '{21891CBB-A1EC-4974-B0B6-F74A4B502BC2}', '{12B7D244-BF4C-401B-A65A-D1621D7DD953}', '{F69B50D8-FB5E-4E8C-AE5C-6DCB4790AFAF}', '{38267404-7625-47AA-B0C8-31BCA5D0435D}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', '{0C7A7725-643D-4F7E-A2F0-0C8A36C2A594}', '{1CDFD5FF-8DF5-48CF-A773-F5EEBD56469C}', '{74A33555-8E08-47DF-B3CD-A1B4C7AF2B4E}', '{474487EB-4554-4A30-B351-6EF762D2F2D6}'],                  
-                               2, [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
-
-            elshokr = bishopDes_values[0]
-            elshokr1 = bishop_values[0]
-            elshokr2 = bishop_values[1]
-
-            tobhyna = bishopDes_values[1]
-            tobhyna1 = bishop_values[2]
-            tobhyna2 = bishop_values[3]
-
-            embiniot = bishopDes_values[2]
-            embiniot1 = bishop_values[4]
-            embiniot2 = bishop_values[5]
-
-            hytynyat = bishopDes_values[3]
-            hytynyat1 = bishop_values[6]
-            hytynyat2 = bishop_values[7]
-
-            byhmot8ar = bishopDes_values[4]-1
-            byhmot8ar1 = bishop_values[4]
-            byhmot8ar2 = bishop_values[5]
-
-            tomakario = bishopDes_values[5] - 1
-            tomakario1 = bishop_values[4]
-            tomakario2 = bishop_values[5]
-
-            eya8aby = bishopDes_values[6] - 1
-            eya8aby1 = bishop_values[8]
-            eya8aby2 = bishop_values[9]
-
-            mrdElkatholikon = bishopDes_values[7]
-            mrdElkatholikon1 = bishop_values[10]
-            mrdElkatholikon2 = bishop_values[11]
-
-            maro = bishopDes_values[8]
-            maro1 = bishop_values[4]
-            maro2 = bishop_values[5]
-
-            esbasmos1 = bishopDes_values[9]
-            esbasmos11 = bishop_values[12]
-            esbasmos12 = bishop_values[13]
-
-            esbasmos2 = bishopDes_values[10]
-            esbasmos21 = bishop_values[12]
-            esbasmos22 = bishop_values[13]
-
-            elaba2basyly = bishopDes_values[11] - 1
-            elaba2basyly1 = bishop_values[0]
-            elaba2basyly2 = bishop_values[1]
-
-            elaba28yry8ory = bishopDes_values[12] - 1
-            elaba28yry8ory1 = bishop_values[0]
-            elaba28yry8ory2 = bishop_values[1]
-
-            if guestBishop < 2:
-                elshokr2 = elshokr2-1
-                tobhyna2 = tobhyna2-2
-                embiniot2 = embiniot2-1
-                hytynyat2 = hytynyat2-3
-                byhmot8ar2 = byhmot8ar2-1
-                tomakario2 = tomakario2-1
-                eya8aby2 = eya8aby2-2
-                mrdElkatholikon2 = mrdElkatholikon2-1
-                maro2 = maro2-1
-                esbasmos12 = esbasmos12-2
-                esbasmos22 = esbasmos22-2
-                elaba2basyly2 = elaba2basyly2-1
-                elaba28yry8ory2 = elaba28yry8ory2-1
-        
-            start_positions = [elaba28yry8ory, elaba2basyly, esbasmos2, esbasmos1, elengil3, elmazmor3, maro, elebrksis3, elkatholikon3, mrdElkatholikon, elbouls3, eya8aby, tomakario, byhmot8ar, hytynyat, embiniot, tobhyna, elshokr]
-            start_slides = [elaba28yry8ory1, elaba2basyly1, esbasmos21, esbasmos11, elengil, elmzmor, maro1, elebrksis1, elkatholikon1, mrdElkatholikon1, elbouls1, eya8aby1, tomakario1, byhmot8ar1, hytynyat1, embiniot1, tobhyna1, elshokr1]
-            end_slides = [elaba28yry8ory2, elaba2basyly2, esbasmos22, esbasmos12, elengil2, elmzmor, maro2, elebrksis2, elkatholikon2, mrdElkatholikon2, elbouls2, eya8aby2, tomakario2, byhmot8ar2, hytynyat2, embiniot2, tobhyna2, elshokr2]
-
-    if guestBishop == 0:
-        start_positions = [elengil3, elmazmor3, elebrksis3, elkatholikon3, elbouls3]
-        start_slides = [elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1]
-        end_slides = [elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2]
-
-    El3adraAndAngels = False 
-    
-    if season == 30 or season == 31 or copticdate[2]==21 or (copticdate[1]==9 and copticdate[2]==1) :
-        El3adraAndAngels == True
-        # el3adra_show_values = ["مرد انجيل كيهك 2 و صوم العذراء", 
-        #                        "قسمة أعياد الملائكة والسيدة العذراء وسنوى (هوذا كائن معنا على هذه)",
-        #                        "اطاي بارثينوس"]
-        # el3adra_hide_values = ["مرد الانجيل", "قسمة القداس الباسيلي (أيها السيد الرب إلهنا)"]
-        el3adra_show_values = ['{71232865-63AA-40C5-8F02-BABBFE7297D3}', '{18835C90-087E-4BAC-9D66-708BC1E04983}', '{D5E69BAC-0157-4B69-9255-B6775E2EE11D}' ]
-        el3adra_hide_values = ['{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{681FF6A7-4230-4171-8F41-83FD64E8C960}']
-        sanawy_hide_full_sections.extend(el3adra_hide_values)
-        sanawy_show_full_sections.extend(el3adra_show_values)
-
-    elif copticdate[2] == 12:
-        El3adraAndAngels == True
-        # elmalakmikhael_values = ["مرد ابركسيس الملاك ميخائيل", "تكملة للملاك ميخائيل 2",
-        #                               "ربع للملاك ميخائيل" , "هيتينية الملاك ميخائيل"],
-        
-        elmalakmikhael_show_values = ['{E95B1DDC-4235-4C02-91A4-DCB7A2808C33}', '{9EF543FB-A75B-4171-B358-2EB549C98411}', '{71232865-63AA-40C5-8F02-BABBFE7297D3}']
-        elmalakmikhael_hide_values = ['{681FF6A7-4230-4171-8F41-83FD64E8C960}']
-        sanawy_show_full_sections.extend(elmalakmikhael_show_values)
-        sanawy_hide_full_sections.extend(elmalakmikhael_hide_values)
-        elmalakmikhael_values = find_slide_nums_arrays_v2(excel, des_sheet, 
-                                ["{4329E910-BD2C-4FBB-8FF3-A59F06EE9D45}", "{5BB65881-3E8A-4130-839D-6EB6F9D5FAFA}"],
-                                2, [1, 2])
-        mrdebrksis = elmalakmikhael_values[0]
-        mrdebrksis3 = elmalakmikhael_values[1]
-        if copticdate[1] == 3:
-            mrdebrksis2 = find_slide_num_v2(excel, des_sheet, "{14A3F09D-ACCA-461F-AD67-08484F44D518}", 2, 1)
-        elif copticdate[1] == 10:
-            mrdebrksis2 = find_slide_num_v2(excel, des_sheet, "{02EBDDE5-1CBF-452A-A12A-A3F76FE68DDC}", 2, 1)
-        else:
-            mrdebrksis2 = find_slide_num_v2(excel, des_sheet, "{56E5BC0D-5FFC-4411-AC9C-78085E58A9E3}", 2, 1)
-        sanawy_show_values.extend([[mrdebrksis, mrdebrksis], [mrdebrksis2, mrdebrksis2], [mrdebrksis3, mrdebrksis3]])
-    
-    elif season == 13:
-        sanawy_show_full_sections.extend(['{EB470874-9124-4BDB-8075-189A7B264402}', '{4A03C859-F4BF-49C0-8ACD-88213CF6D13D}'])
-        sanawy_hide_full_sections.extend(['{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{ECE652ED-1345-4C6D-B92D-5996CFA27AEE}'])
-    
-    if cd.weekday() == 6:
-        show_hide_insertImage_replaceText(prs1, excel, des_sheet, sanawy_show_full_sections, sanawy_hide_full_sections, newText=["لأنك قمت","aktwnk", "آك طونك"])
-    else:
-        show_hide_insertImage_replaceText(prs1, excel, des_sheet, sanawy_show_full_sections, sanawy_hide_full_sections)
-
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
-    presentation1 = open_presentation_relative_path(prs1)
-    presentation2 = open_presentation_relative_path(prs2)
-
-    if guestBishop>0:
-        presentation3 = open_presentation_relative_path(prs3)
-
-    khetamValue = 0
-    if season == 6:
-        khetamValue = find_slide_index_by_title(presentation1, "صوم الميلاد", elkhetam)
-    elif season == "Air" :
-        khetamValue = find_slide_index_by_title(presentation1, "الاهوية", elkhetam)
-    elif season == "Water" :
-        khetamValue = find_slide_index_by_title(presentation1, "المياة", elkhetam)
-    else:
-        khetamValue = find_slide_index_by_title(presentation1, "الزروع", elkhetam)
-    
-    sanawy_show_values.append([khetamValue, khetamValue])
-    show_slides(presentation1, sanawy_show_values)
-
-    run_vba_with_slide_id(excel, des_sheet, prs1, presentation1)
-
-    # Initialize variables for current position, slide, and end index
-    current_position = start_positions[0]
-    current_start_slide = int(start_slides[0])
-    current_end_slide = int(end_slides[0])
-
-    # Initialize index for start position, slide, and end slide
-    position_index = 1
-    slide_index = 1
-    end_index = 1
-
-    while current_start_slide <= current_end_slide and slide_index <= presentation1.Slides.Count:
-        if (current_position == elengil3 or current_position == elmazmor3 or current_position == elebrksis3 
-            or current_position == elkatholikon3 or current_position == elbouls3):
-            source_slide = presentation2.Slides(current_end_slide)
-            source_slide.Copy()
-            presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
-            current_end_slide -= 1
-            if current_start_slide > current_end_slide:
-                current_position += 1
-
-        elif Bishop and current_position in {elaba28yry8ory, elaba2basyly, byhmot8ar, hytynyat, embiniot, 
-                                             elshokr, tomakario, eya8aby, esbasmos1, esbasmos2, maro, 
-                                             mrdElkatholikon, tobhyna}:
-            source_slide = presentation3.Slides(current_end_slide)
-            source_slide.Copy()
-            if current_position in {elaba28yry8ory, elaba2basyly, byhmot8ar, hytynyat, embiniot, elshokr, maro}:
-                presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
-            else:
-                presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = True
-            current_end_slide -= 1
-            if(current_start_slide > current_end_slide):
-                current_position += 1
-
-        # Move to the next round if all slides in the current range have been processed
-        if current_start_slide > current_end_slide:
-            # Check if there are more rounds
-            if position_index < len(start_positions):
-                # Update variables for the next round
-                current_position = start_positions[position_index]
-                current_start_slide = start_slides[slide_index]
-                current_end_slide = end_slides[end_index]
-                position_index += 1
-                slide_index += 1
-                end_index += 1
-
-    if El3adraAndAngels :
-        move_sections_v2(presentation1, ['{71232865-63AA-40C5-8F02-BABBFE7297D3}'], ['{01F61BFD-210C-4F99-A7C7-7308CFAA93F4}'])
-    elif season == 6:
-        move_sections_v2(presentation1, ['{C2F28915-B86E-4596-8EB2-7455EF4E91BD}'], ['{01F61BFD-210C-4F99-A7C7-7308CFAA93F4}'])
-    
-    presentation2.Close()
-    if guestBishop>0:
         presentation3.Close()
 
     presentation1.SlideShowSettings.Run()
@@ -5149,11 +4586,11 @@ def odasSomElRosol(copticdate, Bishop=False, guestBishop=0):
     enthothen = elrosol_values[7]
 
     #تي شوري و الليلويا جي اف ميفي
-    if cd.weekday() == 2 or cd.weekday() == 4:
-        elrosol_show_full_sections.extend(['{F8B8BD1A-9861-4FDC-A89B-06B55C0795E8}', '{43B74D4E-929B-4654-8DB7-4675EFF27370}'])
-    else:
+    if cd.weekday() == 5 or cd.weekday() == 6:        
         elrosol_show_full_sections.extend(['{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}'])
-    
+    else:
+        elrosol_show_full_sections.extend(['{F8B8BD1A-9861-4FDC-A89B-06B55C0795E8}', '{43B74D4E-929B-4654-8DB7-4675EFF27370}'])
+
     elrosol_show_values = [[niromy, niromy], [enthothen, enthothen]]
 
     if Bishop == True:
@@ -5292,7 +4729,7 @@ def odasSomElRosol(copticdate, Bishop=False, guestBishop=0):
         elrosol_show_full_sections.extend(elmalakghobrial_show_values)
 
     if cd.weekday() == 6:
-        show_hide_insertImage_replaceText(prs1, excel, des_sheet, elrosol_show_full_sections, elrosol_hide_full_sections, newText=["لأنك قمت","aktwnk", "آك طونك"])
+        show_hide_insertImage_replaceText(prs1, excel, des_sheet, elrosol_show_full_sections, elrosol_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
     else:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, elrosol_show_full_sections, elrosol_hide_full_sections)
 
@@ -5313,6 +4750,7 @@ def odasSomElRosol(copticdate, Bishop=False, guestBishop=0):
         khetamValue = find_slide_index_by_title(presentation1, "الزروع", elkhetam)
 
     elrosol_show_values.append([khetamValue, khetamValue])
+    run_vba_with_slide_id(excel, des_sheet, prs1, presentation1)
     show_slides(presentation1, elrosol_show_values)
 
     if cd.weekday() == 5 or cd.weekday() == 6:
@@ -5385,6 +4823,563 @@ def odasSomElRosol(copticdate, Bishop=False, guestBishop=0):
     presentation2.Close()
     if guestBishop>0:
         presentation3.Close()
-    run_vba_with_slide_id(excel, des_sheet, prs1, presentation1)
 
+    presentation1.SlideShowSettings.Run()
+
+def odas3ydElrosol(copticdate, Bishop=False, guestBishop=0):
+    from copticDate import CopticCalendar
+    cd = CopticCalendar().coptic_to_gregorian(copticdate)
+    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
+    excel = relative_path(r"Files Data.xlsx")
+    excel2 = relative_path(r"Tables.xlsx")
+    des_sheet ="القداس"
+    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
+    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+
+    if cd.weekday() == 6:
+        prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
+        katamars_sheet = "قطمارس الاحاد للقداس"
+        km = 11
+        kd = 1
+        katamars_offsets = [3, 4, 5, 6, 7, 8]
+    else: 
+        prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
+        katamars_sheet = "القطمارس السنوي القداس"
+        km, kd = find_Readings_Date(11, 5)
+        katamars_offsets = [3, 4, 5, 6, 7, 8]
+
+    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, katamars_offsets)
+    elbouls1 = katamars_values[0]
+    elkatholikon1 = katamars_values[1]
+    elebrksis1 = katamars_values[2]
+    elmzmor = katamars_values[3]
+    elengil = katamars_values[4]
+    elbouls2 = elkatholikon1 - 1
+    elkatholikon2 = elebrksis1 - 1
+    elebrksis2 = elmzmor - 1
+    elengil2 = katamars_values[5]
+
+    elrosol_show_values = []
+    elrosol_hide_values = []
+
+    # elrosol_show_full_sections = ["هيتينية بطرس و بولس", "مرد ابركسيس عيد الرسل", "ربع للرسولين بطرس و بولس", 
+    #                               "قسمة لعيد الرسل (يا الله الآب السماوي)", "مدائح صوم الرسل", "اوشية المياة", "اوشية المياة غ"]
+
+    # elrosol_hide_full_sections = ["قسمة القداس الباسيلي (أيها السيد الرب إلهنا)"]
+    
+    elrosol_show_full_sections = ['{58EB612A-91F2-41A5-9699-DB6F75C6F70C}', '{80A68B54-5ECA-43A2-8B2D-F0B462C4D3B3}', '{7279EB5A-C32A-41F8-80D7-A33740EC7C09}', '{40A6164E-FE8E-46BF-8E33-41EB49A3EBD7}', '{5F05D018-CCA5-41B9-A869-A1F64A0C2BCC}', '{5DD6BABA-9FE4-4D33-9F90-0C865CB95EE4}', '{C7FC170A-D45F-4D4E-BD01-F17CADBFB65C}']
+
+    elrosol_hide_full_sections = ['{681FF6A7-4230-4171-8F41-83FD64E8C960}']
+
+    elrosol_values = ["تكملة على حسب المناسبة", "الانجيل", "المزمور", "الابركسيس", "الكاثوليكون", 
+                      "البولس عربي", "ني رومي", "إنثوتين ذيه", "مرد ابركسيس آخر لعيد الرسل", "بدء قداس الكلمة"]
+
+    elrosol_values = ['{A18EDC94-F257-4FAC-99C7-0A8EA70F0FAF}', '{C7D4A109-F792-4661-BAD0-075FD1A1909F}', '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{E234C6C7-3837-4CE4-A541-CDC9627AAAC2}', '{6D4B3F52-63BF-435F-BF0C-C9D41120C2A3}', '{D88055F5-EAA0-4C8E-8249-C364A572BF7B}', '{7A5E0344-68AD-4F96-9DCC-6A64C5AAD4D1}', '{C1C15903-5A4D-4C48-958A-53713254313C}', '{7F13D31D-738D-4CB2-8F69-09B588EA6EBB}', '{C08D8D44-E49E-47CE-8027-C8AE26B1AA9A}']
+
+    elrosol_values = find_slide_nums_arrays_v2(excel, des_sheet, elrosol_values, 2, [1, 2, 2, 2, 2, 2, 2, 2, 2, 2])
+
+    #الختام
+    elkhetam = elrosol_values[0]
+    
+    #القرائات
+    elengil3 = elrosol_values[1]
+    elmazmor3 = elrosol_values[2]
+    elebrksis3 = elrosol_values[3]
+    elkatholikon3 = elrosol_values[4]
+    elbouls3 = elrosol_values[5]
+
+    #ني رومي و إنثوتين ذيه
+    niromy = elrosol_values[6]
+    enthothen = elrosol_values[7]
+
+    #مرد ابركسيس آخر لعيد الرسل
+    mrdebrksis = elrosol_values[8]
+
+    #تي شوري و الليلويا جي اف ميفي
+    if cd.weekday() == 2 or cd.weekday() == 4:
+        elrosol_show_full_sections.extend(['{F8B8BD1A-9861-4FDC-A89B-06B55C0795E8}', '{43B74D4E-929B-4654-8DB7-4675EFF27370}'])
+    else:
+        elrosol_show_full_sections.extend(['{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}'])
+    
+    elrosol_show_values = [[niromy, niromy], [enthothen, enthothen], [mrdebrksis, mrdebrksis]]
+    
+    if Bishop == True:
+        prs3 = relative_path(r"Data\حضور الأسقف.pptx")
+        sheet = "في حضور الأسقف"
+
+        # bishop_show_values = ['في حضور الاسقف', 'المزمور', 'مارو اتشاسف', 'امبين يوت اتطايوت', 
+        #                       'ني سافيف تيرو', 'تكملة في حضور الاسقف', 'لحن اك اسمارؤوت']
+
+        #bishop_hide_values = ['سوتيس امين']
+
+        bishop_show_values = ['{2BCF4F8C-25F0-43C5-B224-6528B2EA3F2F}', '{F76B0D75-0474-45B5-B79F-7416F354543A}',
+                              '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', 
+                              '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{A9183893-7B7E-459F-8547-F7A8F7D2D521}', 
+                              '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}']
+        
+        bishop_hide_values = ['{4D2B15D5-C978-467C-9D6C-726FE25128B8}']
+        
+        elrosol_show_full_sections.extend(bishop_show_values)
+        elrosol_hide_full_sections.extend(bishop_hide_values)
+
+        if guestBishop > 0:
+            # bishop_values = ["صلاة الشكر", "صلاة الشكر", "طوبه هينا الكبيرة", "طوبه هينا الكبيرة", 
+            #                  "نيم بينيوت", "نيم بينيوت", "الهيتنيات", "الهيتنيات",
+            #                  "اي اغابي", "اي اغابي", "مرد الكاثوليكون", "مرد الكاثوليكون",
+            #                  "الاسبسمس", "الاسبسمس"]
+
+            # bishopDes_values = ["تكملة في حضور الاسقف", "طوبه هينا الكبيرة",
+            #                     "امبين يوت اتطايوت", "تكملة الهيتنيات", "بى اهموت غار الصغيرة",
+            #                     "تو ماكريو", "اي اغابي", "ابيت جيك ايفول", "مارو اتشاسف",
+            #                     "الاسبسمس الادام السنوي+الختام", "ختام الاسبسمس الادام",
+            #                     "اوشية الاباء (ب)", "اوشية الاباء غ"]
+            
+            bishop_values = find_slide_nums_arrays_v2(excel, sheet, 
+                            ['{6851F163-CBEF-4014-A853-CE100557BA6A}', '{6851F163-CBEF-4014-A853-CE100557BA6A}', '{B084BC40-61E1-4477-98DA-15CFB06AEE91}', '{B084BC40-61E1-4477-98DA-15CFB06AEE91}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{D0234C99-69FE-407A-82A9-D7A676919E93}', '{D0234C99-69FE-407A-82A9-D7A676919E93}', '{0B519645-F935-43AE-A9CE-6E2FC03833BB}', '{0B519645-F935-43AE-A9CE-6E2FC03833BB}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}'], 
+                            2, [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2])
+
+            bishopDes_values = find_slide_nums_arrays_v2(excel, des_sheet, 
+                               ['{F76B0D75-0474-45B5-B79F-7416F354543A}', '{8DD21CDE-CB6B-4D5B-B995-D2747AB69ED1}', '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{646A8184-7F05-453A-A2F1-EB9A77D7F0EE}', '{21891CBB-A1EC-4974-B0B6-F74A4B502BC2}', '{12B7D244-BF4C-401B-A65A-D1621D7DD953}', '{F69B50D8-FB5E-4E8C-AE5C-6DCB4790AFAF}', '{38267404-7625-47AA-B0C8-31BCA5D0435D}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', '{0C7A7725-643D-4F7E-A2F0-0C8A36C2A594}', '{1CDFD5FF-8DF5-48CF-A773-F5EEBD56469C}', '{74A33555-8E08-47DF-B3CD-A1B4C7AF2B4E}', '{474487EB-4554-4A30-B351-6EF762D2F2D6}'],                  
+                               2, [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
+
+            elshokr = bishopDes_values[0]
+            elshokr1 = bishop_values[0]
+            elshokr2 = bishop_values[1]
+
+            tobhyna = bishopDes_values[1]
+            tobhyna1 = bishop_values[2]
+            tobhyna2 = bishop_values[3]
+
+            embiniot = bishopDes_values[2]
+            embiniot1 = bishop_values[4]
+            embiniot2 = bishop_values[5]
+
+            hytynyat = bishopDes_values[3]
+            hytynyat1 = bishop_values[6]
+            hytynyat2 = bishop_values[7]
+
+            byhmot8ar = bishopDes_values[4]-1
+            byhmot8ar1 = bishop_values[4]
+            byhmot8ar2 = bishop_values[5]
+
+            tomakario = bishopDes_values[5] - 1
+            tomakario1 = bishop_values[4]
+            tomakario2 = bishop_values[5]
+
+            eya8aby = bishopDes_values[6] - 1
+            eya8aby1 = bishop_values[8]
+            eya8aby2 = bishop_values[9]
+
+            mrdElkatholikon = bishopDes_values[7]
+            mrdElkatholikon1 = bishop_values[10]
+            mrdElkatholikon2 = bishop_values[11]
+
+            maro = bishopDes_values[8]
+            maro1 = bishop_values[4]
+            maro2 = bishop_values[5]
+
+            esbasmos1 = bishopDes_values[9]
+            esbasmos11 = bishop_values[12]
+            esbasmos12 = bishop_values[13]
+
+            esbasmos2 = bishopDes_values[10]
+            esbasmos21 = bishop_values[12]
+            esbasmos22 = bishop_values[13]
+
+            elaba2basyly = bishopDes_values[11] - 1
+            elaba2basyly1 = bishop_values[0]
+            elaba2basyly2 = bishop_values[1]
+
+            elaba28yry8ory = bishopDes_values[12] - 1
+            elaba28yry8ory1 = bishop_values[0]
+            elaba28yry8ory2 = bishop_values[1]
+
+            if guestBishop < 2:
+                elshokr2 = elshokr2-1
+                tobhyna2 = tobhyna2-2
+                embiniot2 = embiniot2-1
+                hytynyat2 = hytynyat2-3
+                byhmot8ar2 = byhmot8ar2-1
+                tomakario2 = tomakario2-1
+                eya8aby2 = eya8aby2-2
+                mrdElkatholikon2 = mrdElkatholikon2-1
+                maro2 = maro2-1
+                esbasmos12 = esbasmos12-2
+                esbasmos22 = esbasmos22-2
+                elaba2basyly2 = elaba2basyly2-1
+                elaba28yry8ory2 = elaba28yry8ory2-1
+        
+            start_positions = [elaba28yry8ory, elaba2basyly, esbasmos2, esbasmos1, elengil3, elmazmor3, maro, elebrksis3, elkatholikon3, mrdElkatholikon, elbouls3, eya8aby, tomakario, byhmot8ar, hytynyat, embiniot, tobhyna, elshokr]
+            start_slides = [elaba28yry8ory1, elaba2basyly1, esbasmos21, esbasmos11, elengil, elmzmor, maro1, elebrksis1, elkatholikon1, mrdElkatholikon1, elbouls1, eya8aby1, tomakario1, byhmot8ar1, hytynyat1, embiniot1, tobhyna1, elshokr1]
+            end_slides = [elaba28yry8ory2, elaba2basyly2, esbasmos22, esbasmos12, elengil2, elmzmor, maro2, elebrksis2, elkatholikon2, mrdElkatholikon2, elbouls2, eya8aby2, tomakario2, byhmot8ar2, hytynyat2, embiniot2, tobhyna2, elshokr2]
+
+    if guestBishop == 0:
+        start_positions = [elengil3, elmazmor3, elebrksis3, elkatholikon3, elbouls3]
+        start_slides = [elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1]
+        end_slides = [elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2]
+
+    if cd.weekday() == 6:
+        show_hide_insertImage_replaceText(prs1, excel, des_sheet, elrosol_show_full_sections, elrosol_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
+    else:
+        show_hide_insertImage_replaceText(prs1, excel, des_sheet, elrosol_show_full_sections, elrosol_hide_full_sections)
+
+    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+    powerpoint.Visible = True
+    presentation1 = open_presentation_relative_path(prs1)
+    presentation2 = open_presentation_relative_path(prs2)
+
+    if guestBishop>0:
+        presentation3 = open_presentation_relative_path(prs3)
+
+    khetamValue = find_slide_index_by_title(presentation1, "المياة", elkhetam)
+    elrosol_show_values.append([khetamValue, khetamValue])
+    run_vba_with_slide_id(excel, des_sheet, prs1, presentation1)
+    show_slides(presentation1, elrosol_show_values)
+
+    if cd.weekday() == 2 or cd.weekday() == 4:
+        agbya(presentation1, elrosol_values[9], 2)
+    else:
+        agbya(presentation1, elrosol_values[9], 1)
+
+    # Initialize variables for current position, slide, and end index
+    current_position = start_positions[0]
+    current_start_slide = int(start_slides[0])
+    current_end_slide = int(end_slides[0])
+
+    # Initialize index for start position, slide, and end slide
+    position_index = 1
+    slide_index = 1
+    end_index = 1
+
+    while current_start_slide <= current_end_slide and slide_index <= presentation1.Slides.Count:
+        if (current_position == elengil3 or current_position == elmazmor3 or current_position == elebrksis3 
+            or current_position == elkatholikon3 or current_position == elbouls3):
+            source_slide = presentation2.Slides(current_end_slide)
+            source_slide.Copy()
+            presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
+            current_end_slide -= 1
+            if current_start_slide > current_end_slide:
+                current_position += 1
+
+        elif Bishop and current_position in {elaba28yry8ory, elaba2basyly, byhmot8ar, hytynyat, embiniot, 
+                                             elshokr, tomakario, eya8aby, esbasmos1, esbasmos2, maro, 
+                                             mrdElkatholikon, tobhyna}:
+            source_slide = presentation3.Slides(current_end_slide)
+            source_slide.Copy()
+            if current_position in {elaba28yry8ory, elaba2basyly, byhmot8ar, hytynyat, embiniot, elshokr, maro}:
+                presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
+            else:
+                presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = True
+            current_end_slide -= 1
+            if(current_start_slide > current_end_slide):
+                current_position += 1
+
+        # Move to the next round if all slides in the current range have been processed
+        if current_start_slide > current_end_slide:
+            # Check if there are more rounds
+            if position_index < len(start_positions):
+                # Update variables for the next round
+                current_position = start_positions[position_index]
+                current_start_slide = start_slides[slide_index]
+                current_end_slide = end_slides[end_index]
+                position_index += 1
+                slide_index += 1
+                end_index += 1
+    
+    move_section_names = [
+        "{ED6C64C6-470F-4506-A03B-46A67986126F}",
+        "{1CDFD5FF-8DF5-48CF-A773-F5EEBD56469C}",
+        "{9791B5D5-AAAD-43E2-80BD-37349C914E3A}", 
+        "{F0C07D6A-9B65-4AF5-AF75-7BA80C1EEEFC}"
+    ]
+
+    target_section_names = [
+        "{22F83DFC-792B-4148-8AED-E77703B6E7BB}", 
+        "{ED6C64C6-470F-4506-A03B-46A67986126F}",
+        "{2EB8E5B7-6049-402F-80E4-ED6EDFAB83F4}",
+        "{9791B5D5-AAAD-43E2-80BD-37349C914E3A}"
+    ]
+
+    # Call the function once for all moves
+    move_sections_v2(presentation1, move_section_names, target_section_names)
+ 
+    presentation2.Close()
+    if guestBishop>0:
+        presentation3.Close()
+
+    presentation1.SlideShowSettings.Run()
+
+def odasEltagaly(coptocdate, Bishop=False, guestBishop=0):
+   return False 
+
+def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0):
+    from copticDate import CopticCalendar
+    cd = CopticCalendar().coptic_to_gregorian(copticdate)
+    prs1 = relative_path(r"قداس.pptx") 
+    excel = relative_path(r"Files Data.xlsx")
+    excel2 = relative_path(r"Tables.xlsx")
+    des_sheet ="القداس"
+    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
+    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+
+    if cd.weekday() == 6 :
+        if copticdate[1] == 1:
+            prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
+            katamars_sheet = "قطمارس الاحاد للقداس"
+            km = 1
+            kd = 4
+        else:
+            prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
+            katamars_sheet = "القطمارس السنوي القداس"
+            km = 7
+            kd = 29
+    else: 
+        prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
+        katamars_sheet = "القطمارس السنوي القداس"
+        km, kd = find_Readings_Date(copticdate[1], copticdate[2])
+
+    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [3, 4, 5, 6, 7, 8])
+    elbouls1 = katamars_values[0]
+    elkatholikon1 = katamars_values[1]
+    elebrksis1 = katamars_values[2]
+    elmzmor = katamars_values[3]
+    elengil = katamars_values[4]
+    elbouls2 = elkatholikon1 - 1
+    elkatholikon2 = elebrksis1 - 1
+    elebrksis2 = elmzmor - 1
+    elengil2 = katamars_values[5]
+
+    # twentyNine_show_full_sections = ["مدائح ال29 من الشهر", "قسمة تذكار البشارة والميلاد والقيامة (نسبح ونمجد إله الآلهة ورب الأرباب)", 
+    #                                  "مرد انجيل ال29 من الشهر", "فاي اريه بي اوو", "مرد مزمور ال29 من الشهر",
+    #                                  "مرد ابركسيس البشارة", "مرد ابركسيس الميلاد", "مرد ابركسيس القيامة", 
+    #                                  "هيتينية الملاك ميخائيل - للقيامة", "هيتينية الملاك غبريال", "هيتينية الميلاد", 
+    #                                  "هيتينية القيامة", "طاي شوري", "الليلويا فاي بيبي"]
+
+    # twentyNine_hide_full_sections = ["قسمة القداس الباسيلي (أيها السيد الرب إلهنا)", "اك اسماروؤت", 
+    #                                  "بي اويك", "مرد الانجيل", "مرد المزمور", "مرد ابركسيس سنوي", "ربع للعذراء"]
+
+    # twentyNine_values = ["تكملة على حسب المناسبة", "مزمور التوزيع", "مزمور التوزيع", 
+    #                      "مرد توزيع البشارة", "مرد توزيع الميلاد", "مرد توزيع القيامة",
+    #                      "الانجيل", "المزمور", "الابركسيس", "الكاثوليكون", "البولس عربي", 
+    #                      "بدء قداس الكلمة"]
+    
+    twentyNine_show_full_sections = ['{3BE1A381-B11E-4562-921A-ECB2221D0A43}', '{10687CED-71ED-4982-964C-7849BA7A2444}', '{B7D98377-B994-4654-B49C-DE10E0DDE4F1}', '{3E3D5CAF-3A1E-4FFD-9B0F-AA2CA0961367}', '{6E13B4F2-4D01-4EE4-8763-939CEE1BDB75}', '{03E2AC57-01DD-4702-A7A7-186D0E009F55}', '{17FBFAA9-1B87-491D-89CE-BA67D27ADCC2}', '{51C5460B-5CB6-46E7-A00C-E417B4008CBC}', '{AE7AA37A-5543-45C2-9921-1F5B7FF26544}', '{6A153E48-DAA6-4874-ACA3-3EB14F3DC960}', '{E0F28C9F-5BF8-4AFC-806F-716597B95865}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}', '{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{BCFF601E-ED54-486A-9884-027CD11CA3C0}']
+    twentyNine_hide_full_sections = ['{681FF6A7-4230-4171-8F41-83FD64E8C960}', '{507EFD97-98F8-4376-848B-20D72E16D2C1}', '{B9A30F5E-0C89-471B-A99A-23DBE7F58504}', '{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{F13A48F2-238D-4617-B84E-9B0A694D9A18}', '{AF548422-5DCE-4418-8D21-7DB43CBC4C00}', '{ECE652ED-1345-4C6D-B92D-5996CFA27AEE}']
+    twentyNine_values = ['{A18EDC94-F257-4FAC-99C7-0A8EA70F0FAF}', '{C29E5A83-A98B-4077-8194-99A6D803EF53}', '{C29E5A83-A98B-4077-8194-99A6D803EF53}', '{2F035E60-4CC5-4808-A906-367BDB0FC9B0}', '{D10973F3-B5C6-431E-8EDA-60ABA7A98C9E}', '{AB0FAC0A-1DAB-4ABD-BAA1-7557AA4860AA}', '{C7D4A109-F792-4661-BAD0-075FD1A1909F}', '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{E234C6C7-3837-4CE4-A541-CDC9627AAAC2}', '{6D4B3F52-63BF-435F-BF0C-C9D41120C2A3}', '{D88055F5-EAA0-4C8E-8249-C364A572BF7B}', '{C08D8D44-E49E-47CE-8027-C8AE26B1AA9A}']
+
+    twentyNine_values = find_slide_nums_arrays_v2(excel, des_sheet, twentyNine_values, 2, [2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
+
+    #الختام
+    elkhetam = twentyNine_values[0]
+    
+    #التوزيع
+    mazmorELtawzy3 = twentyNine_values[1] + 1
+    mazmorELtawzy32 = twentyNine_values[2] - 1
+    mrdMazmorEltawzy3_elbeshara = twentyNine_values[3]
+    mrdMazmorEltawzy3_elbeshara = twentyNine_values[3]
+    mrdMazmorEltawzy3_elmilad = twentyNine_values[4]
+    mrdMazmorEltawzy3_elqiyama = twentyNine_values[5]
+
+    #الاواشي
+    AwashySeason = CopticCalendar().get_coptic_date_range(copticdate)
+    match AwashySeason:
+        case "Air": twentyNine_show_full_sections.extend(['{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}'])
+        case "Tree": twentyNine_show_full_sections.extend(['{F94B3D1F-649D-4839-BD2E-19439E173129}', '{5DD6BABA-9FE4-4D33-9F90-0C865CB95EE4}'])
+        case "Water": twentyNine_show_full_sections.extend(['{C7FC170A-D45F-4D4E-BD01-F17CADBFB65C}', '{3D4C118C-E6FF-4DF8-8E8F-B0CDF0FDBA54}'])
+    
+    #القرائات
+    elengil3 = twentyNine_values[6]
+    elmazmor3 = twentyNine_values[7]
+    elebrksis3 = twentyNine_values[8]
+    elkatholikon3 = twentyNine_values[9]
+    elbouls3 = twentyNine_values[10]
+
+    if Bishop == True:
+        prs3 = relative_path(r"Data\حضور الأسقف.pptx")
+        sheet = "في حضور الأسقف"
+
+        bishop_show_values = ['{F76B0D75-0474-45B5-B79F-7416F354543A}', '{E2968C91-5339-499C-9812-DECCCF58A2CD}',
+                              '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}',
+                              '{A9183893-7B7E-459F-8547-F7A8F7D2D521}']
+        twentyNine_show_full_sections.extend(bishop_show_values)
+
+        if guestBishop > 0:
+            # bishop_values = ["صلاة الشكر", "صلاة الشكر", "طوبه هينا الكبيرة", "طوبه هينا الكبيرة", 
+            #                  "نيم بينيوت", "نيم بينيوت", "الهيتنيات", "الهيتنيات",
+            #                  "اي اغابي", "اي اغابي", "مرد الكاثوليكون", "مرد الكاثوليكون",
+            #                  "الاسبسمس", "الاسبسمس"]
+
+            # bishopDes_values = ["تكملة في حضور الاسقف", "طوبه هينا الكبيرة",
+            #                     "امبين يوت اتطايوت", "تكملة الهيتنيات", "بى اهموت غار الصغيرة",
+            #                     "تو ماكريو", "اي اغابي", "ابيت جيك ايفول", "مارو اتشاسف",
+            #                     "الاسبسمس الادام السنوي+الختام", "ختام الاسبسمس الادام",
+            #                     "اوشية الاباء (ب)", "اوشية الاباء غ"]
+            
+            bishop_values = find_slide_nums_arrays_v2(excel, sheet, 
+                            ['{6851F163-CBEF-4014-A853-CE100557BA6A}', '{6851F163-CBEF-4014-A853-CE100557BA6A}', '{B084BC40-61E1-4477-98DA-15CFB06AEE91}', '{B084BC40-61E1-4477-98DA-15CFB06AEE91}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{D0234C99-69FE-407A-82A9-D7A676919E93}', '{D0234C99-69FE-407A-82A9-D7A676919E93}', '{0B519645-F935-43AE-A9CE-6E2FC03833BB}', '{0B519645-F935-43AE-A9CE-6E2FC03833BB}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}'], 
+                            2, [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2])
+
+            bishopDes_values = find_slide_nums_arrays_v2(excel, des_sheet, 
+                                ['{F76B0D75-0474-45B5-B79F-7416F354543A}', '{8DD21CDE-CB6B-4D5B-B995-D2747AB69ED1}', '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{646A8184-7F05-453A-A2F1-EB9A77D7F0EE}', '{21891CBB-A1EC-4974-B0B6-F74A4B502BC2}', '{12B7D244-BF4C-401B-A65A-D1621D7DD953}', '{F69B50D8-FB5E-4E8C-AE5C-6DCB4790AFAF}', '{38267404-7625-47AA-B0C8-31BCA5D0435D}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', '{0C7A7725-643D-4F7E-A2F0-0C8A36C2A594}', '{1CDFD5FF-8DF5-48CF-A773-F5EEBD56469C}', '{74A33555-8E08-47DF-B3CD-A1B4C7AF2B4E}', '{474487EB-4554-4A30-B351-6EF762D2F2D6}'],                  
+                                2, [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
+
+            elshokr = bishopDes_values[0]
+            elshokr1 = bishop_values[0]
+            elshokr2 = bishop_values[1]
+
+            tobhyna = bishopDes_values[1]
+            tobhyna1 = bishop_values[2]
+            tobhyna2 = bishop_values[3]
+
+            embiniot = bishopDes_values[2]
+            embiniot1 = bishop_values[4]
+            embiniot2 = bishop_values[5]
+
+            hytynyat = bishopDes_values[3]
+            hytynyat1 = bishop_values[6]
+            hytynyat2 = bishop_values[7]
+
+            byhmot8ar = bishopDes_values[4]-1
+            byhmot8ar1 = bishop_values[4]
+            byhmot8ar2 = bishop_values[5]
+
+            tomakario = bishopDes_values[5] - 1
+            tomakario1 = bishop_values[4]
+            tomakario2 = bishop_values[5]
+
+            eya8aby = bishopDes_values[6] - 1
+            eya8aby1 = bishop_values[8]
+            eya8aby2 = bishop_values[9]
+
+            mrdElkatholikon = bishopDes_values[7]
+            mrdElkatholikon1 = bishop_values[10]
+            mrdElkatholikon2 = bishop_values[11]
+
+            maro = bishopDes_values[8]
+            maro1 = bishop_values[4]
+            maro2 = bishop_values[5]
+
+            esbasmos1 = bishopDes_values[9]
+            esbasmos11 = bishop_values[12]
+            esbasmos12 = bishop_values[13]
+
+            esbasmos2 = bishopDes_values[10]
+            esbasmos21 = bishop_values[12]
+            esbasmos22 = bishop_values[13]
+
+            elaba2basyly = bishopDes_values[11] - 1
+            elaba2basyly1 = bishop_values[0]
+            elaba2basyly2 = bishop_values[1]
+
+            elaba28yry8ory = bishopDes_values[12] - 1
+            elaba28yry8ory1 = bishop_values[0]
+            elaba28yry8ory2 = bishop_values[1]
+
+            if guestBishop < 2:
+                elshokr2 = elshokr2-1
+                tobhyna2 = tobhyna2-2
+                embiniot2 = embiniot2-1
+                hytynyat2 = hytynyat2-3
+                byhmot8ar2 = byhmot8ar2-1
+                tomakario2 = tomakario2-1
+                eya8aby2 = eya8aby2-2
+                mrdElkatholikon2 = mrdElkatholikon2-1
+                maro2 = maro2-1
+                esbasmos12 = esbasmos12-2
+                esbasmos22 = esbasmos22-2
+                elaba2basyly2 = elaba2basyly2-1
+                elaba28yry8ory2 = elaba28yry8ory2-1
+        
+            start_positions = [mazmorELtawzy3, elaba28yry8ory, elaba2basyly, esbasmos2, esbasmos1, elengil3, elmazmor3, maro, elebrksis3, elkatholikon3, mrdElkatholikon, elbouls3, eya8aby, tomakario, byhmot8ar, hytynyat, embiniot, tobhyna, elshokr]
+            start_slides = [mrdMazmorEltawzy3_elqiyama, elaba28yry8ory1, elaba2basyly1, esbasmos21, esbasmos11, elengil, elmzmor, maro1, elebrksis1, elkatholikon1, mrdElkatholikon1, elbouls1, eya8aby1, tomakario1, byhmot8ar1, hytynyat1, embiniot1, tobhyna1, elshokr1]
+            end_slides = [mrdMazmorEltawzy3_elqiyama, elaba28yry8ory2, elaba2basyly2, esbasmos22, esbasmos12, elengil2, elmzmor, maro2, elebrksis2, elkatholikon2, mrdElkatholikon2, elbouls2, eya8aby2, tomakario2, byhmot8ar2, hytynyat2, embiniot2, tobhyna2, elshokr2]
+
+    if guestBishop == 0:
+        start_positions = [mazmorELtawzy3, elengil3, elmazmor3, elebrksis3, elkatholikon3, elbouls3]
+        start_slides = [mrdMazmorEltawzy3_elqiyama, elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1]
+        end_slides = [mrdMazmorEltawzy3_elqiyama, elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2]
+
+    show_hide_insertImage_replaceText(prs1, excel, des_sheet, twentyNine_show_full_sections, twentyNine_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
+
+    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+    powerpoint.Visible = True  # Open PowerPoint application
+    presentation1 = open_presentation_relative_path(prs1)
+    presentation2 = open_presentation_relative_path(prs2)
+    
+    if guestBishop > 0:
+        presentation3 = open_presentation_relative_path(prs3)
+
+    khetam29 = find_slide_index_by_title(presentation1, "تذكار الاعياد السيدية", elkhetam, "up")
+    khetam292 = find_slide_index_by_title(presentation1, "تذكار الاعياد السيدية 2", elkhetam, "up")
+
+    show_slides(presentation1, [[khetam29, khetam292]])
+    run_vba_with_slide_id(excel, des_sheet, prs1, presentation1)
+    agbya(presentation1, twentyNine_values[11], 1)
+
+    # Initialize variables for current position, slide, and end index
+    current_position = start_positions[0]
+    current_start_slide = int(start_slides[0])
+    current_end_slide = int(end_slides[0])
+
+    # Initialize index for start position, slide, and end slide
+    position_index = 1
+    slide_index = 1
+    end_index = 1
+
+    while current_start_slide <= current_end_slide and slide_index <= presentation1.Slides.Count:
+        if current_position == mazmorELtawzy3:
+            slide_index1 = mazmorELtawzy32
+            while slide_index1 >= current_position:
+                source_slide = presentation1.Slides(current_start_slide)
+                source_slide.Copy()
+                new_slide = presentation1.Slides.Paste(slide_index1).SlideShowTransition.Hidden = False
+                slide_index1 -= 1
+
+                if current_start_slide == mrdMazmorEltawzy3_elqiyama:
+                    current_start_slide = mrdMazmorEltawzy3_elmilad
+                elif current_start_slide == mrdMazmorEltawzy3_elmilad:
+                    current_start_slide = mrdMazmorEltawzy3_elbeshara
+                else:
+                    current_start_slide = mrdMazmorEltawzy3_elqiyama 
+                
+            current_start_slide += 1
+
+        elif (current_position == elengil3 or current_position == elmazmor3 or current_position == elebrksis3 
+                    or current_position == elkatholikon3 or current_position == elbouls3):
+                    source_slide = presentation2.Slides(current_end_slide)
+                    source_slide.Copy()
+                    presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
+                    current_end_slide -= 1
+                    if current_start_slide > current_end_slide:
+                        current_position += 1
+        
+        elif Bishop and current_position in {elaba28yry8ory, elaba2basyly, byhmot8ar, hytynyat, embiniot, 
+                                             elshokr, tomakario, eya8aby, esbasmos1, esbasmos2, maro, 
+                                             mrdElkatholikon, tobhyna}:
+            source_slide = presentation3.Slides(current_end_slide)
+            source_slide.Copy()
+            if current_position in {elaba28yry8ory, elaba2basyly, byhmot8ar, hytynyat, embiniot, elshokr, maro}:
+                presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
+            else:
+                presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = True
+            current_end_slide -= 1
+            if(current_start_slide > current_end_slide):
+                current_position += 1
+
+        # Move to the next round if all slides in the current range have been processed
+        if current_start_slide > current_end_slide:
+            # Check if there are more rounds
+            if position_index < len(start_positions):
+                # Update variables for the next round
+                current_position = start_positions[position_index]
+                current_start_slide = start_slides[slide_index]
+                current_end_slide = end_slides[end_index]
+                position_index += 1
+                slide_index += 1
+                end_index += 1
+    
+    presentation2.Close()
+    if guestBishop>0:
+        presentation3.Close()
+    
     presentation1.SlideShowSettings.Run()

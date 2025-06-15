@@ -55,6 +55,11 @@ def aashyaSanawy(season, copticdate, adam = False, Bishop = False, guestBishop =
     #الختام
     elkhetam = aashya_values[2]
 
+    #مرد الانجيل
+    if season == 27:
+        # aashya_show_full_sections.append("ربع يقال في صوم الرسل")
+        aashya_show_full_sections.append("{F5AB11D4-D7D2-4DA3-A830-32BA45BCB16D}")
+
     awashy_season = CopticCalendar().get_coptic_date_range(copticdate)
 
     if Bishop == True:
