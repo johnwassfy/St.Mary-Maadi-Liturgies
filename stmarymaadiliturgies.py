@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFrame
-from PyQt5.QtGui import QPixmap, QFont, QIcon, QColor, QPainter, QPainterPath
+from PyQt5.QtGui import QPixmap, QFont, QIcon, QColor
 from PyQt5.QtCore import Qt, pyqtSignal, QSize
-from PyQt5.QtWidgets import QGraphicsDropShadowEffect
+from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QDialog
 from qtawesome import icon
 from copticDate import CopticCalendar
 from Season import get_season_name, get_season
@@ -18,25 +18,6 @@ from UpdatePrompt import UpdatePrompt
 import qtawesome as qta
 
 from PyQt5.QtNetwork import QLocalSocket, QLocalServer
-
-class SingleInstance:
-    def __init__(self, key):
-        self.key = key
-        self.server = None
-
-    def is_running(self):
-        # Try to connect to an existing local socket
-        socket = QLocalSocket()
-        socket.connectToServer(self.key)
-        running = socket.waitForConnected(1000)
-        socket.close()
-        return running
-
-    def start(self):
-        # Start the local server to block further instances
-        self.server = QLocalServer()
-        self.server.removeServer(self.key)  # Just in case it's still lingering
-        return self.server.listen(self.key)
 
 class ClickableFrame(QFrame):
     clicked = pyqtSignal()
@@ -154,9 +135,12 @@ class MainWindow(QMainWindow):
                 frame.setGraphicsEffect(shadow)
 
         except Exception as e:
+            import traceback
+            stack_trace = traceback.format_exc()
             self.notification_bar = NotificationBar(self)
             self.notification_bar.setGeometry(0, 70, self.width(), 50)
-            self.notification_bar.show_message(str(e))
+            self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
+            print(f"Initialization Error: {str(e)}\n{stack_trace}")
 
     def create_update_button(self, y):
         """Create the single update button with initial state."""
@@ -477,14 +461,6 @@ class MainWindow(QMainWindow):
         # Hide the Bishop window after updating variables
         self.bishop_window.hide()
 
-    def open_tasbha_Window(self):
-        from tasbhaWindow import tasbhawindow
-        if self.centralWidget():
-            self.clear_central_widget()
-        
-        tasbha_content = tasbhawindow(self.coptic_date, self.season)
-        self.setCentralWidget(tasbha_content)
-
     def open_elmonasbat_Window(self):
         # Remove old frame
         self.frame2.deleteLater()
@@ -712,8 +688,12 @@ class MainWindow(QMainWindow):
                 widget.close()
 
     def show_error_message(self, error_message):
-        self.notification_bar.show_message(f"Error: {error_message}", duration=5000)
-
+        import traceback
+        stack_trace = traceback.format_exc()
+        full_error = f"Error: {error_message}\n\nStack Trace:\n{stack_trace}"
+        self.notification_bar.show_message(full_error, duration=10000)  # Longer duration for stack traces
+        print(full_error)  # Also print to console for debugging
+    
     def show_message(self, message):
         self.notification_bar.show_message(message, duration=3000)
 
@@ -753,13 +733,22 @@ class MainWindow(QMainWindow):
                     odasat.odasEl3nsara(self.coptic_date, self.bishop, self.GuestBishop)
                 case 27:
                     odasat.odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop)
+                case 28:
+                    odasat.odas3ydElrosol(self.coptic_date, self.bishop, self.GuestBishop)
+                case 29:
+                    odasat.odasEltagaly(self.coptic_date, self.bishop, self.GuestBishop)
                 case 32:
                     odasat.odas29thOfMonth(self.coptic_date, self.bishop, self.GuestBishop)
                 case default :
                     self.notification_bar.show_message(f"قداس {get_season_name(self.season)} غير متوفر حاليا")
         except Exception as e:
-            self.notification_bar.show_message(str(e))
-
+            import traceback
+            stack_trace = traceback.format_exc()
+            self.notification_bar = NotificationBar(self)
+            self.notification_bar.setGeometry(0, 70, self.width(), 50)
+            self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
+            print(f"Initialization Error: {str(e)}\n{stack_trace}")
+    
     def handle_qadas_eltfl_button_click(self):
         # from odasatEltfl import (odasElSomElkbyr, odasEltflSomElrosol, odasEltfl3ydElrosol, odasSanawy, 
         #                          odasEltflElnayrooz, odasEltflKiahk)
@@ -823,6 +812,33 @@ class MainWindow(QMainWindow):
 
         except Exception as e :
             self.show_error_message(str(e))
+    
+    def handle_tasbha_button_click(self):
+        from tasbhaDialog import TasbhaSelectionDialog
+        import tasbha
+        
+        try:
+            # Show the selection dialog
+            dialog = TasbhaSelectionDialog(self)
+            result = dialog.exec_()
+            
+            if result == QDialog.Accepted and dialog.selected_option:
+                # Run the corresponding tasbha function based on user selection
+                if dialog.selected_option == "midnight":
+                    # Run midnight tasbha
+                    if self.season == 5:  # Kiahk season
+                        tasbha.kiahk(self.coptic_date)
+                    else:
+                        tasbha.tasbha(self.coptic_date, False, self.season)
+                elif dialog.selected_option == "evening":
+                    # Run evening tasbha
+                    tasbha.tasbha(self.coptic_date, True, self.season)
+                
+        except Exception as e:
+            import traceback
+            stack_trace = traceback.format_exc()
+            self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
+            print(f"Tasbha Error: {str(e)}\n{stack_trace}")
 
     def handle_agbya_button_click(self):
         return
@@ -954,7 +970,7 @@ class MainWindow(QMainWindow):
         asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\عشية.jpg", (352, 15, 100, 100), "عشية", self.handle_3ashya_button_click))
         asyncio.run(self.add_button_with_image(self.frame2, "Data/الصور/الكتاب المقدس.png", (465, 15, 100, 100), "الكتاب المقدس", self.open_bible_window))
         asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الأجبية.jpg", (13, 148, 100, 100), "الأجبية", self.handle_agbya_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\داود 1.jpg", (126, 148, 100, 100), "الإبصلمودية", self.open_tasbha_Window))
+        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\داود 1.jpg", (126, 148, 100, 100), "الإبصلمودية", self.handle_tasbha_button_click))
         asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الفهرس.jpg", (239, 148, 100, 100), "الفهرس", self.open_elfhrs_window))
         asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\المدائح2.jpg", (352, 148, 100, 100), "المدائح", self.open_taranym_window))
         asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الصليب القبطي.jpg", (465, 148, 100, 100), "المناسبات", self.open_elmonasbat_Window))
@@ -1169,15 +1185,6 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-    import sys
-    instance_checker = SingleInstance("stmary_maadi_app")
-
-    if instance_checker.is_running():
-        print("🚫 App is already running.")
-        sys.exit(0)
-
-    # Start locking this instance
-    instance_checker.start()
     app = QApplication(argv)
 
     # Show splash screen

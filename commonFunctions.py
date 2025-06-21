@@ -1151,7 +1151,7 @@ def get_slide_ids_by_number(pptx_path, slide_num):
     # Load the presentation
     prs = Presentation(pptx_path)
     num_slides = len(prs.slides)
-    
+        
     if slide_num < 1 or slide_num > num_slides:
         print(f"Error: Slide number {slide_num} is out of range.")
         return
@@ -1196,9 +1196,9 @@ def move_sections_range(presentation, start_section_name, end_section_name, targ
         presentation.SectionProperties.Move(move_index, target_index + 1)
         target_index += 1
 
-def run_vba_with_slide_id_bakr_aashya(excel, sheet, prs, presentation):
+def run_vba_with_slide_id_bakr_aashya(excel, sheet, prs, presentation, slide_section_id = '{A5B9CE2F-90E3-44D7-B22F-CAE6783C8E2F}'):
 
-    slide = find_slide_num_v2(excel, sheet, '{A5B9CE2F-90E3-44D7-B22F-CAE6783C8E2F}', 2, 1)
+    slide = find_slide_num_v2(excel, sheet, slide_section_id, 2, 1)
 
     slide_id = get_slide_ids_by_number(prs, slide)
 
@@ -1449,8 +1449,14 @@ def show_hide_insertImage_replaceText(ppt_file, excel_path, sheet_name,
     presentation.save(ppt_file)    
 
 # excel = relative_path(r"Files Data.xlsx")
-# sheet = "رفع بخور"
-# arr = ["تكملة في حضور الاسقف", "طوبه هينا الكبيرة", "مارو اتشاسف"]
+# sheet = "التسبحة"
+# arr =["ابصالية الأربعاء", "ابصالية الخميس",
+#                     "ابصالية الجمعة", "ابصالية السبت",
+#                     "مقدمة الثيؤطوكيات الواطس", 
+#                     "ثيؤطوكية الأربعاء", "ثيؤطوكية الخميس", 
+#                     "ثيؤطوكية الجمعة", "ثيؤطوكية السبت", 
+#                     "لبش الأربعاء", "لبش الخميس", "لبش الجمعة",
+#                     "شيرات السبت 1", "شيرات السبت 2", "ختام الثيؤطوكيات الواطس"]
 # print(find_section_Ids_with_names(excel, sheet, arr))
 # arr2 = ['{2BCF4F8C-25F0-43C5-B224-6528B2EA3F2F}', '{F76B0D75-0474-45B5-B79F-7416F354543A}',
 #         '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', 
