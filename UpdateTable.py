@@ -34,7 +34,6 @@ def a3yad ():
     else:
         asyncio.run(write_to_excel_cell(file_path, sheet_name, "F7", 10))
 
-
     # ##حساب دور القمر
     asyncio.run(write_to_excel_cell(file_path, sheet_name, "I25", (copticYear%19)-1))
     moonDay , moonMonth = find_values_in_row(file_path, sheet_name, "I", (copticYear%19)-1)
@@ -42,7 +41,7 @@ def a3yad ():
     weekday = gd.weekday()
     days_until_sunday = (6 - weekday) % 7
     if days_until_sunday == 0:
-            days_until_sunday = 7  # If today is Sunday, set days_until_sunday to 7
+        days_until_sunday = 7  # If today is Sunday, set days_until_sunday to 7
 
     nextSunday = gd + timedelta(days=days_until_sunday)
 
@@ -94,12 +93,12 @@ def a3yad ():
     asyncio.run(write_to_excel_cell(file_path, sheet_name, "F25", date[2]))
     asyncio.run(write_to_excel_cell(file_path, sheet_name, "D25", date[1]))
 
-    ## بداية الصوم الكبير
+    # # بداية الصوم الكبير
     FastingStartDate = copticDate.coptic_date_before(55, [copticYear, rMonth, rDay])
     asyncio.run(write_to_excel_cell(file_path, sheet_name, "F13", FastingStartDate[2]))
     asyncio.run(write_to_excel_cell(file_path, sheet_name, "D13", FastingStartDate[1]))
 
-    # ## حساب بداية صوم نينوى و فصح يونان
+    # # حساب بداية صوم نينوى و فصح يونان
     NynowaStartDate = copticDate.coptic_date_before(14, [copticYear, FastingStartDate[1], FastingStartDate[2]])
     asyncio.run(write_to_excel_cell(file_path, sheet_name, "F11", NynowaStartDate[2]))
     asyncio.run(write_to_excel_cell(file_path, sheet_name, "D11", NynowaStartDate[1]))
@@ -367,7 +366,7 @@ def katamars3ashyaElsanawyA7ad():
             for col_index, value in enumerate(values_to_copy, start=3):
                 ws.cell(row=row, column=col_index, value=value)
 
-        wb.save(file_path)
+    wb.save(file_path)
 
 def katamarsBakerElsanawyA7ad():
     ws = wb["قطمارس الاحاد لباكر"]
@@ -429,7 +428,7 @@ def katamarsBakerElsanawyA7ad():
             for col_index, value in enumerate(values_to_copy, start=3):
                 ws.cell(row=row, column=col_index, value=value)
 
-        wb.save(file_path)
+    wb.save(file_path)
 
 def katamars3ashyaElsanawyAyam():
     ws = wb["القطمارس السنوي العشية"]
@@ -951,50 +950,13 @@ def Elsh3anyn():
     wb.save(file_path)
 
 def All(progress_callback=None):
-    total_steps = 9  # Total number of functions called
-    current_step = 0
-
     Younan()
-    current_step += 1
-    if progress_callback:
-        progress_callback(int((current_step / total_steps) * 100))
-
     ElsomElkbyr()
-    current_step += 1
-    if progress_callback:
-        progress_callback(int((current_step / total_steps) * 100))
-
     Elsh3anyn()
-    current_step += 1
-    if progress_callback:
-        progress_callback(int((current_step / total_steps) * 100))
-
     katamarsEl5amasyn()
-    current_step += 1
-    if progress_callback:
-        progress_callback(int((current_step / total_steps) * 100))
-
     katamarsOdasElsanawyAyam()
-    current_step += 1
-    if progress_callback:
-        progress_callback(int((current_step / total_steps) * 100))
-
     katamarsOdasElsanawyA7ad()
-    current_step += 1
-    if progress_callback:
-        progress_callback(int((current_step / total_steps) * 100))
-
     katamars3ashyaElsanawyA7ad()
-    current_step += 1
-    if progress_callback:
-        progress_callback(int((current_step / total_steps) * 100))
-
     katamars3ashyaElsanawyAyam()
-    current_step += 1
-    if progress_callback:
-        progress_callback(int((current_step / total_steps) * 100))
-
     katamarsBakerElsanawyAyam()
-    current_step += 1
-    if progress_callback:
-        progress_callback(int((current_step / total_steps) * 100))
+    katamarsBakerElsanawyA7ad()

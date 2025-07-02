@@ -3,7 +3,7 @@ import win32com.client
 
 def tasbha(copticdate, Aashya, season):
     from copticDate import CopticCalendar
-    from Season import El2yama, el3nsara
+    from Season import el3nsara
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs = relative_path(r"الإبصلمودية.pptx")
     excel = relative_path(r"Files Data.xlsx")
@@ -49,6 +49,8 @@ def tasbha(copticdate, Aashya, season):
                 ebsalyElmonasba = '{DCF0D2EF-0E5D-4349-8B22-523BE5D2C719}'
             case 2: #عيد الصليب
                 ebsalyElmonasba = '{1970A997-AC32-4FF7-B7A2-DAF83BF4F40B}'
+            case 24: #الخميسن
+                ebsalyElmonasba = '{43AC03AD-AC75-480D-987F-66CB8CBE3883}'
             case 29: #عيد التجلي
                 ebsalyElmonasba = '{EF0F739B-A8DE-419D-8D45-757AA9347AB5}'
             case 30: #صوم العذراء
@@ -107,7 +109,7 @@ def tasbha(copticdate, Aashya, season):
     elif Aashya == False and weekday<6:
         show_full_sections.append(tasbha_values[3])
 
-    if (El2yama <= [copticdate[1], copticdate[2]] <= el3nsara) or ((([copticdate[1], copticdate[2]] > el3nsara) or (copticdate[1] <= 3)) and weekday == 6):
+    if (26 <= season >= 23.1)  or ((([copticdate[1], copticdate[2]] > el3nsara) or (copticdate[1] <= 3)) and weekday == 6):
         show_full_sections.append(tasbha_values[4])
         if Aashya == False :
             show_full_sections.append(tasbha_values[7])

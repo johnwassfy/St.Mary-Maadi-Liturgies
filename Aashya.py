@@ -1,4 +1,3 @@
-import os
 from commonFunctions import *
 import win32com.client
 
@@ -59,6 +58,9 @@ def aashyaSanawy(season, copticdate, adam = False, Bishop = False, guestBishop =
     if season == 27:
         # aashya_show_full_sections.append("ربع يقال في صوم الرسل")
         aashya_show_full_sections.append("{F5AB11D4-D7D2-4DA3-A830-32BA45BCB16D}")
+    elif season == 28:
+        # baker_show_full_sections.extend(["ربع قال في عيد الرسل", "ربع بطرس و بولس"])
+        aashya_show_full_sections.extend(["{A0B1F7D2-3C4B-4E5F-8A6B-9D0C1F2E3F4A}", "{38E5A337-7696-4261-833A-DF790456C6A8}"])
 
     awashy_season = CopticCalendar().get_coptic_date_range(copticdate)
 
@@ -233,7 +235,7 @@ def aashyaKiahk(copticdate, adam = False, Bishop = False, guestBishop = 0):
     elengil = katamars_values[1]
     elengil2 = katamars_values[2]
 
-    aashya_values = find_slide_nums_arrays(excel, sheet, ["الانجيل", "الانجيل","ارباع الناقوس الادام", "ارباع الناقوس الادام", 
+    aashya_values = find_slide_nums_arrays_v2(excel, sheet, ["الانجيل", "الانجيل","ارباع الناقوس الادام", "ارباع الناقوس الادام", 
                                                           "أرباع الناقوس الواطس", "أرباع الناقوس الواطس", "تكملة ارباع الناقوس",
                                                           "اوشية الراقدين", "اوشية الراقدين", "تفضل يا رب", "تفضل يا رب",
                                                           "مرد انجيل كيهك 1", "مرد انجيل كيهك 1", "مرد انجيل كيهك 2", "مرد انجيل كيهك 2",

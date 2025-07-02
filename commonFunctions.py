@@ -156,6 +156,67 @@ def find_slide_nums_arrays_v2(excel_path, sheet_name, words, search_col, offsets
         # Handle any errors that might occur (e.g., file not found, sheet not found, etc.)
         return f"Error: {str(e)}"
 
+def find_season_date(excel_path, sheet_name, words, search_col):
+    """
+    For each word in the provided array, finds two values at fixed offsets (-1 and -2) 
+    from the search column.
+    
+    Parameters:
+    - excel_path: Path to the Excel file
+    - sheet_name: Name of the worksheet
+    - words: Array of words to search for
+    - search_col: The column number to search in (1-indexed)
+    
+    Returns:
+    - A 2D array where each inner array contains [offset -1 value, offset -2 value] for each word
+    - If a word is not found, its corresponding result will be an error message
+    """
+    try:
+        # Load the Excel workbook
+        workbook = load_workbook(excel_path, read_only=True)
+        
+        # Select the worksheet by name
+        worksheet = workbook[sheet_name]
+        
+        # Initialize an empty list to hold the results
+        results = []
+        
+        # Adjust search_col to zero-based index
+        search_col -= 1
+        
+        # Define the fixed offsets
+        offset1 = -3
+        offset2 = -1
+        
+        # Iterate over each word in the array
+        for word in words:
+            found = False
+            # Iterate over rows in the worksheet
+            for row in worksheet.iter_rows(values_only=True):
+                if row[search_col] == word:
+                    # Calculate the target column indices
+                    target_col1 = search_col + offset1
+                    target_col2 = search_col + offset2
+                    
+                    # Check if indices are within bounds
+                    if 0 <= target_col1 < len(row) and 0 <= target_col2 < len(row):
+                        # Add both values to results
+                        results.append([row[target_col1], row[target_col2]])
+                    else:
+                        results.append([f"Offset out of bounds for '{word}'", None])
+                    found = True
+                    break
+            
+            # If the word is not found, add an error message
+            if not found:
+                results.append([f"No data found for '{word}'", None])
+        
+        return results
+    
+    except Exception as e:
+        # Handle any errors that might occur
+        return f"Error: {str(e)}"
+    
 def read_excel_cell(file_path, sheet_name, cell_address):
     # Load the workbook
     wb = load_workbook(file_path, read_only=True, data_only=True)
@@ -516,8 +577,19 @@ def hide_slide_ranges_from_sections(ppt_file, excel_path, sheet_name, section_id
 def open_presentation_relative_path(rp):
     absolute_path = relative_path(rp)
     powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    presentation = powerpoint.Presentations.Open(absolute_path)
-    return presentation
+    
+    # Check if the presentation is already open
+    file_name = os.path.basename(absolute_path)
+    for pres in powerpoint.Presentations:
+        if os.path.abspath(pres.FullName).lower() == os.path.abspath(absolute_path).lower():
+            return f"{file_name} is already open", None
+    
+    # If not already open, open the presentation
+    try:
+        presentation = powerpoint.Presentations.Open(absolute_path)
+        return presentation
+    except Exception as e:
+        return f"Error opening {file_name}: {str(e)}", None
 
 def find_slide_index_by_title(presentation, title, start_index=1, direction="down"):
     # Get the total number of slides in the presentation
@@ -1298,6 +1370,7 @@ def elzoksologyat (excel_path, season, bakerOR3ashyaORtasbha):
         case 29: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{DC61EC21-9EF0-4E7C-8E4E-CD4269024AE6}", bakerOR3ashyaORtasbha])
         case 5: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["كيهك 1", "كيهك 2", "كيهك 3", "كيهك 4", "كيهك 5", "كيهك 6"])
         case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["الصوم الكبير 1", "الصوم الكبير 2", "الصوم الكبير 3", "الصوم الكبير 4", "الصوم الكبير 5"])
+        case 28: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{81E5C2F6-C71A-4711-83D2-FBF56C7FD101}", bakerOR3ashyaORtasbha])
         case default: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, [bakerOR3ashyaORtasbha])
 
 def find_section_Ids_with_names(excel_path, sheet, names):
@@ -1447,6 +1520,35 @@ def show_hide_insertImage_replaceText(ppt_file, excel_path, sheet_name,
 
     # Save the modified presentation
     presentation.save(ppt_file)    
+
+def get_open_presentations():
+    """Returns a list of full paths of currently open PowerPoint presentations"""
+    import pythoncom
+    import win32com.client
+    import os
+    
+    open_presentations = []
+    
+    pythoncom.CoInitialize()
+    try:
+        # Try to get an active PowerPoint instance
+        powerpoint = win32com.client.GetActiveObject("PowerPoint.Application")
+        
+        # Check each open presentation
+        for pres in powerpoint.Presentations:
+            try:
+                # Make sure to get absolute path
+                open_presentations.append(os.path.abspath(pres.FullName))
+            except Exception:
+                continue
+                
+    except Exception:
+        # PowerPoint isn't running or no presentations are open
+        pass
+    finally:
+        pythoncom.CoUninitialize()
+        
+    return open_presentations
 
 # excel = relative_path(r"Files Data.xlsx")
 # sheet = "التسبحة"

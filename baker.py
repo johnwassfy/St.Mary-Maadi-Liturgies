@@ -4,106 +4,6 @@ import win32com.client
 
 "_____________________________________OLD CODE_DESIGN_____________________________________"
 
-def baker3ydElrosol(adam = False):
-    prs = r"باكر.pptx"
-    katamars = r"Data\القطمارس\الايام\القطمارس السنوي ايام (باكر).pptx"
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    sheet ="باكر"
-    katamars_sheet = "القطمارس السنوي باكر"
-    km, kd = find_Readings_Date(11, 5)
-    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [3, 4, 5])
-    elmzmor = katamars_values[0]
-    elengil = katamars_values[1]
-    elengil2 = katamars_values[2]
-
-    baker_values = find_slide_nums_arrays(excel, sheet, ["ربع يقال في صوم الرسل", "الانجيل", "الانجيل",
-                                                        "بطرس و بولس","بطرس و بولس",
-                                                        "ارباع الناقوس الادام", "ارباع الناقوس الادام", 
-                                                        "أرباع الناقوس الواطس", "أرباع الناقوس الواطس", 
-                                                        "تكملة ارباع الناقوس 2"], 
-                                                        [1, 2, 1, 1, 2, 1, 2, 1, 2, 1])
-
-    #مرد الانجيل
-    mrdelengil = baker_values[0]
-
-    #المزمور و الانجيل
-    elengil3 = baker_values[1]
-    elmzmor1 = baker_values[2] + 2
-
-    #بطرس و بولس
-    pnp = baker_values[3]
-    pnp2 = baker_values[4]
-
-    #ارباع الناقوس
-    arbaaAdam = baker_values[5]
-    arbaaAdam2 = baker_values[6]
-    arbaaWats = baker_values[7]
-    arbaaWats2 = baker_values[8]
-    rob3pnp = baker_values[9]
-
-    if adam == True:
-        show_array = [[mrdelengil, mrdelengil], [pnp, pnp2], [arbaaAdam, arbaaAdam2]]
-        hide_array = [[arbaaWats, arbaaWats2]]
-    else:
-        show_array = [[mrdelengil, mrdelengil], [pnp, pnp2]]
-
-    start_positions = [elengil3, elmzmor1]
-    start_slides = [elengil, elmzmor]
-    end_slides = [elengil2, elmzmor]
-
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
-    presentation1 = open_presentation_relative_path(prs)
-    presentation2 = open_presentation_relative_path(katamars)
-    pnpRob3 = find_slide_index_by_title(presentation1, "السلام لأبينا بطرس: ومعلمنا بولس: العمودين العظيمين: مثبتي المؤمنين.", rob3pnp)
-    show_array.append([pnpRob3, pnpRob3])
-
-    show_slides(presentation1, show_array)
-    if adam == True: 
-        hide_slides(presentation1, hide_array)
-
-    # Initialize variables for current position, slide, and end index
-    current_position = start_positions[0]
-    current_start_slide = int(start_slides[0])
-    current_end_slide = int(end_slides[0])
-
-    # Initialize index for start position, slide, and end slide
-    position_index = 1
-    slide_index = 1
-    end_index = 1
-
-    while current_start_slide <= current_end_slide and slide_index <= presentation1.Slides.Count:
-        if (current_position == elengil3 or current_position == elmzmor1):
-            source_slide = presentation2.Slides(current_end_slide)
-            source_slide.Copy()
-            new_slide = presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
-            current_end_slide -= 1
-            if(current_start_slide > current_end_slide):
-                current_position += 1
-
-        else:
-            source_slide = presentation2.Slides(current_start_slide)
-            source_slide.Copy()
-            new_slide = presentation1.Slides.Paste(current_position)
-            new_slide.SlideShowTransition.Hidden = False
-            current_start_slide += 1
-            current_position += 1
-
-        # Move to the next round if all slides in the current range have been processed
-        if current_start_slide > current_end_slide:
-            # Check if there are more rounds
-            if position_index < len(start_positions):
-                # Update variables for the next round
-                current_position = start_positions[position_index]
-                current_start_slide = start_slides[slide_index]
-                current_end_slide = end_slides[end_index]
-                position_index += 1
-                slide_index += 1
-                end_index += 1
-    
-    presentation2.Close()
-
 def bakerKiahk(copticdate, adam = False, Bishop = False, guestBishop = 0):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
@@ -394,7 +294,9 @@ def bakerSanawy(season, copticdate, adam = False, Bishop = False, guestBishop = 
     if season == 27:
         # baker_show_full_sections.append("ربع يقال في صوم الرسل")
         baker_show_full_sections.append("{F5AB11D4-D7D2-4DA3-A830-32BA45BCB16D}")
-    
+    elif season == 28:
+        # baker_show_full_sections.extend(["ربع قال في عيد الرسل", "ربع بطرس و بولس"])
+        baker_show_full_sections.extend(["{A0B1F7D2-3C4B-4E5F-8A6B-9D0C1F2E3F4A}", "{38E5A337-7696-4261-833A-DF790456C6A8}"])
     if season == 30 | 31 :
         # baker_show_full_sections.append('مرد انجيل صوم العذراء - باكر')
         # baker_hide_full_sections.append('مرد الانجيل السنوي')

@@ -2,22 +2,17 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFra
 from PyQt5.QtGui import QPixmap, QFont, QIcon, QColor
 from PyQt5.QtCore import Qt, pyqtSignal, QSize
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QDialog
-from qtawesome import icon
 from copticDate import CopticCalendar
 from Season import get_season_name, get_season
 from datetime import datetime
-from elbas5aWindow import elbas5aWindow
-from elLakanWindow import ellakanwindow
 from bibleWindow import bibleWindow
 from NotificationBar import NotificationBar
 import asyncio
-from commonFunctions import relative_path, load_background_image, open_presentation_relative_path
+from commonFunctions import relative_path, load_background_image, open_presentation_relative_path, get_open_presentations
 from sys import exit, argv
 from SplashScreen import ModernSplashScreen
 from UpdatePrompt import UpdatePrompt
 import qtawesome as qta
-
-from PyQt5.QtNetwork import QLocalSocket, QLocalServer
 
 class ClickableFrame(QFrame):
     clicked = pyqtSignal()
@@ -43,6 +38,7 @@ class MainWindow(QMainWindow):
             self.setFixedSize(625, 600)
             self.show_update_button = False
             self.glow_effect_counter = 0
+            self.active_presentation_source = None  # Track which button opened a shared presentation
 
             # Try checking for updates early
             update_found, version = self.check_for_updates_silent()
@@ -86,6 +82,7 @@ class MainWindow(QMainWindow):
             self.image_label.setScaledContents(True)
 
             self.frame2 = QFrame(self)
+            self.refresh_button_states()
             self.restore_main_frame()
 
             # Create the update button (single button for both states)
@@ -133,6 +130,10 @@ class MainWindow(QMainWindow):
                 shadow.setOffset(0)
                 shadow.setColor(QColor(0, 0, 0, 100))
                 frame.setGraphicsEffect(shadow)
+
+            # Initialize PowerPoint tracking
+            self.last_open_presentations = set()
+            self.setup_powerpoint_event_listener()
 
         except Exception as e:
             import traceback
@@ -261,6 +262,7 @@ class MainWindow(QMainWindow):
         self.repaint()
 
     async def add_button_with_image(self, parent, image_path, geometry, text, action=None):
+        import os
         x, y, width, height = geometry
 
         # Create a container frame for the button with rounded corners
@@ -272,6 +274,30 @@ class MainWindow(QMainWindow):
                 border-radius: 10px;
             }
         """)
+        
+        # Check if this button corresponds to an open presentation
+        open_presentations = get_open_presentations()
+        presentation_map = {
+            "القداس": r"قداس.pptx",
+            "قداس الطفل": r"قداس الطفل.pptx",
+            "باكر": r"باكر.pptx",
+            "عشية": r"رفع بخور عشية و باكر.pptx",
+            "الإبصلمودية": r"الإبصلمودية.pptx",
+            "المدائح": r"كتاب المدائح.pptx"
+        }
+        
+        is_open = False
+        if text in presentation_map:
+            full_path = os.path.abspath(relative_path(presentation_map[text])).lower()
+            is_open = any(open_pres.lower() == full_path for open_pres in open_presentations)
+            
+            if is_open:
+                # Add glow effect to container if presentation is open
+                glow = QGraphicsDropShadowEffect(container)
+                glow.setOffset(0)
+                glow.setBlurRadius(30)
+                glow.setColor(QColor(0, 255, 0))
+                container.setGraphicsEffect(glow)
         
         # Image Label - Use the full width and height available
         image_label = QLabel(container)
@@ -288,7 +314,7 @@ class MainWindow(QMainWindow):
                 # Center the image in the label
                 image_label.setScaledContents(True)
                 image_label.setPixmap(pixmap)
-    
+
         except Exception as e:
             print(f"Error loading image {image_path}: {str(e)}")
             # Create a placeholder with text if image loading fails
@@ -486,9 +512,9 @@ class MainWindow(QMainWindow):
 
         # Buttons with enhanced layout
         buttons = [
-            ("Data/الصور/البصخة.jpg", (13, 15, 100, 100), "اسبوع الالام", self.open_elbas5a_window),
+            ("Data/الصور/البصخة.jpg", (13, 15, 100, 100), "اسبوع الالام", self.handle_elbas5a_button_click),
             ("Data/الصور/السجدة.jpg", (126, 15, 100, 100), "صلاة السجدة", "Data/صلاة السجدة عيد العنصرة.pptx"),
-            ("Data/الصور/اللقان.jpg", (239, 15, 100, 100), "اللقان", self.open_ellakan_window),
+            ("Data/الصور/اللقان.jpg", (239, 15, 100, 100), "اللقان", self.handle_ellakan_button_click),
         ]
 
         for img, geo, label, action in buttons:
@@ -497,20 +523,6 @@ class MainWindow(QMainWindow):
         # Styled back button
         self.add_back_button(self.frame2, self.restore_main_frame)
         self.frame2.show()
-
-    def open_elbas5a_window(self):
-        if self.centralWidget():
-            self.clear_central_widget()
-        
-        elbas5a_content = elbas5aWindow(self)
-        self.setCentralWidget(elbas5a_content)
-
-    def open_ellakan_window(self):
-        if self.centralWidget():
-            self.clear_central_widget()
-        
-        ellakan_content = ellakanwindow()
-        self.setCentralWidget(ellakan_content)
 
     def open_bible_window(self):
         if self.centralWidget():
@@ -693,61 +705,104 @@ class MainWindow(QMainWindow):
         full_error = f"Error: {error_message}\n\nStack Trace:\n{stack_trace}"
         self.notification_bar.show_message(full_error, duration=10000)  # Longer duration for stack traces
         print(full_error)  # Also print to console for debugging
-    
+
     def show_message(self, message):
         self.notification_bar.show_message(message, duration=3000)
 
     def handle_qadas_button_click(self):
         import odasat
+        from qudasDialog import SectionSelectionDialog
+        import os
         try:
-            match self.season:
-                case 0 | 6 | 13 | 30 | 31:
-                    odasat.odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop)
-                case 2:
-                    odasat.odasElsalyb(self.coptic_date, self.bishop, self.GuestBishop)
-                case 4:
-                    odasat.odasElmilad(self.bishop, self.GuestBishop)
-                case 14:
-                    odasat.odasElbeshara(self.bishop, self.GuestBishop)
-                case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11:
-                    odasat.odasElSomElkbyr(self.coptic_date, self.season, self.bishop, self.GuestBishop)
-                case 16:
-                    odasat.odasSbtLe3azr(self.coptic_date, self.bishop, self.GuestBishop)
-                case 17:
-                    odasat.odasElsh3anyn(self.coptic_date, self.bishop, self.GuestBishop)
-                case 19:
-                    self.notification_bar.show_message("صلوات خميس العهد متوفرة في ملف واحد: المناسبات > اسبوع الالام > خميس العهد", 10000)
-                case 20:
-                    self.notification_bar.show_message("لا يوجد قداس يوم الجمعة العظيمة: المناسبات > اسبوع الالام > الجمعة العظيمة", 10000)
-                case 21:
-                    self.notification_bar.show_message("صلوات سبت الفرح متوفرة في ملف واحد: المناسبات > اسبوع الالام > ليلة ابوغلمسيس", 10000)
-                case 22:
-                    odasat.odasEl2yama(self.coptic_date, self.bishop, self.GuestBishop)
-                case 24:
-                    odasat.odasEl5amasyn_2_39(self.coptic_date, self.bishop, self.GuestBishop)
-                case 24.1:
-                    odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, True)
-                case 25:
-                    odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop)
-                case 26:
-                    odasat.odasEl3nsara(self.coptic_date, self.bishop, self.GuestBishop)
-                case 27:
-                    odasat.odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop)
-                case 28:
-                    odasat.odas3ydElrosol(self.coptic_date, self.bishop, self.GuestBishop)
-                case 29:
-                    odasat.odasEltagaly(self.coptic_date, self.bishop, self.GuestBishop)
-                case 32:
-                    odasat.odas29thOfMonth(self.coptic_date, self.bishop, self.GuestBishop)
-                case default :
-                    self.notification_bar.show_message(f"قداس {get_season_name(self.season)} غير متوفر حاليا")
+            presentation_opened = False
+            presentation_file = os.path.abspath(relative_path(r"قداس.pptx")).lower()
+            
+            # Check if presentation is already open
+            open_presentations = get_open_presentations()
+            is_already_open = any(open_pres.lower() == presentation_file for open_pres in open_presentations)
+            
+            if is_already_open:
+                # If already open, just show the dialog without reopening the presentation
+                presentation_opened = True
+            else:
+                match self.season:
+                    case 0 | 6 | 13 | 30 | 31:
+                        odasat.odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 2:
+                        odasat.odasElsalyb(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 4:
+                        odasat.odasElmilad(self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 14:
+                        odasat.odasElbeshara(self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11:
+                        odasat.odasElSomElkbyr(self.coptic_date, self.season, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 16:
+                        odasat.odasSbtLe3azr(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 17:
+                        odasat.odasElsh3anyn(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 19:
+                        self.notification_bar.show_message("صلوات خميس العهد متوفرة في ملف واحد: المناسبات > اسبوع الالام > خميس العهد", 10000)
+                    case 20:
+                        self.notification_bar.show_message("لا يوجد قداس يوم الجمعة العظيمة: المناسبات > اسبوع الالام > الجمعة العظيمة", 10000)
+                    case 21:
+                        self.notification_bar.show_message("صلوات سبت الفرح متوفرة في ملف واحد: المناسبات > اسبوع الالام > ليلة ابوغلمسيس", 10000)
+                    case 22:
+                        odasat.odasEl2yama(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 24:
+                        odasat.odasEl5amasyn_2_39(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 24.1:
+                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, True)
+                        presentation_opened = True
+                    case 25:
+                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 26:
+                        odasat.odasEl3nsara(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 27:
+                        odasat.odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 28:
+                        odasat.odas3ydElrosol(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 29:
+                        odasat.odasEltagaly(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 32:
+                        odasat.odas29thOfMonth(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case default:
+                        self.notification_bar.show_message(f"قداس {get_season_name(self.season)} غير متوفر حاليا")
+            
+            # After the match logic, if a presentation was opened, show the sections dialog
+            if presentation_opened:
+                self.refresh_button_states()
+                self.restore_main_frame()
+                # Format dates for the dialog
+                m = self.getmonth(self.coptic_date[1])
+                m = self.convert_to_arabic_digits(m)
+                coptic_date_text = f"{self.convert_to_arabic_digits(self.coptic_date[2])} {m}، {self.convert_to_arabic_digits(self.coptic_date[0])}"
+                arabic_date_text = self.get_arabic_month_date(self.current_date)
+                title = f"قداس {coptic_date_text} / {arabic_date_text}"
+                sheet_name = "القداس"
+                # Create and show the dialog
+                dialog = SectionSelectionDialog(self, title, sheet_name)
+                dialog.exec_()
+                
         except Exception as e:
             import traceback
             stack_trace = traceback.format_exc()
-            self.notification_bar = NotificationBar(self)
-            self.notification_bar.setGeometry(0, 70, self.width(), 50)
             self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
-            print(f"Initialization Error: {str(e)}\n{stack_trace}")
+            print(f"Qudas Error: {str(e)}\n{stack_trace}")
     
     def handle_qadas_eltfl_button_click(self):
         # from odasatEltfl import (odasElSomElkbyr, odasEltflSomElrosol, odasEltfl3ydElrosol, odasSanawy, 
@@ -775,44 +830,177 @@ class MainWindow(QMainWindow):
         return
 
     def handle_baker_button_click(self):
-        from openpyxl import load_workbook
-        from baker import baker3ydElrosol, bakerSanawy, bakerKiahk
-
-        coptic_cal = CopticCalendar()
-        copticDate = coptic_cal.coptic_to_gregorian(self.coptic_date)
-        adam = False
-        if copticDate.weekday() in [0, 1, 6]:
-            adam = True
+        from baker import bakerSanawy, bakerKiahk
+        from qudasDialog import SectionSelectionDialog
+        from PyQt5.QtWidgets import QMessageBox
+        import os
+        
         try:
-            match self.season :
-                case 0 | 27 | 30 | 31:
-                    bakerSanawy(self.season, self.coptic_date, adam, self.bishop, self.GuestBishop)
-                case 5:
-                    bakerKiahk(self.coptic_date, adam, self.bishop, self.GuestBishop)
-                case 28:
-                    baker3ydElrosol(adam)
-                    open_presentation_relative_path(r"Data\لقان عيد الرسل.pptx")
+            presentation_file = os.path.abspath(relative_path(r"رفع بخور عشية و باكر.pptx")).lower()
+            
+            # Check if presentation is already open
+            open_presentations = get_open_presentations()
+            is_already_open = any(open_pres.lower() == presentation_file for open_pres in open_presentations)
+            
+            if is_already_open and self.active_presentation_source != "باكر":
+                # File is open but was opened by a different button
+                reply = QMessageBox.question(self, "تحذير",
+                                  "هذا الملف مفتوح حاليًا في عرض عشية. هل تريد إغلاق الملف وفتحه كباكر؟",
+                                  QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                
+                if reply == QMessageBox.Yes:
+                    # Close all open PowerPoint presentations
+                    import win32com.client
+                    import pythoncom
+                    pythoncom.CoInitialize()
+                    try:
+                        powerpoint = win32com.client.GetActiveObject("PowerPoint.Application")
+                        for pres in powerpoint.Presentations:
+                            if os.path.abspath(pres.FullName.lower()) == presentation_file:
+                                pres.Close()
+                                break
+                    except Exception as e:
+                        print(f"Error closing presentation: {str(e)}")
+                    finally:
+                        pythoncom.CoUninitialize()
+                    
+                    # Wait a bit for PowerPoint to properly close
+                    import time
+                    time.sleep(0.5)
+                    
+                    # Now proceed with opening the file
+                    is_already_open = False
+                else:
+                    # User chose not to proceed
+                    return
+            
+            presentation_opened = False
+            
+            if is_already_open and self.active_presentation_source == "باكر":
+                # If already open and was opened by this button, just show the dialog
+                presentation_opened = True
+            else:
+                # Open the presentation with the appropriate content
+                coptic_cal = CopticCalendar()
+                copticDate = coptic_cal.coptic_to_gregorian(self.coptic_date)
+                adam = False
+                if copticDate.weekday() in [0, 1, 6]:
+                    adam = True
+                match self.season:
+                    case 0 | 27 | 28 | 30 | 31:
+                        bakerSanawy(self.season, self.coptic_date, adam, self.bishop, self.GuestBishop)
+                        self.active_presentation_source = "باكر"  # Set the active button
+                        presentation_opened = True
+                    case 5:
+                        bakerKiahk(self.coptic_date, adam, self.bishop, self.GuestBishop)
+                        self.active_presentation_source = "باكر"  # Set the active button
+                        presentation_opened = True
+            
+            if presentation_opened:
+                self.refresh_button_states(skip_timer=True)
+                self.restore_main_frame()
+                # Format dates for the dialog
+                m = self.getmonth(self.coptic_date[1])
+                m = self.convert_to_arabic_digits(m)
+                coptic_date_text = f"{self.convert_to_arabic_digits(self.coptic_date[2])} {m}، {self.convert_to_arabic_digits(self.coptic_date[0])}"
+                arabic_date_text = self.get_arabic_month_date(self.current_date)
+                title = f"رفع بخور باكر {coptic_date_text} / {arabic_date_text}"
+                sheet_name = "رفع بخور"
+                # Create and show the dialog
+                dialog = SectionSelectionDialog(self, title, sheet_name)
+                dialog.exec_()
+        
         except Exception as e:
-            self.show_error_message(str(e))
-
+            self.show_error_message(str(e))    
+    
     def handle_3ashya_button_click(self):
         from Aashya import aashyaKiahk, aashyaSanawy
+        from qudasDialog import SectionSelectionDialog
+        from PyQt5.QtWidgets import QMessageBox
+        import os
+        
         try:
-            coptic_cal = CopticCalendar()
-            copticDate = coptic_cal.coptic_to_gregorian(self.coptic_date)
-            adam = False
-            if copticDate.weekday() in [0, 1, 6]:
-                adam = True
+            presentation_file = os.path.abspath(relative_path(r"رفع بخور عشية و باكر.pptx")).lower()
+            
+            # Check if presentation is already open
+            open_presentations = get_open_presentations()
+            is_already_open = any(open_pres.lower() == presentation_file for open_pres in open_presentations)
+            
+            if is_already_open and self.active_presentation_source != "عشية":
+                # File is open but was opened by a different button
+                reply = QMessageBox.question(self, "تحذير",
+                              "هذا الملف مفتوح حاليًا في عرض باكر. هل تريد إغلاق الملف وفتحه كعشية؟",
+                              QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                
+                if reply == QMessageBox.Yes:
+                    # Close all open PowerPoint presentations
+                    import win32com.client
+                    import pythoncom
+                    pythoncom.CoInitialize()
+                    try:
+                        powerpoint = win32com.client.GetActiveObject("PowerPoint.Application")
+                        for pres in powerpoint.Presentations:
+                            if os.path.abspath(pres.FullName.lower()) == presentation_file:
+                                pres.Close()
+                                break
+                    except Exception as e:
+                        print(f"Error closing presentation: {str(e)}")
+                    finally:
+                        pythoncom.CoUninitialize()
+                    
+                    # Wait a bit for PowerPoint to properly close
+                    import time
+                    time.sleep(0.5)
+                    
+                    # Now proceed with opening the file
+                    is_already_open = False
+                else:
+                    # User chose not to proceed
+                    return
+            
+            presentation_opened = False
+            
+            if is_already_open and self.active_presentation_source == "عشية":
+                # If already open and was opened by this button, just show the dialog
+                presentation_opened = True
+            else:
+                # Open the presentation with the appropriate content
+                coptic_cal = CopticCalendar()
+                copticDate = coptic_cal.coptic_to_gregorian(self.coptic_date)
+                adam = False
+                if copticDate.weekday() in [0, 1, 6]:
+                    adam = True
+                
+                match (self.season):
+                    case 0 | 27 | 29 | 30 | 31: 
+                        aashyaSanawy(self.season, self.coptic_date, adam, self.bishop, self.GuestBishop)
+                        self.active_presentation_source = "عشية"  # Set the active button
+                        presentation_opened = True
+                    case 5:
+                        aashyaKiahk(self.coptic_date, adam, self.bishop, self.GuestBishop)
+                        self.active_presentation_source = "عشية"  # Set the active button
+                        presentation_opened = True
+            
+            if presentation_opened:
+                self.refresh_button_states(skip_timer=True)
+                self.restore_main_frame()
+                # Format dates for the dialog
+                m = self.getmonth(self.coptic_date[1])
+                m = self.convert_to_arabic_digits(m)
+                coptic_date_text = f"{self.convert_to_arabic_digits(self.coptic_date[2])} {m}، {self.convert_to_arabic_digits(self.coptic_date[0])}"
+                arabic_date_text = self.get_arabic_month_date(self.current_date)
+                title = f"رفع بخور عشية {coptic_date_text} / {arabic_date_text}"
+                sheet_name = "رفع بخور"
+                # Create and show the dialog
+                dialog = SectionSelectionDialog(self, title, sheet_name)
+                dialog.exec_()
+                
+        except Exception as e:
+            import traceback
+            stack_trace = traceback.format_exc()
+            self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
+            print(f"Aashya Error: {str(e)}\n{stack_trace}")
 
-            match (self.season) :
-                case 0 | 27 | 29 | 30 | 31: 
-                    aashyaSanawy(self.season, self.coptic_date, adam, self.bishop, self.GuestBishop)
-                case 5 :
-                    aashyaKiahk (self.coptic_date, adam, self.bishop, self.GuestBishop)
-
-        except Exception as e :
-            self.show_error_message(str(e))
-    
     def handle_tasbha_button_click(self):
         from tasbhaDialog import TasbhaSelectionDialog
         import tasbha
@@ -839,6 +1027,34 @@ class MainWindow(QMainWindow):
             stack_trace = traceback.format_exc()
             self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
             print(f"Tasbha Error: {str(e)}\n{stack_trace}")
+
+    def handle_ellakan_button_click(self):
+        from elLakanDialog import LakanSelectionDialog
+        import tasbha
+        
+        try:
+            # Show the selection dialog
+            dialog = LakanSelectionDialog(self)
+            result = dialog.exec_()
+            
+            if result == QDialog.Accepted and dialog.selected_option:
+                # Run the corresponding tasbha function based on user selection
+                if dialog.selected_option == "Baptism":
+                    return
+                elif dialog.selected_option == "Holy Thursday":
+                    open_presentation_relative_path(r"Data\اسبوع الالام\خميس العهد.pptx")
+                elif dialog.selected_option == "Apostles":
+                    open_presentation_relative_path(r"Data\لقان عيد الرسل.pptx")
+        except Exception as e:
+            import traceback
+            stack_trace = traceback.format_exc()
+            self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
+            print(f"Tasbha Error: {str(e)}\n{stack_trace}")
+
+    def handle_elbas5a_button_click(self):
+        from elbas5aDialog import Elbas5aDialog
+        dialog = Elbas5aDialog(self)
+        dialog.exec_()
 
     def handle_agbya_button_click(self):
         return
@@ -1183,6 +1399,101 @@ class MainWindow(QMainWindow):
             # If restart fails, show error and continue
             self.notification_bar.show_message(f"فشل إعادة التشغيل: {str(e)}")
 
+    def setup_powerpoint_event_listener(self):
+        """Set up a timer that specifically checks for PowerPoint close events"""
+        from PyQt5.QtCore import QTimer
+        
+        # Store the last known state of open presentations
+        self.last_open_presentations = set()
+        
+        # Create a timer that runs more frequently just to check for PowerPoint events
+        self.ppt_check_timer = QTimer(self)
+        self.ppt_check_timer.timeout.connect(self.check_powerpoint_changes)
+        self.ppt_check_timer.start(750)  # Check every 750ms
+        
+    def check_powerpoint_changes(self):
+        """Check if any PowerPoint presentations have been closed and update UI immediately"""
+        try:
+            # Get current presentations
+            current_presentations = set(get_open_presentations())
+            
+            # If different from last check, refresh the buttons
+            if current_presentations != self.last_open_presentations:
+                # Check if رفع بخور عشية و باكر.pptx was closed
+                import os
+                baker_path = os.path.abspath(relative_path(r"رفع بخور عشية و باكر.pptx")).lower()
+                was_open = any(path.lower() == baker_path for path in self.last_open_presentations)
+                is_now_open = any(path.lower() == baker_path for path in current_presentations)
+                
+                if was_open and not is_now_open:
+                    # Reset active source when the file is closed
+                    self.active_presentation_source = None
+                
+                # Force a refresh without waiting
+                self.refresh_button_states(skip_timer=True)
+                self.last_open_presentations = current_presentations
+        except Exception as e:
+            print(f"Error checking PowerPoint changes: {e}")    
+    
+    def refresh_button_states(self, skip_timer=False):
+        """Updates glow effects on buttons based on currently open presentations"""
+        import os
+        # Get list of open presentations
+        open_presentations = get_open_presentations()
+        
+        # Map of buttons and their corresponding presentation files
+        button_map = {
+            "القداس": r"قداس.pptx",
+            "قداس الطفل": r"قداس الطفل.pptx",
+            "باكر": r"رفع بخور عشية و باكر.pptx",
+            "عشية": r"رفع بخور عشية و باكر.pptx",
+            "الإبصلمودية": r"الإبصلمودية.pptx",
+            "المدائح": r"كتاب المدائح.pptx"
+        }
+        
+        # Check if رفع بخور عشية و باكر.pptx is open
+        baker_open = False
+        baker_path = os.path.abspath(relative_path(r"رفع بخور عشية و باكر.pptx")).lower()
+        if any(open_pres.lower() == baker_path for open_pres in open_presentations):
+            baker_open = True
+        
+        # Find all buttons in the frame2 container
+        for child in self.frame2.children():
+            if isinstance(child, QFrame):
+                for btn_child in child.children():
+                    if isinstance(btn_child, QLabel) and btn_child.text() in button_map:
+                        button_text = btn_child.text()
+                        container = btn_child.parent()
+                        
+                        # Use ABSOLUTE path for comparison
+                        full_path = os.path.abspath(relative_path(button_map[button_text])).lower()
+                        
+                        # Special handling for باكر and عشية
+                        if button_text in ["باكر", "عشية"]:
+                            # Only add glow to the active button if the file is open
+                            if baker_open and self.active_presentation_source == button_text:
+                                glow = QGraphicsDropShadowEffect(container)
+                                glow.setOffset(0)
+                                glow.setBlurRadius(30)
+                                glow.setColor(QColor(0, 255, 0))
+                                container.setGraphicsEffect(glow)
+                            else:
+                                container.setGraphicsEffect(None)
+                        else:
+                            # Standard handling for other buttons
+                            is_open = any(open_pres.lower() == full_path for open_pres in open_presentations)
+                            if is_open:
+                                glow = QGraphicsDropShadowEffect(container)
+                                glow.setOffset(0)
+                                glow.setBlurRadius(30)
+                                glow.setColor(QColor(0, 255, 0))
+                                container.setGraphicsEffect(glow)
+                            else:
+                                container.setGraphicsEffect(None)
+    
+        if not skip_timer:
+            from PyQt5.QtCore import QTimer
+            QTimer.singleShot(1000, self.refresh_button_states)  # Check more frequently
 
 if __name__ == "__main__":
     app = QApplication(argv)

@@ -1,24 +1,28 @@
 import datetime
 import copticDate
-from commonFunctions import read_excel_cell, read_excel_cells_by_array, relative_path
-import os
-
+from commonFunctions import relative_path, find_season_date
 
 workbook = relative_path(r"Tables.xlsx")
 sheetname = "المناسبات"
 
+Seasons_values = ["برمون الميلاد", "الميلاد", "برمون الغطاس", "بدء صوم نينوى", "فصح يونان", 
+                  "بدء الصوم الكبير ", "جمعة ختام الصوم ", "سبت لعازر", "أحد الشعانين", "خميس العهد",
+                  "الجمعة العظيمة", "سبت النور", "القيامة", "عيد الصعود", "عيد العنصرة"]
+
+Seasons_values = find_season_date(workbook, sheetname, Seasons_values, 7)
+
 # Pre-calculate values from Excel
 coptic = copticDate.CopticCalendar()
-baramonElmilad = [coptic.current_coptic_datetime[0], read_excel_cell(workbook, sheetname, "D4"), read_excel_cell(workbook, sheetname, "F4")]
-Elmilad = [coptic.current_coptic_datetime[0], read_excel_cell(workbook, sheetname, "D5"), read_excel_cell(workbook, sheetname, "F5")]
+baramonElmilad = [coptic.current_coptic_datetime[0], Seasons_values[0][0], Seasons_values[0][1]]
+Elmilad = [coptic.current_coptic_datetime[0], Seasons_values[1][0], Seasons_values[1][1]]
 SomElmilad_start = coptic.coptic_date_before(43, Elmilad)
 
-baramonElghetas = [read_excel_cell(workbook, sheetname, "D7"), read_excel_cell(workbook, sheetname, "F7")]
+baramonElghetas = [Seasons_values[2][0], Seasons_values[2][1]]
 
-SomNynawa = [read_excel_cell(workbook, sheetname, "D11"), read_excel_cell(workbook, sheetname, "F11")]
-Fes7Younan = [read_excel_cell(workbook, sheetname, "D12"), read_excel_cell(workbook, sheetname, "F12")]
+SomNynawa = [Seasons_values[3][0], Seasons_values[3][1]]
+Fes7Younan = [Seasons_values[4][0], Seasons_values[4][1]]
 
-ElSomElkbyr = [read_excel_cell(workbook, sheetname, "D13"), read_excel_cell(workbook, sheetname, "F13")]
+ElSomElkbyr = [Seasons_values[5][0], Seasons_values[5][1]]
 SabtElrefa3 = coptic.coptic_date_before(2, [coptic.current_coptic_datetime[0], ElSomElkbyr[0], ElSomElkbyr[1]])
 A7dElrefa3 = coptic.coptic_date_before(1, [coptic.current_coptic_datetime[0], ElSomElkbyr[0], ElSomElkbyr[1]])
 
@@ -29,17 +33,15 @@ A7dElSamerya = coptic.coptic_date_after(7, A7dElEbnEldal)
 A7dElM5l3 = coptic.coptic_date_after(7, A7dElSamerya)
 A7dElMawlodA3ma = coptic.coptic_date_after(7, A7dElM5l3)
 
-Gom3t5tamElsom = [read_excel_cell(workbook, sheetname, "D16"), read_excel_cell(workbook, sheetname, "F16")]
-saturday_of_lazarus = [read_excel_cell(workbook, sheetname, "D17"), read_excel_cell(workbook, sheetname, "F17")]
-Elsh3anyn = [read_excel_cell(workbook, sheetname, "D18"), read_excel_cell(workbook, sheetname, "F18")]
-khamysEl3hd = [read_excel_cell(workbook, sheetname, "D19"), read_excel_cell(workbook, sheetname, "F19")]
-GreatFriday = [read_excel_cell(workbook, sheetname, "D20"), read_excel_cell(workbook, sheetname, "F20")]
-HolySaturday = [read_excel_cell(workbook, sheetname, "D21"), read_excel_cell(workbook, sheetname, "F21")]
-El2yama = [read_excel_cell(workbook, sheetname, "D22"), read_excel_cell(workbook, sheetname, "F22")]
-
-elso3od = [read_excel_cell(workbook, sheetname, "D24"), read_excel_cell(workbook, sheetname, "F24")]
-
-el3nsara = [read_excel_cell(workbook, sheetname, "D25"), read_excel_cell(workbook, sheetname, "F25")]
+Gom3t5tamElsom = [Seasons_values[6][0], Seasons_values[6][1]]
+saturday_of_lazarus = [Seasons_values[7][0], Seasons_values[7][1]]
+Elsh3anyn = [Seasons_values[8][0], Seasons_values[8][1]]
+khamysEl3hd = [Seasons_values[9][0], Seasons_values[9][1]]
+GreatFriday = [Seasons_values[10][0], Seasons_values[10][1]]
+HolySaturday = [Seasons_values[11][0], Seasons_values[11][1]]
+El2yama = [Seasons_values[12][0], Seasons_values[12][1]]
+elso3od = [Seasons_values[13][0], Seasons_values[13][1]]
+el3nsara = [Seasons_values[14][0], Seasons_values[14][1]]
 
 def get_season(date):
     CD = copticDate.CopticCalendar()
