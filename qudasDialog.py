@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (QDialog, QPushButton, QVBoxLayout, QLabel, QFrame, 
                            QScrollArea, QWidget, QLineEdit, QSizePolicy, QTabWidget)
 from PyQt5.QtGui import QFont, QPixmap, QColor
 from PyQt5.QtCore import Qt, QSize
-from commonFunctions import relative_path, open_presentation_relative_path
+from commonFunctions import relative_path, open_presentation_relative_path, get_appdata_pptx_folder
 import pandas as pd
 import win32com.client
 import pythoncom
@@ -922,11 +922,15 @@ class SectionSelectionDialog(QDialog):
                 except:
                     pass
             
-        except Exception as e:
+        except Exception as e:                
+            import traceback
+            error_message = traceback.format_exc()
             error_label = QLabel(f"خطأ في استخراج البيانات: {str(e)}")
             error_label.setStyleSheet("color: white; font-size: 14px;")
             error_label.setAlignment(Qt.AlignCenter)
             self.buttons_layout.addWidget(error_label)
+            print(f"Error extracting sections: {str(e)}")
+            print(f"Full traceback:\n{error_message}")
             
             # Try to fall back to Excel data if available
             try:
@@ -968,23 +972,23 @@ class SectionSelectionDialog(QDialog):
         """Determine which PowerPoint file to use based on the sheet name"""
         match(self.sheet_name):
             case "رفع بخور":
-                self.file_path = r"رفع بخور عشية و باكر.pptx"
+                self.file_path = "رفع بخور عشية و باكر.pptx"
             case "القداس":
-                self.file_path = r"قداس.pptx"
+                self.file_path = "قداس.pptx"
             case "قداس الطفل":
-                self.file_path = r"قداس الطفل.pptx"
+                self.file_path = "قداس الطفل.pptx"
             case "التسبحة":
-                self.file_path = r"الإبصلمودية.pptx"
+                self.file_path = "الإبصلمودية.pptx"
             case "تسبحة كيهك":
-                self.file_path = r"الإبصلمودية الكيهكية.pptx"
+                self.file_path = "الإبصلمودية الكيهكية.pptx"
             case "الذكصولوجيات":
-                self.file_path = r"الذكصولوجيات.pptx"
+                self.file_path = "الذكصولوجيات.pptx"
             case "المدائح":
-                self.file_path = r"كتاب المدائح.pptx"
+                self.file_path = "كتاب المدائح.pptx"
             case _:
-                self.file_path = r"قداس.pptx"  # Default
+                self.file_path = "قداس.pptx"  # Default
         
-        self.file_path = relative_path(self.file_path)
+        self.file_path = str(get_appdata_pptx_folder() / self.file_path)
     
     def set_button_style(self, button):
         button.setStyleSheet("""

@@ -4289,12 +4289,13 @@ def odasDo5olElmasy7Masr(copticdate, Bishop=False, guestBishop=0):
 def odasSomElRosol(copticdate, Bishop=False, guestBishop=0):
     from copticDate import CopticCalendar
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
+    copy_selected_pptx_files([relative_path(r"Data\CopyData\قداس.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx")])
+    prs1 = get_appdata_pptx_folder() / "قداس.pptx"
     excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
     des_sheet ="القداس"
-    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    if not prs1.exists():
+        return f"لم يتم العثور على الملف:\n{prs1}"
 
     if cd.weekday() == 6:
         prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
@@ -5413,3 +5414,4 @@ def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0):
         presentation3.Close()
     
     presentation1.SlideShowSettings.Run()
+

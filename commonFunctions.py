@@ -5,6 +5,9 @@ from pptx import Presentation
 import win32com.client
 from PyQt5.QtGui import QPixmap, QPainter, QColor, QLinearGradient
 from PyQt5.QtCore import Qt, QLineF, QPointF
+import shutil
+from pathlib import Path
+
 
 def relative_path(relative_path):
     """Return absolute path to resource, for dev and frozen apps"""
@@ -1436,7 +1439,7 @@ def show_hide_insertImage_replaceText(ppt_file, excel_path, sheet_name,
     from pptx import Presentation
     
     # Open the PowerPoint presentation
-    presentation = Presentation(ppt_file)
+    presentation = Presentation(str(ppt_file))
 
     # Function to process both 1D and 2D arrays into a set of slide indices
     def process_sections(section_data):
@@ -1549,6 +1552,38 @@ def get_open_presentations():
         pythoncom.CoUninitialize()
         
     return open_presentations
+
+def get_appdata_pptx_folder():
+    return Path(os.getenv("LOCALAPPDATA")) / ".smm_liturgies" / "pptx"
+
+def copy_selected_pptx_files(full_paths):
+    """
+    Copy specific pptx files given by absolute/full paths.
+    Copies only the file (not folder structure) into AppData.
+    Overwrites if the file already exists.
+    """
+    dest_dir = get_appdata_pptx_folder()
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    all_success = True
+
+    for full_path in full_paths:
+        src = Path(full_path)
+        if not src.exists():
+            print(f"[❌] File not found: {src}")
+            all_success = False
+            continue
+
+        dst = dest_dir / src.name  # Just copy the file name
+
+        try:
+            shutil.copy2(src, dst)
+            print(f"[✅] Copied {src.name} to AppData")
+        except Exception as e:
+            print(f"[❌] Failed to copy {src.name}: {e}")
+            all_success = False
+
+    return all_success
 
 # excel = relative_path(r"Files Data.xlsx")
 # sheet = "التسبحة"

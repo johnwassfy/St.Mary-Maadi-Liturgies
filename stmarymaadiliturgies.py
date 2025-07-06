@@ -1235,7 +1235,7 @@ class MainWindow(QMainWindow):
             if not have_internet_connection():
                 return False, None
 
-            local_version = "2.3.6"
+            local_version = "2.4"
             dropbox_url = "https://www.dropbox.com/scl/fi/tumjwytg8ptr88zs5pojd/version.json?rlkey=4fukyqxjx9lii0j0tunwxwpi7&st=sqk5fl08&dl=1"
             response = requests.get(dropbox_url, timeout=5)
             response.raise_for_status()
@@ -1300,7 +1300,7 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message("⚠ ملف التحديث غير صالح أو لا يمكن تحليله.", duration=5000)
         except Exception as e:
             self.notification_bar.show_message(f"⚠ خطأ غير متوقع: {str(e)}", duration=5000)
-    
+
     def download_update(self, installer_url):
         import requests
         import os
@@ -1410,7 +1410,7 @@ class MainWindow(QMainWindow):
         self.ppt_check_timer = QTimer(self)
         self.ppt_check_timer.timeout.connect(self.check_powerpoint_changes)
         self.ppt_check_timer.start(750)  # Check every 750ms
-        
+
     def check_powerpoint_changes(self):
         """Check if any PowerPoint presentations have been closed and update UI immediately"""
         try:
@@ -1434,7 +1434,7 @@ class MainWindow(QMainWindow):
                 self.last_open_presentations = current_presentations
         except Exception as e:
             print(f"Error checking PowerPoint changes: {e}")    
-    
+
     def refresh_button_states(self, skip_timer=False):
         """Updates glow effects on buttons based on currently open presentations"""
         import os
