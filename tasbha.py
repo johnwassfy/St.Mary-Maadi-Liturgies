@@ -63,15 +63,15 @@ def tasbha(copticdate, Aashya, season):
             show_full_sections.append(ebsalyElmonasba)
         
     else :
-        # wats_data = ["ابصالية الأربعاء", "ابصالية الخميس", "ابصالية الجمعة", "ابصالية السبت",
-        #              "مقدمة الثيؤطوكيات الواطس", "ثيؤطوكية الأربعاء", "ثيؤطوكية الخميس", 
-        #              "ثيؤطوكية الجمعة", "ثيؤطوكية السبت", "لبش الأربعاء", "لبش الخميس", "لبش الجمعة",
-        #              "شيرات السبت 1", "شيرات السبت 2", "ختام الثيؤطوكيات الواطس"
-        #             ]
+        wats_data = ["ابصالية الأربعاء", "ابصالية الخميس", "ابصالية الجمعة", "ابصالية السبت",
+                     "مقدمة الثيؤطوكيات الواطس", "ثيؤطوكية الأربعاء", "ثيؤطوكية الخميس", 
+                     "ثيؤطوكية الجمعة", "ثيؤطوكية السبت", "لبش الأربعاء", "لبش الخميس", "لبش الجمعة",
+                     "شيرات السبت 1", "شيرات السبت 2", "ختام الثيؤطوكيات الواطس"
+                    ]
         
         wats_data = ['{8ABA75EA-D793-46A0-8AE2-5B61A6B4FD7E}', '{02352F94-02C4-4D7F-9247-697DA282E7C9}', '{E8504067-DC7B-4818-8157-B947A0A74D9A}', '{BF504610-6275-426C-A939-798A885C5C71}', '{F96B080A-3FB2-430B-9BED-E692E913A9B0}', '{5AD56D85-2906-43FB-98E9-FB96F1B37293}', '{88249BFF-471A-47A1-B7BC-E5A5093EC8D7}', '{6C9361D4-74F3-4201-B28D-7EB59C9D9A46}', '{25CBC7C4-A68C-4EBD-B127-98DA707B3413}', '{824D594F-C079-4552-882A-CC297F319D7D}', '{260E1FAC-A9F6-4E94-BAAB-EFD045CD242D}', '{27A6E4EC-9C9A-4029-8EAF-A984FA647997}', '{FA5AF629-FC64-4123-92EA-193DFE2229CC}', '{2DF7B6FE-B056-4813-B72C-DFE470371815}', '{BF439D71-64D1-4376-8E4A-812437425EBB}']
         
-        show_full_sections_ranges.extend([[wats_data[4], wats_data[14]]])
+        show_full_sections.extend([wats_data[4], wats_data[14]])
         
         if weekday == 2:
             show_full_sections.extend([wats_data[0], wats_data[5], wats_data[9]])
@@ -109,7 +109,7 @@ def tasbha(copticdate, Aashya, season):
     elif Aashya == False and weekday<6:
         show_full_sections.append(tasbha_values[3])
 
-    if (26 <= season >= 23.1)  or ((([copticdate[1], copticdate[2]] > el3nsara) or (copticdate[1] <= 3)) and weekday == 6):
+    if (23.1 <= season <= 24.1) or (season >= 25 and season <= 26)  or ((([copticdate[1], copticdate[2]] > el3nsara) or (copticdate[1] <= 3)) and weekday == 6):
         show_full_sections.append(tasbha_values[4])
         if Aashya == False :
             show_full_sections.append(tasbha_values[7])

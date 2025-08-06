@@ -242,11 +242,11 @@ def bakerSanawy(season, copticdate, adam = False, Bishop = False, guestBishop = 
         km = copticdate[1]
         kd = (copticdate[2] - 1) // 7 + 1
     else: 
-        katamars = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (باكر).pptx")
-        katamars_sheet = "القطمارس السنوي باكر"
+        katamars = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+        katamars_sheet = "القطمارس السنوي أيام"
         km, kd = find_Readings_Date(copticdate[1], copticdate[2])
 
-    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [3, 4, 5])
+    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [9, 10, 11])
     elmzmor = katamars_values[0]
     elengil = katamars_values[1]
     elengil2 = katamars_values[2]

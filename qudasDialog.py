@@ -108,6 +108,8 @@ class SectionSelectionDialog(QDialog):
                     border-radius: 5px;
                     font-size: 14px;
                     font-weight: bold;
+                    min-width: 200px;
+                    min-height: 20px;
                 }
                 QTabBar::tab:selected {
                     background: rgba(255, 255, 255, 180);

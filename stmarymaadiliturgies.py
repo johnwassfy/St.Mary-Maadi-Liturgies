@@ -914,7 +914,7 @@ class MainWindow(QMainWindow):
             self.show_error_message(str(e))    
     
     def handle_3ashya_button_click(self):
-        from Aashya import aashyaKiahk, aashyaSanawy
+        from Aashya import aashyaKiahk, aashyaSanawy, aashyaEltagaly
         from qudasDialog import SectionSelectionDialog
         from PyQt5.QtWidgets import QMessageBox
         import os
@@ -972,7 +972,7 @@ class MainWindow(QMainWindow):
                     adam = True
                 
                 match (self.season):
-                    case 0 | 27 | 29 | 30 | 31: 
+                    case 0 | 27 | 30 | 31:
                         aashyaSanawy(self.season, self.coptic_date, adam, self.bishop, self.GuestBishop)
                         self.active_presentation_source = "عشية"  # Set the active button
                         presentation_opened = True
@@ -980,6 +980,8 @@ class MainWindow(QMainWindow):
                         aashyaKiahk(self.coptic_date, adam, self.bishop, self.GuestBishop)
                         self.active_presentation_source = "عشية"  # Set the active button
                         presentation_opened = True
+                    case 29:
+                        aashyaEltagaly(self.coptic_date, adam, self.bishop, self.GuestBishop)
             
             if presentation_opened:
                 self.refresh_button_states(skip_timer=True)
@@ -1004,24 +1006,91 @@ class MainWindow(QMainWindow):
     def handle_tasbha_button_click(self):
         from tasbhaDialog import TasbhaSelectionDialog
         import tasbha
+        from qudasDialog import SectionSelectionDialog
+        import os
         
         try:
-            # Show the selection dialog
+            # Check if either Tasbha presentation is already open
+            standard_tasbha_file = os.path.abspath(relative_path(r"الإبصلمودية.pptx")).lower()
+            kiahk_tasbha_file = os.path.abspath(relative_path(r"الإبصلمودية الكيهكية.pptx")).lower()
+            
+            open_presentations = get_open_presentations()
+            standard_is_open = any(open_pres.lower() == standard_tasbha_file for open_pres in open_presentations)
+            kiahk_is_open = any(open_pres.lower() == kiahk_tasbha_file for open_pres in open_presentations)
+            
+            # If either tasbha file is already open, skip the tasbha selection dialog
+            if standard_is_open or kiahk_is_open:
+                # Format dates for the dialog
+                m = self.getmonth(self.coptic_date[1])
+                m = self.convert_to_arabic_digits(m)
+                coptic_date_text = f"{self.convert_to_arabic_digits(self.coptic_date[2])} {m}، {self.convert_to_arabic_digits(self.coptic_date[0])}"
+                arabic_date_text = self.get_arabic_month_date(self.current_date)
+                
+                # Determine which type of tasbha is open
+                if kiahk_is_open:
+                    title_prefix = "تسبحة كيهك"
+                    sheet_name = "تسبحة كيهك"
+                else:  # standard_is_open
+                    title_prefix = "تسبحة"
+                    sheet_name = "التسبحة"
+                
+                title = f"{title_prefix} {coptic_date_text} / {arabic_date_text}"
+                
+                # Create and show the dialog
+                sections_dialog = SectionSelectionDialog(self, title, sheet_name)
+                sections_dialog.exec_()
+                return
+            
+            # If no tasbha is open, show the selection dialog
             dialog = TasbhaSelectionDialog(self)
             result = dialog.exec_()
             
             if result == QDialog.Accepted and dialog.selected_option:
+                presentation_file = None
+                presentation_opened = False
+                
                 # Run the corresponding tasbha function based on user selection
                 if dialog.selected_option == "midnight":
                     # Run midnight tasbha
                     if self.season == 5:  # Kiahk season
                         tasbha.kiahk(self.coptic_date)
+                        presentation_file = relative_path(r"الإبصلمودية الكيهكية.pptx")
                     else:
                         tasbha.tasbha(self.coptic_date, False, self.season)
+                        presentation_file = relative_path(r"الإبصلمودية.pptx")
+                    presentation_opened = True
+                    
                 elif dialog.selected_option == "evening":
                     # Run evening tasbha
                     tasbha.tasbha(self.coptic_date, True, self.season)
+                    presentation_file = relative_path(r"الإبصلمودية.pptx")
+                    presentation_opened = True
                 
+                # After opening the presentation, show the section selection dialog
+                if presentation_opened and presentation_file:
+                    self.refresh_button_states(skip_timer=True)
+                    self.restore_main_frame()
+                    
+                    # Format dates for the dialog
+                    m = self.getmonth(self.coptic_date[1])
+                    m = self.convert_to_arabic_digits(m)
+                    coptic_date_text = f"{self.convert_to_arabic_digits(self.coptic_date[2])} {m}، {self.convert_to_arabic_digits(self.coptic_date[0])}"
+                    arabic_date_text = self.get_arabic_month_date(self.current_date)
+                    
+                    # Determine the type of tasbha for the title
+                    if dialog.selected_option == "midnight":
+                        title_prefix = "تسبحة نصف الليل"
+                        sheet_name = "تسبحة كيهك" if self.season == 5 else "التسبحة"
+                    else:
+                        title_prefix = "تسبحة عشية"
+                        sheet_name = "التسبحة"
+                    
+                    title = f"{title_prefix} {coptic_date_text} / {arabic_date_text}"
+                    
+                    # Create and show the dialog
+                    sections_dialog = SectionSelectionDialog(self, title, sheet_name)
+                    sections_dialog.exec_()
+                    
         except Exception as e:
             import traceback
             stack_trace = traceback.format_exc()
@@ -1235,7 +1304,7 @@ class MainWindow(QMainWindow):
             if not have_internet_connection():
                 return False, None
 
-            local_version = "2.3.6"
+            local_version = "2.4"
             dropbox_url = "https://www.dropbox.com/scl/fi/tumjwytg8ptr88zs5pojd/version.json?rlkey=4fukyqxjx9lii0j0tunwxwpi7&st=sqk5fl08&dl=1"
             response = requests.get(dropbox_url, timeout=5)
             response.raise_for_status()
@@ -1436,8 +1505,29 @@ class MainWindow(QMainWindow):
             print(f"Error checking PowerPoint changes: {e}")    
     
     def refresh_button_states(self, skip_timer=False):
-        """Updates glow effects on buttons based on currently open presentations"""
+        """
+        Updates glow effects on buttons based on currently open presentations.
+        Also closes any open SectionSelectionDialog if present.
+        """
         import os
+
+        # --- Close any open SectionSelectionDialog --- 
+        # Check if there is an attribute for the dialog and if it's open, close it
+        # (Assumes dialog is stored as self.section_dialog or self.elfhrs_window, etc.)
+        # You may need to adjust dialog attribute names as per your codebase
+
+        # Try to close SectionSelectionDialog if it exists and is open
+        dialog_attrs = ["section_dialog", "elfhrs_window", "elfhrs_dialog"]
+        for attr in dialog_attrs:
+            dialog = getattr(self, attr, None)
+            if dialog is not None:
+                try:
+                    # For QDialog, isVisible() is a good check
+                    if hasattr(dialog, "isVisible") and dialog.isVisible():
+                        dialog.close()
+                except Exception:
+                    pass
+
         # Get list of open presentations
         open_presentations = get_open_presentations()
         

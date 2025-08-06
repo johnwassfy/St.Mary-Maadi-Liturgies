@@ -161,8 +161,8 @@ def odasElnayrooz (copticdate, Bishop=False, guestBishop=0):
         km = copticdate[1]
         kd = (copticdate[2] - 1) // 7 + 1
     else: 
-        prs3 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-        katamars_sheet = "القطمارس السنوي القداس"
+        prs3 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+        katamars_sheet = "القطمارس السنوي أيام"
         km, kd = find_Readings_Date(copticdate[1], copticdate[2])
 
     katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [3, 4, 5, 6, 7, 8])
@@ -419,8 +419,8 @@ def odasKiahk (copticdate, Bishop=False, guestBishop=0):
         km = copticdate[1]
         kd = (copticdate[2] - 1) // 7 + 1
     else: 
-        prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-        katamars_sheet = "القطمارس السنوي القداس"
+        prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+        katamars_sheet = "القطمارس السنوي أيام"
         km, kd = find_Readings_Date(copticdate[1], copticdate[2])
 
     katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [3, 4, 5, 6, 7, 8])
@@ -742,7 +742,7 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0):
         katamars_sheet = "قطمارس الصوم الكبير"
         km = copticdate[1]
         kd = copticdate[2]
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
+        katamars_offsets = [10, 11, 12, 13, 14, 15]
     elif cd.weekday() == 6:
         prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
         katamars_sheet = "قطمارس الاحاد للقداس"
@@ -750,10 +750,10 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0):
         kd = (copticdate[2] - 1) // 7 + 1
         katamars_offsets = [3, 4, 5, 6, 7, 8]
     else: 
-        prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-        katamars_sheet = "القطمارس السنوي القداس"
+        prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+        katamars_sheet = "القطمارس السنوي أيام"
         km, kd = find_Readings_Date(copticdate[1], copticdate[2])
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
+        katamars_offsets = [9, 10, 11, 12, 13, 14]
 
     katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, katamars_offsets)
     elbouls1 = katamars_values[0]
@@ -796,6 +796,9 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0):
         sanawy_show_full_sections.extend(['{F8B8BD1A-9861-4FDC-A89B-06B55C0795E8}', '{43B74D4E-929B-4654-8DB7-4675EFF27370}'])
     else:
         sanawy_show_full_sections.extend(['{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}'])
+
+    #المدائح السنوي
+    sanawy_show_full_sections.append('{07298C47-E831-4285-ACB7-25BB3772C6A2}')
 
     if Bishop == True:
         prs3 = relative_path(r"Data\حضور الأسقف.pptx")
@@ -920,8 +923,12 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0):
         #                        "قسمة أعياد الملائكة والسيدة العذراء وسنوى (هوذا كائن معنا على هذه)",
         #                        "اطاي بارثينوس"]
         # el3adra_hide_values = ["مرد الانجيل", "قسمة القداس الباسيلي (أيها السيد الرب إلهنا)"]
+        # el2sma_som_el3adra = ["صوم و أعياد القديسة العذراء مريم (يا الله الساكن في الأعالي)"]
         el3adra_show_values = ['{71232865-63AA-40C5-8F02-BABBFE7297D3}', '{18835C90-087E-4BAC-9D66-708BC1E04983}', '{D5E69BAC-0157-4B69-9255-B6775E2EE11D}' ]
         el3adra_hide_values = ['{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{681FF6A7-4230-4171-8F41-83FD64E8C960}']
+        el2sma_som_el3adra = ['{C78EDE33-ED5C-411D-A2E6-2B55E70B9F6B}']
+        el2sma_som_el3adra_values = find_slide_nums_arrays_v2(excel, des_sheet, el2sma_som_el3adra, 2, [2])
+        sanawy_show_values.extend([[el2sma_som_el3adra_values[0], el2sma_som_el3adra_values[0]]])
         sanawy_hide_full_sections.extend(el3adra_hide_values)
         sanawy_show_full_sections.extend(el3adra_show_values)
 
@@ -1048,11 +1055,11 @@ def odasElsalyb(copticdate, Bishop=False, guestBishop=0):
     SlaybText = ["لأنك صُلِبتَ", "auask", "اف اشك"]
     replacefile(prs, relative_path(r"Data\CopyData\قداس.pptx"))
 
-    prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-    katamars_sheet = "القطمارس السنوي القداس"
+    prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+    katamars_sheet = "القطمارس السنوي أيام"
     km, kd = find_Readings_Date(copticdate[1], copticdate[2])
 
-    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [3, 4, 5, 6, 7, 8])
+    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [9, 10, 11, 12, 13, 14])
     elbouls1 = katamars_values[0]
     elkatholikon1 = katamars_values[1]
     elebrksis1 = katamars_values[2]
@@ -1363,9 +1370,9 @@ def odasElmilad(Bishop=False, guestBishop=0):
     milad_show_full_sections = ['{BBBAC16F-044D-4F33-8068-620F498B59CD}', '{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}', '{03E2AC57-01DD-4702-A7A7-186D0E009F55}', '{8DD599A1-D7AC-4AA8-A52B-31BFD527E68E}', '{DEDC0CCA-3854-4E18-8CB2-5D6FEC5BABCC}', '{D95C2E5C-8772-445E-AE3E-2F50770CFC61}', '{B7D98377-B994-4654-B49C-DE10E0DDE4F1}', '{C2F28915-B86E-4596-8EB2-7455EF4E91BD}', '{42181297-997B-4C4C-B43B-4E9D8A23858D}', '{6A153E48-DAA6-4874-ACA3-3EB14F3DC960}', '{DD757736-F2EB-40FA-9016-1E28087A0BE5}', '{59DBF0F6-1D86-41E8-B37A-8AA2368AA8AB}', '{E6CBA825-E339-438B-84B4-326FC5C299C1}', '{973DBBAC-E645-4981-B3F5-5DB1413508D0}', '{DFBFA7AB-D078-4C2A-A184-5823F2253ED4}', '{79502253-2043-4F29-96A3-0E65F6F2C484}']
     milad_hide_full_sections = ['{ECE652ED-1345-4C6D-B92D-5996CFA27AEE}', '{E107D25B-A642-458E-A4F3-B73FDB564A7C}', '{4D2B15D5-C978-467C-9D6C-726FE25128B8}', '{31685B5B-48C4-437E-858C-CF8D225C0C26}', '{CD4B95FF-0E0E-42D3-8DC4-224C3DD732F7}', '{F13A48F2-238D-4617-B84E-9B0A694D9A18}', '{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{681FF6A7-4230-4171-8F41-83FD64E8C960}', '{507EFD97-98F8-4376-848B-20D72E16D2C1}', '{B9A30F5E-0C89-471B-A99A-23DBE7F58504}', '{370EC778-91D3-426C-964D-7E6C28CA69DA}', '{1E7E7987-2CAA-4858-AB80-5A0AF761B6EF}', '{409B3D0A-B40A-4475-811D-72C5125134AB}', '{3CD34DC9-72C7-4E1F-A24E-3878EF0435D6}', '{FB902AC1-5581-4552-B503-116755E9D9A8}', '{A8A52E1F-44DD-45E1-A737-4E13E15D5F1F}']
 
-    katamars = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-    katamars_sheet = "القطمارس السنوي القداس"
-    katamars_values = fetch_data_arrays(excel2, katamars_sheet, 4, 29, [3, 4, 5, 6, 7, 8])
+    katamars = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+    katamars_sheet = "القطمارس السنوي أيام"
+    katamars_values = fetch_data_arrays(excel2, katamars_sheet, 4, 29, [9, 10, 11, 12, 13, 14])
     elbouls1 = katamars_values[0]
     elkatholikon1 = katamars_values[1]
     elebrksis1 = katamars_values[2]
@@ -2220,10 +2227,10 @@ def odasElbeshara(Bishop=False, guestBishop=0):
     des_sheet ="القداس"
     replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
 
-    prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-    katamars_sheet = "القطمارس السنوي القداس"
+    prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+    katamars_sheet = "القطمارس السنوي أيام"
     km, kd = find_Readings_Date(7, 29)
-    katamars_offsets = [3, 4, 5, 6, 7, 8]
+    katamars_offsets = [9, 10, 11, 12, 13, 14]
 
     katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, katamars_offsets)
     elbouls1 = katamars_values[0]
@@ -4303,10 +4310,10 @@ def odasSomElRosol(copticdate, Bishop=False, guestBishop=0):
         kd = (copticdate[2] - 1) // 7 + 1
         katamars_offsets = [3, 4, 5, 6, 7, 8]
     else: 
-        prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-        katamars_sheet = "القطمارس السنوي القداس"
+        prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+        katamars_sheet = "القطمارس السنوي أيام"
         km, kd = find_Readings_Date(copticdate[1], copticdate[2])
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
+        katamars_offsets = [9, 10, 11, 12, 13, 14]
 
     katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, katamars_offsets)
     elbouls1 = katamars_values[0]
@@ -4613,10 +4620,10 @@ def odas3ydElrosol(copticdate, Bishop=False, guestBishop=0):
         kd = 1
         katamars_offsets = [3, 4, 5, 6, 7, 8]
     else: 
-        prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-        katamars_sheet = "القطمارس السنوي القداس"
+        prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+        katamars_sheet = "القطمارس السنوي أيام"
         km, kd = find_Readings_Date(11, 5)
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
+        katamars_offsets = [9, 10, 11, 12, 13, 14]
 
     katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, katamars_offsets)
     elbouls1 = katamars_values[0]
@@ -4889,10 +4896,10 @@ def odasEltagaly(copticdate, Bishop=False, guestBishop=0):
     replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
     replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
 
-    prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-    katamars_sheet = "القطمارس السنوي القداس"
+    prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+    katamars_sheet = "القطمارس السنوي أيام"
     km, kd = find_Readings_Date(12, 13)
-    katamars_offsets = [3, 4, 5, 6, 7, 8]
+    katamars_offsets = [9, 10, 11, 12, 13, 14]
 
     katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, katamars_offsets)
     elbouls1 = katamars_values[0]
@@ -5158,17 +5165,19 @@ def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0):
             katamars_sheet = "قطمارس الاحاد للقداس"
             km = 1
             kd = 4
+            katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [3, 4, 5, 6, 7, 8])
         else:
-            prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-            katamars_sheet = "القطمارس السنوي القداس"
+            prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+            katamars_sheet = "القطمارس السنوي أيام"
             km = 7
             kd = 29
+            katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [9, 10, 11, 12, 13, 14])
     else: 
-        prs2 = relative_path(r"Data\القطمارس\الايام\القطمارس السنوي ايام (القداس).pptx")
-        katamars_sheet = "القطمارس السنوي القداس"
+        prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+        katamars_sheet = "القطمارس السنوي أيام"
         km, kd = find_Readings_Date(copticdate[1], copticdate[2])
+        katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [9, 10, 11, 12, 13, 14])
 
-    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [3, 4, 5, 6, 7, 8])
     elbouls1 = katamars_values[0]
     elkatholikon1 = katamars_values[1]
     elebrksis1 = katamars_values[2]

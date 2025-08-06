@@ -1371,6 +1371,7 @@ def elzoksologyat (excel_path, season, bakerOR3ashyaORtasbha):
         case 5: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["كيهك 1", "كيهك 2", "كيهك 3", "كيهك 4", "كيهك 5", "كيهك 6"])
         case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["الصوم الكبير 1", "الصوم الكبير 2", "الصوم الكبير 3", "الصوم الكبير 4", "الصوم الكبير 5"])
         case 28: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{81E5C2F6-C71A-4711-83D2-FBF56C7FD101}", bakerOR3ashyaORtasbha])
+        case 29: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{DC61EC21-9EF0-4E7C-8E4E-CD4269024AE6}", bakerOR3ashyaORtasbha])
         case default: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, [bakerOR3ashyaORtasbha])
 
 def find_section_Ids_with_names(excel_path, sheet, names):
@@ -1551,14 +1552,8 @@ def get_open_presentations():
     return open_presentations
 
 # excel = relative_path(r"Files Data.xlsx")
-# sheet = "التسبحة"
-# arr =["ابصالية الأربعاء", "ابصالية الخميس",
-#                     "ابصالية الجمعة", "ابصالية السبت",
-#                     "مقدمة الثيؤطوكيات الواطس", 
-#                     "ثيؤطوكية الأربعاء", "ثيؤطوكية الخميس", 
-#                     "ثيؤطوكية الجمعة", "ثيؤطوكية السبت", 
-#                     "لبش الأربعاء", "لبش الخميس", "لبش الجمعة",
-#                     "شيرات السبت 1", "شيرات السبت 2", "ختام الثيؤطوكيات الواطس"]
+# sheet = "رفع بخور"
+# arr =["ختام ارباع الناقوس السنوي", "مرد الانجيل السنوي"]
 # print(find_section_Ids_with_names(excel, sheet, arr))
 # arr2 = ['{2BCF4F8C-25F0-43C5-B224-6528B2EA3F2F}', '{F76B0D75-0474-45B5-B79F-7416F354543A}',
 #         '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', 

@@ -366,56 +366,56 @@
     
 #     return slide_id_pairs
 
-import pptx
-import pandas as pd
+# import pptx
+# import pandas as pd
 
-def extract_slide_layouts_to_excel(pptx_file, output_excel_file):
-    # Load the PowerPoint presentation
-    prs = pptx.Presentation(pptx_file)
+# def extract_slide_layouts_to_excel(pptx_file, output_excel_file):
+#     # Load the PowerPoint presentation
+#     prs = pptx.Presentation(pptx_file)
     
-    # Data structure to store layout names and slide ranges
-    layout_data = []
+#     # Data structure to store layout names and slide ranges
+#     layout_data = []
 
-    # Access the single slide master and iterate over its layouts
-    slide_master = prs.slide_master
-    for layout in slide_master.slide_layouts:
-        layout_name = layout.name if layout.name else "Unnamed Layout"
-        slide_numbers = []
+#     # Access the single slide master and iterate over its layouts
+#     slide_master = prs.slide_master
+#     for layout in slide_master.slide_layouts:
+#         layout_name = layout.name if layout.name else "Unnamed Layout"
+#         slide_numbers = []
         
-        # Collect slide numbers for this layout
-        for slide_index, slide in enumerate(prs.slides, start=1):
-            if slide.slide_layout == layout:
-                slide_numbers.append(slide_index)
+#         # Collect slide numbers for this layout
+#         for slide_index, slide in enumerate(prs.slides, start=1):
+#             if slide.slide_layout == layout:
+#                 slide_numbers.append(slide_index)
         
-        # Convert slide numbers into ranges
-        slide_ranges = []
-        if slide_numbers:
-            start = slide_numbers[0]
-            for i in range(1, len(slide_numbers)):
-                if slide_numbers[i] != slide_numbers[i - 1] + 1:
-                    # Found the end of a range
-                    slide_ranges.append(f"{start}-{slide_numbers[i - 1]}" if start != slide_numbers[i - 1] else str(start))
-                    start = slide_numbers[i]
-            # Add the last range
-            slide_ranges.append(f"{start}-{slide_numbers[-1]}" if start != slide_numbers[-1] else str(start))
+#         # Convert slide numbers into ranges
+#         slide_ranges = []
+#         if slide_numbers:
+#             start = slide_numbers[0]
+#             for i in range(1, len(slide_numbers)):
+#                 if slide_numbers[i] != slide_numbers[i - 1] + 1:
+#                     # Found the end of a range
+#                     slide_ranges.append(f"{start}-{slide_numbers[i - 1]}" if start != slide_numbers[i - 1] else str(start))
+#                     start = slide_numbers[i]
+#             # Add the last range
+#             slide_ranges.append(f"{start}-{slide_numbers[-1]}" if start != slide_numbers[-1] else str(start))
         
-        # Add layout name and slide ranges to the data
-        layout_data.append([layout_name] + slide_ranges)
+#         # Add layout name and slide ranges to the data
+#         layout_data.append([layout_name] + slide_ranges)
     
-    # Convert the data into a pandas DataFrame
-    max_cols = max(len(row) for row in layout_data)
-    column_names = ["Layout Name"] + [f"Slides {i}" for i in range(1, max_cols)]
-    df = pd.DataFrame(layout_data, columns=column_names).fillna("")
+#     # Convert the data into a pandas DataFrame
+#     max_cols = max(len(row) for row in layout_data)
+#     column_names = ["Layout Name"] + [f"Slides {i}" for i in range(1, max_cols)]
+#     df = pd.DataFrame(layout_data, columns=column_names).fillna("")
     
-    # Save the DataFrame to an Excel file
-    df.to_excel(output_excel_file, index=False, engine="openpyxl")
-    print(f"Excel file saved to {output_excel_file}")
-# Example usage
-presentation_path = r"F:\5dmt Shashat\Codes and Files\Data\CopyData\قداس.pptx"  # Path to your PowerPoint presentation
-output_excel_path = "layout_slides.xlsx"  # Path to save the Excel file
-extract_slide_layouts_to_excel(presentation_path, output_excel_path)
+#     # Save the DataFrame to an Excel file
+#     df.to_excel(output_excel_file, index=False, engine="openpyxl")
+#     print(f"Excel file saved to {output_excel_file}")
+# # Example usage
+# presentation_path = r"F:\5dmt Shashat\Codes and Files\Data\CopyData\قداس.pptx"  # Path to your PowerPoint presentation
+# output_excel_path = "layout_slides.xlsx"  # Path to save the Excel file
+# extract_slide_layouts_to_excel(presentation_path, output_excel_path)
 
-print(f"Layout and slide information has been saved to {output_excel_path}.")
+# print(f"Layout and slide information has been saved to {output_excel_path}.")
 
 # import win32com.client
 
@@ -461,4 +461,39 @@ print(f"Layout and slide information has been saved to {output_excel_path}.")
 #     slide_number=25,
 #     textbox_name="TextBox 5",  # Exact shape name
 #     custom_show_name="ابيكران"
+# )
+
+# from pptx import Presentation
+
+# def replace_text_in_slides(pptx_path, old_text, new_text, start_slide, end_slide, output_path=None):
+#     prs = Presentation(pptx_path)
+    
+#     # Ensure slide numbers are within bounds
+#     total_slides = len(prs.slides)
+#     start = max(1, start_slide)
+#     end = min(end_slide, total_slides)
+    
+#     for i in range(start - 1, end):  # slide indices are 0-based
+#         slide = prs.slides[i]
+#         for shape in slide.shapes:
+#             if shape.has_text_frame:
+#                 for paragraph in shape.text_frame.paragraphs:
+#                     for run in paragraph.runs:
+#                         if old_text in run.text:
+#                             run.text = run.text.replace(old_text, new_text)
+    
+#     # Save to the same file if no output_path is given
+#     if output_path is None:
+#         output_path = pptx_path
+#     prs.save(output_path)
+#     print(f"Text replacement completed in slides {start_slide} to {end_slide}.")
+
+# # === Example usage ===
+# replace_text_in_slides(
+#     pptx_path=r"Data\القطمارس\الايام\القطمارس السنوي ايام.pptx",
+#     old_text="الإنجيل من",
+#     new_text="إنجيل باكر",
+#     start_slide=0,
+#     end_slide=1156,
+#     output_path=r"Data\القطمارس\الايام\القطمارس السنوي ايام.pptx"
 # )
