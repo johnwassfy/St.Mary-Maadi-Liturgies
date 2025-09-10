@@ -497,3 +497,94 @@
 #     end_slide=1156,
 #     output_path=r"Data\القطمارس\الايام\القطمارس السنوي ايام.pptx"
 # )
+
+
+# import win32com.client as win32
+
+# def arrange_sections_alphabetically(pptx_path, start_section, end_section):
+#     # Start PowerPoint
+#     powerpoint = win32.Dispatch("PowerPoint.Application")
+#     powerpoint.Visible = True
+    
+#     # Open the presentation
+#     presentation = powerpoint.Presentations.Open(pptx_path)
+    
+#     sections = presentation.SectionProperties
+#     section_count = sections.Count
+    
+#     print(f"Total sections: {section_count}")
+    
+#     # Build list of sections
+#     section_list = []
+#     for i in range(1, section_count + 1):  # COM is 1-based
+#         section_name = sections.Name(i)
+#         section_list.append({
+#             "index": i,
+#             "name": section_name,
+#             "first_slide": sections.FirstSlide(i)
+#         })
+#         print(f"Section {i}: {section_name}")
+    
+#     # Find start and end indices
+#     try:
+#         start_idx = next(i for i, s in enumerate(section_list) if s["name"] == start_section)
+#         end_idx = next(i for i, s in enumerate(section_list) if s["name"] == end_section)
+#     except StopIteration:
+#         print("❌ Start or End section not found!")
+#         presentation.Close()
+#         return
+    
+#     if start_idx > end_idx:
+#         print("❌ Start section comes after End section!")
+#         presentation.Close()
+#         return
+    
+#     # Extract range
+#     target_sections = section_list[start_idx:end_idx+1]
+#     print(f"Sections to sort: {len(target_sections)}")
+    
+#     # Print original order
+#     print("Original section order:")
+#     for i, sec in enumerate(target_sections):
+#         print(f"{i+1}. {sec['name']}")
+    
+#     # Sort sections by name using a basic string sort (may not be ideal for Arabic but let's try)
+#     # We'll create a new list so we can track actual positions
+#     sorted_sections = sorted(target_sections, key=lambda s: s["name"])
+    
+#     # Print the sorted order for debugging
+#     print("Sorted section order:")
+#     for i, sec in enumerate(sorted_sections):
+#         print(f"{i+1}. {sec['name']}")
+    
+#     # We need to track section positions as they change during reordering
+#     # So we'll create a function to get the current index of a section
+#     def get_current_section_index(section_name):
+#         for i in range(1, sections.Count + 1):
+#             if sections.Name(i) == section_name:
+#                 return i
+#         return -1
+    
+#     # Reorder sections in PowerPoint
+#     # Start from the beginning and place each section in order
+#     target_pos = start_idx + 1  # 1-based position where we'll start placing sorted sections
+    
+#     for sec in sorted_sections:
+#         # Get the current position of this section (which may have changed)
+#         current_pos = get_current_section_index(sec["name"])
+        
+#         if current_pos != target_pos:
+#             print(f"Moving section '{sec['name']}' from position {current_pos} to {target_pos}")
+#             # Move the section
+#             sections.Move(current_pos, target_pos)
+        
+#         target_pos += 1
+
+# # Example usage:
+# arrange_sections_alphabetically(
+#     pptx_path=r"F:\5dmt Shashat\Codes and Files\Data\CopyData\كتاب المدائح.pptx",
+#     start_section="رحلة الصوم الكبير",
+#     end_section="كنيستي القبطية نشرت المسيحية"
+# )
+
+

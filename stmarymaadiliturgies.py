@@ -532,12 +532,28 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(bible_content)
 
     def open_elfhrs_window(self):
-        from elfhrsNEWindow import elfhrswindow
-
-        self.hide()
-        self.elfhrs_window = elfhrswindow(parent=self)  # Pass self as parent
-        self.elfhrs_window.show()
-
+        try:
+            from elfhrsNEWindow import elfhrswindow
+            
+            # Clear central widget if it exists
+            if self.centralWidget():
+                self.clear_central_widget()
+            
+            # Create the elfhrs window content as a widget
+            elfhrs_content = elfhrswindow(self)
+            
+            # Set it as central widget (keeps it within the main application window)
+            self.setCentralWidget(elfhrs_content)
+            
+            # Optional: Update the UI to reflect the current state
+            self.refresh_button_states(skip_timer=True)
+            
+        except Exception as e:
+            import traceback
+            stack_trace = traceback.format_exc()
+            self.notification_bar.show_message(f"Error opening Elfhrs window: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
+            print(f"Elfhrs Window Error: {str(e)}\n{stack_trace}")
+    
     def open_taranym_window(self):
         from TaranymWindow import Taranymwindow
         if self.centralWidget():
@@ -576,6 +592,8 @@ class MainWindow(QMainWindow):
         match self.season :
             case 0:
                 return r"Data\الصور\Aykona.png"
+            case 1 | 1.1:
+                return r"Data\الصور\النيروز.JPG"
             case 4 | 4.1:
                 return r"Data\الصور\عيد الميلاد.jpg"
             case 10 :
@@ -729,6 +747,8 @@ class MainWindow(QMainWindow):
                     case 0 | 6 | 13 | 30 | 31:
                         odasat.odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop)
                         presentation_opened = True
+                    case 1 | 1.1:
+                        odasat.odasElnayrooz(self.coptic_date, self.bishop, self.GuestBishop)
                     case 2:
                         odasat.odasElsalyb(self.coptic_date, self.bishop, self.GuestBishop)
                         presentation_opened = True
@@ -895,6 +915,8 @@ class MainWindow(QMainWindow):
                         bakerKiahk(self.coptic_date, adam, self.bishop, self.GuestBishop)
                         self.active_presentation_source = "باكر"  # Set the active button
                         presentation_opened = True
+                    case _:
+                        self.notification_bar.show_message(f"رفع بخور باكر {get_season_name(self.season)} غير متوفر حاليا")
             
             if presentation_opened:
                 self.refresh_button_states(skip_timer=True)
@@ -982,6 +1004,8 @@ class MainWindow(QMainWindow):
                         presentation_opened = True
                     case 29:
                         aashyaEltagaly(self.coptic_date, adam, self.bishop, self.GuestBishop)
+                        self.active_presentation_source = "عشية"  # Set the active button
+                        presentation_opened = True
             
             if presentation_opened:
                 self.refresh_button_states(skip_timer=True)
@@ -1304,7 +1328,7 @@ class MainWindow(QMainWindow):
             if not have_internet_connection():
                 return False, None
 
-            local_version = "2.4"
+            local_version = "2.5"
             dropbox_url = "https://www.dropbox.com/scl/fi/tumjwytg8ptr88zs5pojd/version.json?rlkey=4fukyqxjx9lii0j0tunwxwpi7&st=sqk5fl08&dl=1"
             response = requests.get(dropbox_url, timeout=5)
             response.raise_for_status()

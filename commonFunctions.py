@@ -853,7 +853,7 @@ def find_Readings_Date (month, day):
         5: [7],
         6: [14, 18, 27],
         9: [12, 28],
-        12: [11, 24],
+        12: [14],
     }
     if month in hator17 and day in hator17[month]:
         return 3, 17
@@ -1552,8 +1552,8 @@ def get_open_presentations():
     return open_presentations
 
 # excel = relative_path(r"Files Data.xlsx")
-# sheet = "رفع بخور"
-# arr =["ختام ارباع الناقوس السنوي", "مرد الانجيل السنوي"]
+# sheet = "القداس"
+# arr = ['مرد ابركسيس يوحنا المعمدان', 'ربع للعذراء', 'ربع ليوحنا المعمدان']
 # print(find_section_Ids_with_names(excel, sheet, arr))
 # arr2 = ['{2BCF4F8C-25F0-43C5-B224-6528B2EA3F2F}', '{F76B0D75-0474-45B5-B79F-7416F354543A}',
 #         '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', 

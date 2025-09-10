@@ -49,8 +49,10 @@ def get_season(date):
     month, day = coptic_date[1], coptic_date[2]
     season = 0
 
-    if month == 1 and day <= 16:
-        season = 1  # فترة النيروز
+    if month == 1 and day == 1:
+        season = 1  # عيد النيروز
+    elif month == 1 and day <= 16:
+        season = 1.1  # فترة النيروز
     elif (month == 1 and (17 <= day <= 19)) or (month == 7 and day == 10):
         season = 2  # عيدي الصليب
     elif [baramonElmilad[1], baramonElmilad[2]]<= [month, day] < [Elmilad[1], Elmilad[2]]:
@@ -159,7 +161,8 @@ def get_season(date):
 def get_season_name(season_number):
     seasons = {
         0: "سنوي",
-        1: "فترة النيروز",
+        1: "عيد النيروز",
+        1.1: "فترة النيروز",
         2: "عيد الصليب",
         3: "برامون الميلاد",
         4: "عيد الميلاد المجيد",
