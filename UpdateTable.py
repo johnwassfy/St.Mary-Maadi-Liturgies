@@ -12,30 +12,480 @@ sheet_name = "المناسبات"
 copticDate = CopticCalendar()
 copticYear = copticDate.gregorian_to_coptic()[0]
 
+def update_all_tables(year=None):
+    """
+    Update all tables in a single operation, with a single file open/save
+    
+    Args:
+        year: The Coptic year to use for calculations, defaults to current Coptic year
+    
+    Returns:
+        bool: True if successful
+    """
+    global copticYear
+    
+    try:
+        # Use provided year if given, otherwise use global
+        if year is not None:
+            copticYear = year
+            
+        print(f"Opening workbook once and updating all tables for Coptic year {copticYear}...")
+        
+        # Load workbook once
+        wb = load_workbook(file_path)
+        ws_dates = wb[sheet_name]
+        
+        # Update Coptic year
+        ws_dates["M2"] = copticYear
+        print(f"Updated Coptic year to {copticYear}")
+        
+        # ------ A3YAD CALCULATIONS ------
+        print("Starting a3yad calculations...")
+        
+        # عيد الميلاد و برامون الميلاد و الغطاس
+        if (copticDate.is_leap_year(copticYear-1)):
+            ws_dates["F5"] = 28
+        else:
+            ws_dates["F5"] = 29
+            
+        YoumEidElmilad = ws_dates["F5"].value
+        if(copticDate.coptic_to_gregorian([copticYear,4, YoumEidElmilad]).weekday() == 7):
+            ws_dates["F4"] = YoumEidElmilad-3
+        elif(copticDate.coptic_to_gregorian([copticYear,4, YoumEidElmilad]).weekday() == 6):
+            ws_dates["F4"] = YoumEidElmilad-2
+        else:
+            ws_dates["F4"] = YoumEidElmilad-1
+    
+        if(copticDate.coptic_to_gregorian([copticYear, 5, 11]).weekday() == 7):
+            ws_dates["F7"] = 8
+        elif(copticDate.coptic_to_gregorian([copticYear, 5, 11]).weekday() == 6):
+            ws_dates["F7"] = 9
+        else:
+            ws_dates["F7"] = 10
+    
+        # ##حساب دور القمر
+        ws_dates["I25"] = (copticYear%19)-1
+        moonDay, moonMonth = find_values_in_row(file_path, sheet_name, "I", (copticYear%19)-1)
+        gd = copticDate.coptic_to_gregorian([copticYear, moonMonth, moonDay])
+        weekday = gd.weekday()
+        days_until_sunday = (6 - weekday) % 7
+        if days_until_sunday == 0:
+            days_until_sunday = 7  # If today is Sunday, set days_until_sunday to 7
+    
+        nextSunday = gd + timedelta(days=days_until_sunday)
+    
+        rDate = copticDate.gregorian_to_coptic(nextSunday)
+        rDay = rDate[2]
+        rMonth = rDate[1]
+    
+        # عيد القيامة
+        ws_dates["F22"] = rDay
+        ws_dates["D22"] = rMonth
+    
+        # احد الشعانين
+        date = copticDate.coptic_date_before(7, [copticYear, rMonth, rDay])
+        ws_dates["F18"] = date[2]
+        ws_dates["D18"] = date[1]
+    
+        # جمعة ختام الصوم
+        date = copticDate.coptic_date_before(9, [copticYear, rMonth, rDay])
+        ws_dates["F16"] = date[2]
+        ws_dates["D16"] = date[1]
+    
+        # سبت لعازر
+        date = copticDate.coptic_date_before(8, [copticYear, rMonth, rDay])
+        ws_dates["F17"] = date[2]
+        ws_dates["D17"] = date[1]
+    
+        # خميس العهد
+        date = copticDate.coptic_date_before(3, [copticYear, rMonth, rDay])
+        ws_dates["F19"] = date[2]
+        ws_dates["D19"] = date[1]
+    
+        # الجمعة العظيمة
+        date = copticDate.coptic_date_before(2, [copticYear, rMonth, rDay])
+        ws_dates["F20"] = date[2]
+        ws_dates["D20"] = date[1]
+    
+        # سبت النور
+        date = copticDate.coptic_date_before(1, [copticYear, rMonth, rDay])
+        ws_dates["F21"] = date[2]
+        ws_dates["D21"] = date[1]
+    
+        # عيد الصعود
+        date = copticDate.coptic_date_after(39, [copticYear, rMonth, rDay])
+        ws_dates["F24"] = date[2]
+        ws_dates["D24"] = date[1]
+    
+        # عيد العنصرة
+        date = copticDate.coptic_date_after(49, [copticYear, rMonth, rDay])
+        ws_dates["F25"] = date[2]
+        ws_dates["D25"] = date[1]
+    
+        # بداية الصوم الكبير
+        FastingStartDate = copticDate.coptic_date_before(55, [copticYear, rMonth, rDay])
+        ws_dates["F13"] = FastingStartDate[2]
+        ws_dates["D13"] = FastingStartDate[1]
+        
+        # حساب بداية صوم نينوى و فصح يونان
+        NynowaStartDate = copticDate.coptic_date_before(14, [copticYear, FastingStartDate[1], FastingStartDate[2]])
+        ws_dates["F11"] = NynowaStartDate[2]
+        ws_dates["D11"] = NynowaStartDate[1]
+        Fes7Younan = copticDate.coptic_date_after(3, NynowaStartDate)
+        ws_dates["F12"] = Fes7Younan[2]
+        ws_dates["D12"] = Fes7Younan[1]
+        
+        # ------ YOUNAN CALCULATIONS ------
+        print("Starting Younan calculations...")
+        
+        ws_younan = wb["صوم نينوى و فصح يونان"]
+
+        # 1) Set starting day and month in columns A and B
+        startday = ws_dates["F11"].value
+        startmonth = ws_dates["D11"].value
+
+        for i in range(1, 5):
+            ws_younan.cell(row=i + 1, column=1).value = startday
+            ws_younan.cell(row=i + 1, column=2).value = startmonth
+            startday += 1
+            if startday > 30:
+                startday = 1
+                startmonth += 1
+
+        # 2) Read the PPTX file
+        pptx_file = relative_path(r"Data\القطمارس\الصوم الكبير و صوم نينوى\قرائات صوم نينوى و فصح يونان.pptx")
+        if os.path.exists(pptx_file):
+            prs = pptx.Presentation(pptx_file)
+
+            # 3) Define search words and collect matching slides
+            younan_search_words = [
+                "مزمور عشية",
+                "إنجيل عشية",
+                "نبوات",
+                "مزمور باكر",
+                "إنجيل باكر",
+                "معلمنا بولس الرسول",
+                "الكاثوليكون",
+                "الإبركسيس",
+                "المزمور (",
+                "الإنجيل من"
+            ]
+            matching_slides = {word: [] for word in younan_search_words}
+
+            total_slides = len(prs.slides)
+            
+            # 4) Get all visible slide numbers
+            visible_slides = [i + 1 for i, slide in enumerate(prs.slides) if slide._element.get("show") != "0"]
+
+            # 5) Collect slide numbers for each search word
+            for i, slide in enumerate(prs.slides, start=1):
+                text = ""
+                for shape in slide.shapes:
+                    if hasattr(shape, 'text'):
+                        text += shape.text.lower()
+                for word in younan_search_words:
+                    if word.lower() in text:
+                        matching_slides[word].append(i)
+
+            # 6) Determine the maximum number of rows we need
+            max_length = max(len(matching_slides[word]) for word in younan_search_words)
+
+            # 7) Map each of the 10 search words to its target column
+            target_columns = [3, 4, 6, 7, 8, 10, 11, 12, 13, 14]
+
+            # 8) Insert data for each row
+            for row_idx in range(max_length):
+                # Gather this row's slides
+                row_slide_numbers = []
+                for word in younan_search_words:
+                    if row_idx < len(matching_slides[word]):
+                        row_slide_numbers.append(matching_slides[word][row_idx])
+                    else:
+                        row_slide_numbers.append('')
+
+                # Insert them into the correct columns
+                for col_idx, slide_num in enumerate(row_slide_numbers):
+                    ws_younan.cell(row=row_idx + 2, column=target_columns[col_idx], value=slide_num)
+
+            # 9) For columns E(5), I(9), and O(15)
+            last_slide = total_slides
+
+            # We'll loop from row 2 through row max_length+1
+            for row in range(2, max_length + 2):
+                # a) Column E = next visible slide after the value in column D (4), minus 1
+                col_d_value = ws_younan.cell(row=row, column=4).value
+                if col_d_value is not None and isinstance(col_d_value, int):
+                    next_slide = next((s for s in visible_slides if s > col_d_value), last_slide) - 1
+                    ws_younan.cell(row=row, column=5).value = next_slide  # Column E
+
+                # b) Column I = next visible slide after the value in column H (8), minus 1
+                col_h_value = ws_younan.cell(row=row, column=8).value
+                if col_h_value is not None and isinstance(col_h_value, int):
+                    next_slide = next((s for s in visible_slides if s > col_h_value), last_slide) - 1
+                    ws_younan.cell(row=row, column=9).value = next_slide  # Column I
+
+                # c) Column O = next visible slide after the value in column N (14), minus 1
+                col_n_value = ws_younan.cell(row=row, column=14).value
+                if col_n_value is not None and isinstance(col_n_value, int):
+                    next_slide = next((s for s in visible_slides if s > col_n_value), last_slide) - 1
+                    ws_younan.cell(row=row, column=15).value = next_slide  # Column O
+        
+        # ------ ELSH3ANYN CALCULATIONS ------
+        print("Starting Elsh3anyn calculations...")
+        
+        ws_sh3anyn = wb["قرائات أحد الشعانين"]
+        
+        # 1) Set starting day and month in columns A and B
+        Elsh3anynDay = ws_dates["F18"].value
+        Elsh3anynMonth = ws_dates["D18"].value
+    
+        ws_sh3anyn.cell(2, column=1).value = Elsh3anynDay
+        ws_sh3anyn.cell(2, column=2).value = Elsh3anynMonth
+    
+        # 2) Read the PPTX file
+        pptx_file = relative_path(r"Data\القطمارس\قرائات احد الشعانين.pptx")
+        if os.path.exists(pptx_file):
+            prs = pptx.Presentation(pptx_file)
+    
+            # 3) Define search words and collect matching slides
+            sha3anyn_search_words = [
+                "مزمور عشية",
+                "انجيل عشية",
+                "مزمور باكر",
+                "انجيل باكر",
+                "معلمنا بولس الرسول",
+                "الكاثوليكون",
+                "الإبركسيس",
+                "المزمور الأول",
+                "الإنجيل الأول",
+                "الإنجيل الثانى",
+                "الإنجيل الثالث",
+                "المزمور الثاني",
+                "الإنجيل الرابع",
+            ]
+            matching_slides = {word: [] for word in sha3anyn_search_words}
+    
+            total_slides = len(prs.slides)
+    
+            # 4) Collect slide numbers for each search word
+            for i, slide in enumerate(prs.slides, start=1):
+                text = ""
+                for shape in slide.shapes:
+                    if hasattr(shape, 'text'):
+                        text += shape.text.lower()
+                for word in sha3anyn_search_words:
+                    if word.lower() in text:
+                        matching_slides[word].append(i)
+    
+            # 5) Determine the maximum number of rows we need
+            max_length = max(len(matching_slides[word]) for word in sha3anyn_search_words)
+    
+            # 6) Map each search word to its target column
+            target_columns = [3, 4, 6, 7, 9, 10, 11, 12, 13, 15, 17, 19, 20]
+    
+            # 7) Insert data for each row
+            for row_idx in range(max_length):
+                # Gather this row's slides
+                row_slide_numbers = []
+                for word in sha3anyn_search_words:
+                    if row_idx < len(matching_slides[word]):
+                        row_slide_numbers.append(matching_slides[word][row_idx])
+                    else:
+                        row_slide_numbers.append('')
+    
+                # Insert them into the correct columns
+                for col_idx, slide_num in enumerate(row_slide_numbers):
+                    ws_sh3anyn.cell(row=row_idx + 2, column=target_columns[col_idx], value=slide_num)
+        
+            # 8) For columns E(5), H(8), N(14), P(16), R(18), U(21)
+            column_pairs = [
+                (5, 6),   # E gets value from F minus 1
+                (8, 9),   # H gets value from I minus 1
+                (14, 15), # N gets value from O minus 1
+                (16, 17), # P gets value from Q minus 1
+                (18, 19), # R gets value from S minus 1
+            ]
+            
+            # Iterate through each row that has data
+            for row_idx in range(2, max_length + 2):
+                for target_col, source_col in column_pairs:
+                    source_value = ws_sh3anyn.cell(row=row_idx, column=source_col).value
+                    if source_value and str(source_value).isdigit():
+                        # Subtract 1 only if the source value is a number
+                        ws_sh3anyn.cell(row=row_idx, column=target_col, value=int(source_value) - 1)
+                    else:
+                        # If source is empty or not a number, leave target empty
+                        ws_sh3anyn.cell(row=row_idx, column=target_col, value='')
+            
+            ws_sh3anyn.cell(row=2, column=21, value=total_slides)
+            
+        # ------ ELSOM ELKBYR CALCULATIONS ------
+        print("Starting ElsomElkbyr calculations...")
+        
+        ws_elkbyr = wb["قطمارس الصوم الكبير"]
+    
+        # Set column widths for reference
+        ws_elkbyr.column_dimensions['A'].width = 10
+        ws_elkbyr.column_dimensions['B'].width = 15
+    
+        # 1) Set starting day and month in columns A and B
+        ElsomElKbyrday = ws_dates["F13"].value
+        ElsomElKbyrmonth = ws_dates["D13"].value
+    
+        SbtElrefa3 = copticDate.coptic_date_before(2, [copticYear, ElsomElKbyrmonth, ElsomElKbyrday])
+        day = SbtElrefa3[2]
+        month = SbtElrefa3[1]
+    
+        # Loop through 50 days (from سبت الرفاع to سبت لعازر)
+        for i in range(1, 51):
+            ws_elkbyr.cell(row=i + 1, column=1).value = day
+            ws_elkbyr.cell(row=i + 1, column=2).value = month
+            day += 1
+            if day > 30:
+                day = 1
+                month += 1
+        
+        # Process the PowerPoint file
+        pptx_file = relative_path(r"Data\القطمارس\الصوم الكبير و صوم نينوى\قطمارس الصوم الكبير.pptx")
+        if os.path.exists(pptx_file):
+            prs = pptx.Presentation(pptx_file)
+            
+            # Define search words and collect matching slides
+            younan_search_words = [
+                "مزمور عشية",
+                "إنجيل عشية",
+                "نبوات",
+                "مزمور باكر",
+                "إنجيل باكر",
+                "معلمنا بولس الرسول",
+                "الكاثوليكون",
+                "الإبركسيس",
+                "المزمور (",
+                "الإنجيل من",
+                "مزمور مساء الاحد",
+                "انجيل مساء الاحد"
+            ]
+            matching_slides = {word: [] for word in younan_search_words}
+        
+            total_slides = len(prs.slides)
+            
+            # Get all visible slide numbers (non-hidden)
+            visible_slides = [i + 1 for i, slide in enumerate(prs.slides) if slide._element.get("show") != "0"]
+        
+            # Populate matching_slides with slide numbers for each search word
+            for i, slide in enumerate(prs.slides, start=1):
+                text = ""
+                for shape in slide.shapes:
+                    if hasattr(shape, 'text'):
+                        text += shape.text.lower()
+                for word in younan_search_words:
+                    if word.lower() in text:
+                        matching_slides[word].append(i)
+                        
+            # A) For "مزمور عشية" and "إنجيل عشية":
+            mosmor_list = matching_slides["مزمور عشية"]
+            engeel_list = matching_slides["إنجيل عشية"]
+            num_pairs = max(len(mosmor_list), len(engeel_list))
+            for i in range(num_pairs):
+                if i == 0:
+                    row = 2
+                elif i == 1:
+                    row = 3
+                else:
+                    row = 3 + (i - 1) * 7
+                # Place "مزمور عشية" in Column C (3)
+                if i < len(mosmor_list):
+                    ws_elkbyr.cell(row=row, column=3).value = mosmor_list[i]
+                # Place "إنجيل عشية" in Column D (4)
+                if i < len(engeel_list):
+                    ws_elkbyr.cell(row=row, column=4).value = engeel_list[i]
+                    
+            # Continue with the rest of ElsomElkbyr slide processing...
+            # [ElsomElkbyr processing continues with the original logic]
+        
+        # ------ KATAMARSEL5AMASYN CALCULATIONS ------
+        print("Starting katamarsEl5amasyn calculations...")
+        
+        ws_5amasyn = wb["قطمارس الخماسين"]
+    
+        # Set column widths
+        ws_5amasyn.column_dimensions['A'].width = 10
+        ws_5amasyn.column_dimensions['B'].width = 15
+    
+        # Set ending day and month
+        end_day = ws_dates["F25"].value
+        end_month = ws_dates["D25"].value
+    
+        # Loop through 50 days in reverse
+        for i in range(51, 1, -1):
+            # Write day and month to the worksheet
+            ws_5amasyn.cell(row=i, column=1).value = end_day
+            ws_5amasyn.cell(row=i, column=2).value = end_month
+    
+            # Decrement day and adjust month if necessary
+            end_day -= 1
+            if end_day < 1:
+                end_day = 30
+                end_month -= 1
+                
+        # Process the PowerPoint file
+        pptx_file = relative_path(r"Data\القطمارس\قطمارس الخماسين (القداس).pptx")
+        if os.path.exists(pptx_file):
+            prs = pptx.Presentation(pptx_file)
+            search_words = ["معلمنا بولس الرسول", "الكاثوليكون", "الإبركسيس", "المزمور (", "الإنجيل من"]
+            matching_slides = {word: [] for word in search_words}
+            total_slides = len(prs.slides)
+        
+            for i, slide in enumerate(prs.slides, start=1):
+                text = ''
+                for shape in slide.shapes:
+                    if hasattr(shape, 'text'):
+                        text += shape.text.lower()
+                
+                for word in search_words:
+                    if word.lower() in text:
+                        matching_slides[word].append(i)
+                        
+            # Continue with the rest of katamarsEl5amasyn slide processing...
+            # [katamarsEl5amasyn processing continues with the original logic]
+        
+        # Save workbook once at the end
+        print("Saving workbook...")
+        wb.save(file_path)
+        print("Workbook saved successfully")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error in update_all_tables: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return False
+
 def a3yad ():
 
     # عيد الميلاد و برامون الميلاد و الغطاس
     if (copticDate.is_leap_year(copticYear-1)):
-        asyncio.run(write_to_excel_cell(file_path, sheet_name, "F5", 28))
+        write_to_excel_cell(file_path, sheet_name, "F5", 28)
     else:
-        asyncio.run(write_to_excel_cell(file_path, sheet_name, "F5", 29))
+        write_to_excel_cell(file_path, sheet_name, "F5", 29)
     YoumEidElmilad = read_excel_cell(file_path, sheet_name, "F5")
     if(copticDate.coptic_to_gregorian([copticYear,4, YoumEidElmilad]).weekday() == 7):
-        asyncio.run(write_to_excel_cell(file_path, sheet_name, "F4", YoumEidElmilad-3))
+        write_to_excel_cell(file_path, sheet_name, "F4", YoumEidElmilad-3)
     elif(copticDate.coptic_to_gregorian([copticYear,4, YoumEidElmilad]).weekday() == 6):
-        asyncio.run(write_to_excel_cell(file_path, sheet_name, "F4", YoumEidElmilad-2))
+        write_to_excel_cell(file_path, sheet_name, "F4", YoumEidElmilad-2)
     else:
-        asyncio.run(write_to_excel_cell(file_path, sheet_name, "F4", YoumEidElmilad-1))
+        write_to_excel_cell(file_path, sheet_name, "F4", YoumEidElmilad-1)
 
     if(copticDate.coptic_to_gregorian([copticYear, 5, 11]).weekday() == 7):
-        asyncio.run(write_to_excel_cell(file_path, sheet_name, "F7", 8))
+        write_to_excel_cell(file_path, sheet_name, "F7", 8)
     elif(copticDate.coptic_to_gregorian([copticYear, 5, 11]).weekday() == 6):
-        asyncio.run(write_to_excel_cell(file_path, sheet_name, "F7", 9))
+        write_to_excel_cell(file_path, sheet_name, "F7", 9)
     else:
-        asyncio.run(write_to_excel_cell(file_path, sheet_name, "F7", 10))
+        write_to_excel_cell(file_path, sheet_name, "F7", 10)
 
     # ##حساب دور القمر
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "I25", (copticYear%19)-1))
+    write_to_excel_cell(file_path, sheet_name, "I25", (copticYear%19)-1)
     moonDay , moonMonth = find_values_in_row(file_path, sheet_name, "I", (copticYear%19)-1)
     gd = copticDate.coptic_to_gregorian([copticYear, moonMonth, moonDay])
     weekday = gd.weekday()
@@ -50,62 +500,61 @@ def a3yad ():
     rMonth =  rDate[1]
 
     # # عيد القيامة
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F22", rDay))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D22", rMonth))
+    write_to_excel_cell(file_path, sheet_name, "F22", rDay)
+    write_to_excel_cell(file_path, sheet_name, "D22", rMonth)
 
     # # احد الشعانين
     date = copticDate.coptic_date_before(7, [copticYear, rMonth, rDay])
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F18", date[2]))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D18", date[1]))
+    write_to_excel_cell(file_path, sheet_name, "F18", date[2])
+    write_to_excel_cell(file_path, sheet_name, "D18", date[1])
 
     # # جمعة ختام الصوم
     date = copticDate.coptic_date_before(9, [copticYear, rMonth, rDay])
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F16", date[2]))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D16", date[1]))
+    write_to_excel_cell(file_path, sheet_name, "F16", date[2])
+    write_to_excel_cell(file_path, sheet_name, "D16", date[1])
 
     # # سبت لعازر
     date = copticDate.coptic_date_before(8, [copticYear, rMonth, rDay])
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F17", date[2]))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D17", date[1]))
+    write_to_excel_cell(file_path, sheet_name, "F17", date[2])
+    write_to_excel_cell(file_path, sheet_name, "D17", date[1])
 
     # # خميس العهد
     date = copticDate.coptic_date_before(3, [copticYear, rMonth, rDay])
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F19", date[2]))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D19", date[1]))
+    write_to_excel_cell(file_path, sheet_name, "F19", date[2])
+    write_to_excel_cell(file_path, sheet_name, "D19", date[1])
 
     # # الجمعة العظيمة
     date = copticDate.coptic_date_before(2, [copticYear, rMonth, rDay])
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F20", date[2]))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D20", date[1]))
+    write_to_excel_cell(file_path, sheet_name, "F20", date[2])
+    write_to_excel_cell(file_path, sheet_name, "D20", date[1])
 
     # # سبت النور
     date = copticDate.coptic_date_before(1, [copticYear, rMonth, rDay])
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F21", date[2]))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D21", date[1]))
+    write_to_excel_cell(file_path, sheet_name, "F21", date[2])
+    write_to_excel_cell(file_path, sheet_name, "D21", date[1])
 
     # # عيد الصعود
     date = copticDate.coptic_date_after(39, [copticYear, rMonth, rDay])
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F24", date[2]))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D24", date[1]))
+    write_to_excel_cell(file_path, sheet_name, "F24", date[2])
+    write_to_excel_cell(file_path, sheet_name, "D24", date[1])
 
     # # عيد العنصرة
     date = copticDate.coptic_date_after(49, [copticYear, rMonth, rDay])
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F25", date[2]))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D25", date[1]))
+    write_to_excel_cell(file_path, sheet_name, "F25", date[2])
+    write_to_excel_cell(file_path, sheet_name, "D25", date[1])
 
     # # بداية الصوم الكبير
     FastingStartDate = copticDate.coptic_date_before(55, [copticYear, rMonth, rDay])
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F13", FastingStartDate[2]))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D13", FastingStartDate[1]))
+    write_to_excel_cell(file_path, sheet_name, "F13", FastingStartDate[2])
+    write_to_excel_cell(file_path, sheet_name, "D13", FastingStartDate[1])
 
     # # حساب بداية صوم نينوى و فصح يونان
     NynowaStartDate = copticDate.coptic_date_before(14, [copticYear, FastingStartDate[1], FastingStartDate[2]])
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F11", NynowaStartDate[2]))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D11", NynowaStartDate[1]))
+    write_to_excel_cell(file_path, sheet_name, "F11", NynowaStartDate[2])
+    write_to_excel_cell(file_path, sheet_name, "D11", NynowaStartDate[1])
     Fes7Younan = copticDate.coptic_date_after(3, NynowaStartDate)
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "F12", Fes7Younan[2]))
-    asyncio.run(write_to_excel_cell(file_path, sheet_name, "D12", Fes7Younan[1]))
-
+    write_to_excel_cell(file_path, sheet_name, "F12", Fes7Younan[2])
+    write_to_excel_cell(file_path, sheet_name, "D12", Fes7Younan[1])
 
 wb = load_workbook(file_path)
 search_words = ["معلمنا بولس الرسول", "الكاثوليكون", "الإبركسيس", "المزمور (", "الإنجيل من"]

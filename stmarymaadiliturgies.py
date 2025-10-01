@@ -3,7 +3,6 @@ from PyQt5.QtGui import QPixmap, QFont, QIcon, QColor
 from PyQt5.QtCore import Qt, pyqtSignal, QSize
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QDialog
 from copticDate import CopticCalendar
-from Season import get_season_name, get_season
 from datetime import datetime
 from bibleWindow import bibleWindow
 from NotificationBar import NotificationBar
@@ -28,6 +27,7 @@ class MainWindow(QMainWindow):
             self.current_date = datetime.now()
             self.coptic_date = CopticCalendar().gregorian_to_coptic(self.current_date)
             self.checkCopticYear(self.coptic_date[0])
+            from Season import get_season
             self.season = get_season(self.current_date)
             self.bishop_window = None
             self.bishop = False
@@ -634,6 +634,7 @@ class MainWindow(QMainWindow):
                 self.setCentralWidget(None)
 
     def update_current_date(self, new_date, new_time):
+        from Season import get_season
         try:
             self.current_date = datetime.strptime(new_date + ' ' + new_time, '%Y-%m-%d %I:%M %p')
             self.coptic_date = CopticCalendar().gregorian_to_coptic(self.current_date)
@@ -648,6 +649,7 @@ class MainWindow(QMainWindow):
         return ''.join(arabic_digits[digit] if digit in arabic_digits else digit for digit in str(number))
 
     async def update_labels(self):
+        from Season import get_season_name
         from PyQt5.QtGui import QFontMetrics
         label1 = self.findChild(QLabel, "label1")
         if label1:
@@ -731,6 +733,8 @@ class MainWindow(QMainWindow):
         import odasat
         from qudasDialog import SectionSelectionDialog
         import os
+        from Season import get_season_name
+
         try:
             presentation_opened = False
             presentation_file = os.path.abspath(relative_path(r"قداس.pptx")).lower()
@@ -754,6 +758,9 @@ class MainWindow(QMainWindow):
                         presentation_opened = True
                     case 4:
                         odasat.odasElmilad(self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 5:
+                        odasat.odasKiahk(self.coptic_date, self.bishop, self.GuestBishop)
                         presentation_opened = True
                     case 14:
                         odasat.odasElbeshara(self.bishop, self.GuestBishop)
@@ -854,6 +861,7 @@ class MainWindow(QMainWindow):
         from qudasDialog import SectionSelectionDialog
         from PyQt5.QtWidgets import QMessageBox
         import os
+        from Season import get_season_name
         
         try:
             presentation_file = os.path.abspath(relative_path(r"رفع بخور عشية و باكر.pptx")).lower()
@@ -901,10 +909,8 @@ class MainWindow(QMainWindow):
                 presentation_opened = True
             else:
                 # Open the presentation with the appropriate content
-                coptic_cal = CopticCalendar()
-                copticDate = coptic_cal.coptic_to_gregorian(self.coptic_date)
                 adam = False
-                if copticDate.weekday() in [0, 1, 6]:
+                if self.current_date.weekday() in [0, 1, 6]:
                     adam = True
                 match self.season:
                     case 0 | 27 | 28 | 30 | 31:
@@ -987,10 +993,8 @@ class MainWindow(QMainWindow):
                 presentation_opened = True
             else:
                 # Open the presentation with the appropriate content
-                coptic_cal = CopticCalendar()
-                copticDate = coptic_cal.coptic_to_gregorian(self.coptic_date)
                 adam = False
-                if copticDate.weekday() in [0, 1, 6]:
+                if self.current_date.weekday() in [0, 1, 6]:
                     adam = True
                 
                 match (self.season):
@@ -1304,16 +1308,29 @@ class MainWindow(QMainWindow):
         return False
 
     def checkCopticYear(self, copticYear):
-        from commonFunctions import read_excel_cell, write_to_excel_cell
-        currentYear = read_excel_cell(relative_path(r"Tables.xlsx"), "المناسبات", "M2")
-        if copticYear != currentYear:
-            from UpdateTable import a3yad, ElsomElkbyr, katamarsEl5amasyn
-            asyncio.run(write_to_excel_cell(relative_path(r"Tables.xlsx"), "المناسبات", "M2", copticYear))
-            a3yad()
-            ElsomElkbyr()
-            katamarsEl5amasyn()
-        else:
-            return
+        from commonFunctions import read_excel_cell, relative_path
+        import traceback
+        
+        try:
+            currentYear = read_excel_cell(relative_path(r"Tables.xlsx"), "المناسبات", "M2")
+            if copticYear != currentYear:
+                # Import the unified update function
+                from UpdateTable import update_all_tables
+                
+                # Run the update with the new year
+                success = update_all_tables(copticYear)
+                
+                if success:
+                    return True
+                else:
+                    return False
+            else:
+                return False
+                
+        except Exception as e:
+            print(f"Error in checkCopticYear: {str(e)}")
+            print(traceback.format_exc())
+            return False
 
     def check_for_updates_silent(self):
         import socket, requests
@@ -1503,7 +1520,7 @@ class MainWindow(QMainWindow):
         self.ppt_check_timer = QTimer(self)
         self.ppt_check_timer.timeout.connect(self.check_powerpoint_changes)
         self.ppt_check_timer.start(750)  # Check every 750ms
-        
+
     def check_powerpoint_changes(self):
         """Check if any PowerPoint presentations have been closed and update UI immediately"""
         try:

@@ -587,4 +587,83 @@
 #     end_section="كنيستي القبطية نشرت المسيحية"
 # )
 
+# import win32com.client
 
+# def get_textboxes(slide):
+#     """Return all textboxes (or placeholders) that contain text."""
+#     boxes = []
+#     for shape in slide.Shapes:
+#         if shape.HasTextFrame:
+#             if shape.TextFrame.HasText:
+#                 if shape.TextFrame.TextRange.Text.strip() != "":
+#                     boxes.append(shape)
+#     return boxes
+
+
+# def get_bottom_textbox(slide):
+#     """Return the bottom-most textbox (largest Top value)."""
+#     boxes = get_textboxes(slide)
+#     if not boxes:
+#         return None
+#     return max(boxes, key=lambda s: s.Top)
+
+
+# def combine_textboxes(ppt_path):
+#     app = win32com.client.Dispatch("PowerPoint.Application")
+#     app.Visible = True
+#     pres = app.Presentations.Open(ppt_path)
+
+#     section_start = None
+#     buffer_texts = []
+
+#     for i, slide in enumerate(pres.Slides, start=1):
+#         boxes = get_textboxes(slide)
+#         print(f"Slide {i}: found {len(boxes)} textboxes")
+
+#         # Blank slide → flush and reset
+#         if len(boxes) == 0:
+#             print("   -> Blank (reset section)")
+#             if section_start and buffer_texts:
+#                 main_box = get_bottom_textbox(section_start)
+#                 if main_box:
+#                     main_box.TextFrame.TextRange.Text += "\r\n" + "\r\n".join(buffer_texts)
+#             buffer_texts = []
+#             section_start = None
+#             continue
+
+#         # Slide with 2+ textboxes → new anchor
+#         if len(boxes) >= 2:
+#             print("   -> Multiple textboxes (new section anchor)")
+#             # flush buffered text
+#             if section_start and buffer_texts:
+#                 main_box = get_bottom_textbox(section_start)
+#                 if main_box:
+#                     main_box.TextFrame.TextRange.Text += "\r\n" + "\r\n".join(buffer_texts)
+#             buffer_texts = []
+#             section_start = slide
+#             continue
+
+#         # Slide with exactly 1 textbox
+#         if len(boxes) == 1:
+#             if section_start is None:
+#                 section_start = slide
+#                 print("   -> Section start (1 textbox)")
+#             else:
+#                 print(f"   -> Cutting text from Slide {i} into Slide {section_start.SlideIndex}")
+#                 buffer_texts.append(boxes[0].TextFrame.TextRange.Text)
+#                 # CUT (clear text after saving)
+#                 boxes[0].TextFrame.TextRange.Text = ""
+
+#     # Final flush
+#     if section_start and buffer_texts:
+#         main_box = get_bottom_textbox(section_start)
+#         if main_box:
+#             main_box.TextFrame.TextRange.Text += "\r\n" + "\r\n".join(buffer_texts)
+
+#     print("✅ Finished merging textboxes (cut + pasted into bottom textbox).")
+
+
+# if __name__ == "__main__":
+#     # Change path to your presentation
+#     ppt_file = r"C:\Users\dell\Downloads\السنكسار-ات\توت، بابه، هاتور - Copy.pptx"
+#     combine_textboxes(ppt_file)

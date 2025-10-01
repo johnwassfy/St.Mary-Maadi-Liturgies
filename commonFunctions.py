@@ -254,7 +254,7 @@ def find_values_in_row(file_path, sheet_name, column_letter, search_value):
     # If the value is not found, return None
     return None, None
 
-async def write_to_excel_cell(file_path, sheet_name, cell_address, value):
+def write_to_excel_cell(file_path, sheet_name, cell_address, value):
     # Load the workbook
     wb = load_workbook(filename=file_path)
     
@@ -1368,8 +1368,8 @@ def elzoksologyat (excel_path, season, bakerOR3ashyaORtasbha):
         case 1: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{9A902651-94A5-4D6A-83A0-BF404F380CD5}", bakerOR3ashyaORtasbha])
         case 2: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{264E4307-BE55-4799-9151-3D149372B553}", bakerOR3ashyaORtasbha])
         case 29: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{DC61EC21-9EF0-4E7C-8E4E-CD4269024AE6}", bakerOR3ashyaORtasbha])
-        case 5: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["كيهك 1", "كيهك 2", "كيهك 3", "كيهك 4", "كيهك 5", "كيهك 6"])
-        case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["الصوم الكبير 1", "الصوم الكبير 2", "الصوم الكبير 3", "الصوم الكبير 4", "الصوم الكبير 5"])
+        case 5: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ['{D92BB540-7883-4DD1-A6A7-1E0A76337CF2}', '{D622430F-FECE-4075-85A5-AFCFB40851AB}', '{DA8C1040-76BE-40FE-A02D-791EEB63045C}', '{C13ED8FB-8409-4503-AB7D-D9DF2DA0CBE7}', '{75722E63-5075-4CAF-9D6F-C5591C6AC389}', '{72C6D456-0F5A-4A81-82BB-06406C1912B3}'])
+        case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ['{D44C71EC-63B2-4404-886F-C06106494AA4}', '{7C22CB67-76C9-4102-BF71-E76EFA7F9CC2}', '{6B4AE8CD-BEBF-46D6-B948-EC0EE4A8E823}', '{9D8CE5B8-388E-4BFB-9501-7D65B99CD64B}', '{C3B15270-DF51-4212-942E-C99136F27899}'])
         case 28: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{81E5C2F6-C71A-4711-83D2-FBF56C7FD101}", bakerOR3ashyaORtasbha])
         case 29: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{DC61EC21-9EF0-4E7C-8E4E-CD4269024AE6}", bakerOR3ashyaORtasbha])
         case default: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, [bakerOR3ashyaORtasbha])
@@ -1552,13 +1552,10 @@ def get_open_presentations():
     return open_presentations
 
 # excel = relative_path(r"Files Data.xlsx")
-# sheet = "القداس"
-# arr = ['مرد ابركسيس يوحنا المعمدان', 'ربع للعذراء', 'ربع ليوحنا المعمدان']
+# sheet = "رفع بخور"
+# arr = ["مرد الانجيل السنوي", "اري ابرسفافين"]
 # print(find_section_Ids_with_names(excel, sheet, arr))
-# arr2 = ['{2BCF4F8C-25F0-43C5-B224-6528B2EA3F2F}', '{F76B0D75-0474-45B5-B79F-7416F354543A}',
-#         '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', 
-#         '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{A9183893-7B7E-459F-8547-F7A8F7D2D521}', 
-#         '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}']
+# arr2 = ["{4329E910-BD2C-4FBB-8FF3-A59F06EE9D45}", "{5BB65881-3E8A-4130-839D-6EB6F9D5FAFA}"]
 # print(find_section_names_with_ids(excel, sheet, arr2))
 # print(find_slide_num_v2(excel, sheet, "تكملة للملاك ميخائيل 1", 1, 1))
 # print(find_slide_nums_arrays_v2(excel, sheet, ['{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}'], 2, [1, 2, 1, 2]))
