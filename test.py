@@ -366,54 +366,54 @@
     
 #     return slide_id_pairs
 
-# import pptx
-# import pandas as pd
+import pptx
+import pandas as pd
 
-# def extract_slide_layouts_to_excel(pptx_file, output_excel_file):
-#     # Load the PowerPoint presentation
-#     prs = pptx.Presentation(pptx_file)
+def extract_slide_layouts_to_excel(pptx_file, output_excel_file):
+    # Load the PowerPoint presentation
+    prs = pptx.Presentation(pptx_file)
     
-#     # Data structure to store layout names and slide ranges
-#     layout_data = []
+    # Data structure to store layout names and slide ranges
+    layout_data = []
 
-#     # Access the single slide master and iterate over its layouts
-#     slide_master = prs.slide_master
-#     for layout in slide_master.slide_layouts:
-#         layout_name = layout.name if layout.name else "Unnamed Layout"
-#         slide_numbers = []
+    # Access the single slide master and iterate over its layouts
+    slide_master = prs.slide_master
+    for layout in slide_master.slide_layouts:
+        layout_name = layout.name if layout.name else "Unnamed Layout"
+        slide_numbers = []
         
-#         # Collect slide numbers for this layout
-#         for slide_index, slide in enumerate(prs.slides, start=1):
-#             if slide.slide_layout == layout:
-#                 slide_numbers.append(slide_index)
+        # Collect slide numbers for this layout
+        for slide_index, slide in enumerate(prs.slides, start=1):
+            if slide.slide_layout == layout:
+                slide_numbers.append(slide_index)
         
-#         # Convert slide numbers into ranges
-#         slide_ranges = []
-#         if slide_numbers:
-#             start = slide_numbers[0]
-#             for i in range(1, len(slide_numbers)):
-#                 if slide_numbers[i] != slide_numbers[i - 1] + 1:
-#                     # Found the end of a range
-#                     slide_ranges.append(f"{start}-{slide_numbers[i - 1]}" if start != slide_numbers[i - 1] else str(start))
-#                     start = slide_numbers[i]
-#             # Add the last range
-#             slide_ranges.append(f"{start}-{slide_numbers[-1]}" if start != slide_numbers[-1] else str(start))
+        # Convert slide numbers into ranges
+        slide_ranges = []
+        if slide_numbers:
+            start = slide_numbers[0]
+            for i in range(1, len(slide_numbers)):
+                if slide_numbers[i] != slide_numbers[i - 1] + 1:
+                    # Found the end of a range
+                    slide_ranges.append(f"{start}-{slide_numbers[i - 1]}" if start != slide_numbers[i - 1] else str(start))
+                    start = slide_numbers[i]
+            # Add the last range
+            slide_ranges.append(f"{start}-{slide_numbers[-1]}" if start != slide_numbers[-1] else str(start))
         
-#         # Add layout name and slide ranges to the data
-#         layout_data.append([layout_name] + slide_ranges)
+        # Add layout name and slide ranges to the data
+        layout_data.append([layout_name] + slide_ranges)
     
-#     # Convert the data into a pandas DataFrame
-#     max_cols = max(len(row) for row in layout_data)
-#     column_names = ["Layout Name"] + [f"Slides {i}" for i in range(1, max_cols)]
-#     df = pd.DataFrame(layout_data, columns=column_names).fillna("")
+    # Convert the data into a pandas DataFrame
+    max_cols = max(len(row) for row in layout_data)
+    column_names = ["Layout Name"] + [f"Slides {i}" for i in range(1, max_cols)]
+    df = pd.DataFrame(layout_data, columns=column_names).fillna("")
     
-#     # Save the DataFrame to an Excel file
-#     df.to_excel(output_excel_file, index=False, engine="openpyxl")
-#     print(f"Excel file saved to {output_excel_file}")
-# # Example usage
-# presentation_path = r"F:\5dmt Shashat\Codes and Files\Data\CopyData\قداس.pptx"  # Path to your PowerPoint presentation
-# output_excel_path = "layout_slides.xlsx"  # Path to save the Excel file
-# extract_slide_layouts_to_excel(presentation_path, output_excel_path)
+    # Save the DataFrame to an Excel file
+    df.to_excel(output_excel_file, index=False, engine="openpyxl")
+    print(f"Excel file saved to {output_excel_file}")
+# Example usage
+presentation_path = r"F:\5dmt Shashat\Codes and Files\Data\CopyData\قداس.pptx"  # Path to your PowerPoint presentation
+output_excel_path = "layout_slides.xlsx"  # Path to save the Excel file
+extract_slide_layouts_to_excel(presentation_path, output_excel_path)
 
 # print(f"Layout and slide information has been saved to {output_excel_path}.")
 
@@ -599,14 +599,27 @@
 #                     boxes.append(shape)
 #     return boxes
 
-
 # def get_bottom_textbox(slide):
-#     """Return the bottom-most textbox (largest Top value)."""
+#     """Return the bottom-most textbox inside slide borders (largest Top value)."""
 #     boxes = get_textboxes(slide)
 #     if not boxes:
 #         return None
-#     return max(boxes, key=lambda s: s.Top)
 
+#     slide_height = slide.Parent.PageSetup.SlideHeight  # total slide height
+#     margin = 10  # tolerance in points
+
+#     # Filter out shapes outside slide borders
+#     inside_boxes = []
+#     for s in boxes:
+#         if (s.Top >= -margin and 
+#             s.Left >= -margin and 
+#             (s.Top + s.Height) <= (slide_height + margin)):
+#             inside_boxes.append(s)
+
+#     if not inside_boxes:
+#         return None
+
+#     return max(inside_boxes, key=lambda s: s.Top)
 
 # def combine_textboxes(ppt_path):
 #     app = win32com.client.Dispatch("PowerPoint.Application")
@@ -662,8 +675,197 @@
 
 #     print("✅ Finished merging textboxes (cut + pasted into bottom textbox).")
 
+# def clean_bottom_textbox(pptx_path):
+#     powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+#     powerpoint.Visible = True
+    
+#     presentation = powerpoint.Presentations.Open(pptx_path)
+
+#     for slide in presentation.Slides:
+#         bottom_shape = None
+#         max_top = -1
+
+#         shapes = slide.Shapes
+#         for i in range(1, shapes.Count + 1):
+#             shape = shapes.Item(i)
+#             if shape.HasTextFrame and shape.TextFrame.HasText:
+#                 if shape.Top > max_top:
+#                     bottom_shape = shape
+#                     max_top = shape.Top
+
+#         if bottom_shape is not None:
+#             txt = bottom_shape.TextFrame.TextRange.Text
+
+#             # 1. Replace newlines with spaces
+#             txt = txt.replace("\r\n", " ").replace("\r", " ").replace("\n", " ")
+
+#             # 2. Remove multiple spaces
+#             while "  " in txt:
+#                 txt = txt.replace("  ", " ")
+
+#             # 3. Remove leading and trailing spaces/newlines
+#             txt = txt.strip()
+
+#             bottom_shape.TextFrame.TextRange.Text = txt
+
+# def delete_white_textboxes(pptx_path):
+#     powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+#     powerpoint.Visible = True
+    
+#     presentation = powerpoint.Presentations.Open(pptx_path)
+
+#     for slide in presentation.Slides:
+#         shapes = slide.Shapes
+#         # Loop backwards because deleting while iterating forward causes skips
+#         for i in range(shapes.Count, 0, -1):
+#             shape = shapes.Item(i)
+#             if shape.HasTextFrame and shape.TextFrame.HasText:
+#                 font = shape.TextFrame.TextRange.Font
+#                 if font.Color.RGB == 16777215:  # RGB(255,255,255) in decimal
+#                     shape.Delete()
+
+# def style_combined_textbox(textbox):
+#     try:
+#         text_range = textbox.TextFrame.TextRange
+#         para_format = text_range.ParagraphFormat
+
+#         # Remove underline from all text
+#         text_range.Font.Underline = False
+
+#         # Align text to right
+#         para_format.Alignment = 3  # ppAlignRight
+
+#         # Vertical center alignment (fixed)
+#         textbox.TextFrame.VerticalAnchor = 3  # ppVerticalAnchorMiddle
+
+#         # Turn on word wrap
+#         textbox.TextFrame.WordWrap = True
+
+#         # Ensure it's not autosizing (keep manual layout)
+#         textbox.TextFrame.AutoSize = 0  # ppAutoSizeNone
+
+#         # Make bullet list with star (★)
+#         for paragraph in text_range.Paragraphs():
+#             p_format = paragraph.ParagraphFormat
+#             p_format.Bullet.Visible = True
+#             p_format.Bullet.Font.Name = "Wingdings"
+#             p_format.Bullet.Character = 118  # Unicode star
+#             p_format.Bullet.RelativeSize = 1
+
+#         textbox.Left = 0 * 28.35                       # 0 cm from left
+#         textbox.Top = 12.07 * 28.35                    # 12.07 cm from top
+
+#         textbox.Width = 25.4 * 28.35                   # 25.4 cm width
+#         textbox.Height = 6.98 * 28.35                  # 6.98 cm height
+
+#         print("✔ Styled combined textbox successfully.")
+
+#     except Exception as e:
+#         print(f"⚠️ Error styling textbox: {e}")
+
+# def combine_textboxes_v2(ppt_path):
+#     app = win32com.client.Dispatch("PowerPoint.Application")
+#     app.Visible = True
+#     pres = app.Presentations.Open(ppt_path)
+
+#     section_start = None
+#     buffer_texts = []
+
+#     slides_to_delete = []
+
+#     for i, slide in enumerate(list(pres.Slides), start=1):
+#         boxes = get_textboxes(slide)
+#         print(f"Slide {i}: found {len(boxes)} textboxes")
+
+#         # Blank slide → flush and reset
+#         if len(boxes) == 0:
+#             print("   -> Blank (reset section)")
+#             if section_start and buffer_texts:
+#                 main_box = get_bottom_textbox(section_start)
+#                 if main_box:
+#                     main_box.TextFrame.TextRange.Text += "\r\n" + "\r\n".join(buffer_texts)
+#                     style_combined_textbox(main_box)
+#             buffer_texts = []
+#             section_start = None
+#             continue
+
+#         # Slide with 2+ textboxes → new anchor
+#         if len(boxes) >= 2:
+#             print("   -> Multiple textboxes (new section anchor)")
+#             # flush buffered text
+#             if section_start and buffer_texts:
+#                 main_box = get_bottom_textbox(section_start)
+#                 if main_box:
+#                     main_box.TextFrame.TextRange.Text += "\r\n" + "\r\n".join(buffer_texts)
+#                     style_combined_textbox(main_box)
+#             buffer_texts = []
+#             section_start = slide
+#             continue
+
+#         # Slide with exactly 1 textbox
+#         if len(boxes) == 1:
+#             if section_start is None:
+#                 section_start = slide
+#                 print("   -> Section start (1 textbox)")
+#             else:
+#                 print(f"   -> Cutting text from Slide {i} into Slide {section_start.SlideIndex}")
+#                 buffer_texts.append(boxes[0].TextFrame.TextRange.Text.strip())
+#                 boxes[0].TextFrame.TextRange.Text = ""  # CUT text
+#                 slides_to_delete.append(slide)  # mark for deletion later
+
+#     # Final flush
+#     if section_start and buffer_texts:
+#         main_box = get_bottom_textbox(section_start)
+#         if main_box:
+#             main_box.TextFrame.TextRange.Text += "\r\n" + "\r\n".join(buffer_texts)
+#             style_combined_textbox(main_box)
+
+#     # Delete slides marked for deletion + hidden blank slides
+#     for slide in reversed(list(pres.Slides)):
+#         if slide in slides_to_delete:
+#             print(f"Deleting slide {slide.SlideIndex} (merged text moved)")
+#             slide.Delete()
+#         elif slide.SlideShowTransition.Hidden:
+#             boxes = get_textboxes(slide)
+#             if len(boxes) == 0 or all(not b.TextFrame.TextRange.Text.strip() for b in boxes):
+#                 print(f"Deleting hidden blank slide {slide.SlideIndex}")
+#                 slide.Delete()
+
+#     print("✅ Finished merging textboxes, formatting, and deleting empty slides.")
+
+# def turn_bottom_text_white(pptx_path):
+#     """Turn the text in the bottom textbox of each slide to white."""
+#     powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+#     powerpoint.Visible = True
+
+#     presentation = powerpoint.Presentations.Open(pptx_path)
+
+#     for slide in presentation.Slides:
+#         bottom_box = get_bottom_textbox(slide)
+#         if not bottom_box:
+#             continue
+
+#         try:
+#             text_range = bottom_box.TextFrame.TextRange
+
+#             # 1. Set all text to white
+#             text_range.Font.Color.RGB = 16777215  # RGB(255,255,255)
+
+#             # 2. Set bullet color to yellow (#FFCC00)
+#             bullet_rgb = int("00C0FF", 16)  # reversed byte order for COM (BGR)
+#             # Explanation: PowerPoint COM uses BGR, not RGB, so #FFCC00 → 0x00CCFF
+#             for paragraph in text_range.Paragraphs():
+#                 if paragraph.ParagraphFormat.Bullet.Visible:
+#                     paragraph.ParagraphFormat.Bullet.Font.Color.RGB = bullet_rgb
+
+#             print(f"✔ Updated Slide {slide.SlideIndex}: text white, bullets yellow.")
+#         except Exception as e:
+#             print(f"⚠️ Error on Slide {slide.SlideIndex}: {e}")
 
 # if __name__ == "__main__":
-#     # Change path to your presentation
-#     ppt_file = r"C:\Users\dell\Downloads\السنكسار-ات\توت، بابه، هاتور - Copy.pptx"
-#     combine_textboxes(ppt_file)
+    # Change path to your presentation
+    # ppt_file = r"F:\5dmt Shashat\Codes and Files\Data\القطمارس\السنكسار.pptx"
+#     # clean_bottom_textbox(ppt_file)
+#     combine_textboxes_v2(ppt_file)
+#     # delete_white_textboxes(ppt_file)
+    # turn_bottom_text_white(ppt_file)

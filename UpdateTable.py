@@ -1520,12 +1520,70 @@ def sanawyAyam():
     # 8) Finally, save the workbook
     wb.save(file_path)
 
+def seneksar():
+    ws = wb["السنكسار"]
+    
+    # Read the PPTX file for seneksar
+    pptx_file = relative_path(r"Data\القطمارس\السنكسار.pptx")
+    
+    try:
+        prs = pptx.Presentation(pptx_file)
+        total_slides = len(prs.slides)
+        
+        # Get slide visibility status (True = visible, False = hidden)
+        slide_visibility = []
+        for slide in prs.slides:
+            # Check if slide is hidden (show="0" means hidden)
+            is_visible = slide._element.get("show") != "0"
+            slide_visibility.append(is_visible)
+        
+        # Find patterns: non-hidden slide followed by hidden slides, then non-hidden slide
+        row = 2  # Start from row 2 as specified
+        i = 0  # Slide index
+        
+        while i < total_slides:
+            # Look for a non-hidden slide
+            if slide_visibility[i]:  # Current slide is visible
+                # Look ahead for hidden slides
+                first_hidden = None
+                last_hidden = None
+                j = i + 1
+                
+                # Find consecutive hidden slides after this visible slide
+                while j < total_slides and not slide_visibility[j]:  # While hidden
+                    if first_hidden is None:
+                        first_hidden = j + 1  # Convert to 1-based slide number
+                    last_hidden = j + 1  # Keep updating to get the last hidden
+                    j += 1
+                
+                # If we found hidden slides, record them
+                if first_hidden is not None:
+                    ws.cell(row=row, column=3).value = first_hidden  # Column C
+                    ws.cell(row=row, column=4).value = last_hidden   # Column D
+                    row += 1
+                
+                # Move to the next visible slide (or beyond the hidden sequence)
+                i = j
+            else:
+                # Current slide is hidden, move to next
+                i += 1
+        
+        # Save the workbook
+        wb.save(file_path)
+        
+    except FileNotFoundError:
+        print(f"PowerPoint file not found: {pptx_file}")
+    except Exception as e:
+        print(f"Error in seneksar function: {str(e)}")
+
 def All(progress_callback=None):
     Younan()
     ElsomElkbyr()
     Elsh3anyn()
     sanawyAyam()
+    seneksar()
     katamarsEl5amasyn()
     katamarsOdasElsanawyA7ad()
     katamars3ashyaElsanawyA7ad()
     katamarsBakerElsanawyA7ad()
+

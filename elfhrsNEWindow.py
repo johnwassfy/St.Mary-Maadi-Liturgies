@@ -93,7 +93,7 @@ class elfhrswindow(QMainWindow):
         self.frame_layout = QHBoxLayout(frame)
 
         # Add a stretch to position the line where you want it
-        self.frame_layout.addStretch(8)
+        self.frame_layout.addStretch(10)
 
         # Add a line to divide the frame
         line = QFrame(frame)
@@ -109,7 +109,7 @@ class elfhrswindow(QMainWindow):
         self.image_label = QLabel(frame)
         pixmap = QPixmap(relative_path(r"Data\الصور\الفهرس.png"))
         self.image_label.setPixmap(pixmap)
-        self.image_label.setGeometry(12, 25, 300, 400)  # Adjust the size to make it bigger
+        self.image_label.setGeometry(3, 25, 300, 400)  # Adjust the size to make it bigger
         self.image_label.setScaledContents(True)
         self.image_label.setAlignment(Qt.AlignCenter)  # Center align the image
         self.image_label.setStyleSheet("background-color: transparent;border: none;")
@@ -138,14 +138,17 @@ class elfhrswindow(QMainWindow):
         self.buttons_layout.addWidget(self.label, alignment=Qt.AlignRight)
 
         self.add_buttons_with_paths(
-            ["الصوم الكبير", "الخماسين", "سنوي أيام",
-             "سنوي آحاد - باكر", "سنوي آحاد - عشية", "سنوي آحاد - قداس"], 
-            ["Data\القطمارس\الصوم الكبير و صوم نينوى\قطمارس الصوم الكبير.pptx", 
-             "Data\القطمارس\قطمارس الخماسين (القداس).pptx", 
+            ["سنوي أيام","سنوي آحاد - باكر", "سنوي آحاد - عشية", "سنوي آحاد - قداس",
+             "الصوم الكبير", "الخماسين", "السنكسار (عناوين فقط)"
+            ], 
+            [
              "Data\القطمارس\القطمارس السنوي ايام.pptx", 
              "Data\القطمارس\الاحاد\القطمارس السنوي احاد (باكر).pptx", 
              "Data\القطمارس\الاحاد\القطمارس السنوي احاد (عشية).pptx", 
-             "Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx"
+             "Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx",
+             "Data\القطمارس\الصوم الكبير و صوم نينوى\قطمارس الصوم الكبير.pptx", 
+             "Data\القطمارس\قطمارس الخماسين (القداس).pptx", 
+             "Data\القطمارس\السنكسار.pptx"
              ])
 
         # Add a scroll area for buttons and dropdowns
@@ -377,7 +380,7 @@ class elfhrswindow(QMainWindow):
             self.image_label = QLabel(self)
             pixmap = QPixmap(relative_path(r"Data\الصور\الفهرس.png"))
             self.image_label.setPixmap(pixmap)
-            self.image_label.setGeometry(12, 25, 300, 400)  # Adjust the size to make it bigger
+            self.image_label.setGeometry(3, 25, 300, 400)  # Adjust the size to make it bigger
             self.image_label.setScaledContents(True)
             self.image_label.setAlignment(Qt.AlignCenter)  # Center align the image
             self.image_label.setStyleSheet("background-color: transparent;border: none;")

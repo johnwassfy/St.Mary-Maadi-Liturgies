@@ -320,7 +320,7 @@ def bakerSanawy(season, copticdate, adam = False, Bishop = False, guestBishop = 
             # bishop_values = ["صلاة الشكر", "صلاة الشكر", "طوبه هينا الكبيرة", "طوبه هينا الكبيرة", 
             #                  "نيم بينيوت", "نيم بينيوت", "الاسبسمس", "الاسبسمس"]
 
-            bishopDes_values = ["تكملة في حضور الاسقف", "طوبه هينا الكبيرة", "مارو اتشاسف"]
+            # bishopDes_values = ["تكملة في حضور الاسقف", "طوبه هينا الكبيرة", "مارو اتشاسف"]
             
             bishop_values = find_slide_nums_arrays_v2(excel, sheet, 
                             ['{6851F163-CBEF-4014-A853-CE100557BA6A}', '{6851F163-CBEF-4014-A853-CE100557BA6A}',
@@ -343,7 +343,7 @@ def bakerSanawy(season, copticdate, adam = False, Bishop = False, guestBishop = 
             tobhyna1 = bishop_values[2]
             tobhyna2 = bishop_values[3]
 
-            maro = bishopDes_values[8]
+            maro = bishopDes_values[2]
             maro1 = bishop_values[4]
             maro2 = bishop_values[5]
 

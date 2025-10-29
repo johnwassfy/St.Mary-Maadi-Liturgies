@@ -1,9 +1,131 @@
-from PyQt5.QtWidgets import QDialog, QWidget, QLabel, QCheckBox, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLineEdit, QFrame, QGraphicsDropShadowEffect
-from PyQt5.QtGui import QIcon, QFont, QColor
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtWidgets import QDialog, QWidget, QLabel, QCheckBox, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLineEdit, QFrame, QGraphicsDropShadowEffect, QScrollArea, QRadioButton, QButtonGroup, QToolTip
+from PyQt5.QtGui import QIcon, QFont, QColor, QCursor
+from PyQt5.QtCore import Qt, QSize, QTimer
 from pptx import Presentation
 from commonFunctions import relative_path
 import qtawesome as qta
+
+class SynaxarSection(QWidget):
+    def __init__(self):
+        super().__init__()
+        
+        # Section title
+        self.title_label = QLabel("السنكسار")
+        self.title_label.setStyleSheet("font-weight: bold; color: white; font-size: 16px; margin-bottom: 8px;")
+        
+        # Radio button group
+        self.button_group = QButtonGroup()
+        
+        # Radio button 1
+        self.radio1 = QRadioButton("عناوين فقط")
+        self.radio1.setChecked(True)  # Default selection
+        self.radio1.setStyleSheet("""
+            QRadioButton {
+                color: white;
+                font-size: 14px;
+                padding: 5px;
+            }
+            QRadioButton::indicator {
+                width: 20px;
+                height: 20px;
+                border: 3px solid white;
+                border-radius: 12px;
+                background: transparent;
+            }
+            QRadioButton::indicator:unchecked {
+                background: transparent;
+                border: 3px solid rgba(255, 255, 255, 180);
+            }
+            QRadioButton::indicator:checked {
+                background: qlineargradient(
+                    x1: 0, y1: 0, x2: 1, y2: 1,
+                    stop: 0 #00ff88,
+                    stop: 1 #00cc66
+                );
+                border: 3px solid #00ff88;
+            }
+            QRadioButton::indicator:hover {
+                border: 3px solid rgba(255, 255, 255, 255);
+            }
+        """)
+        
+        # Radio button 2 (disabled with tooltip)
+        self.radio2 = QRadioButton("النص كامل")
+        self.radio2.setEnabled(False)  # Disable the radio button
+        self.radio2.setToolTip("سيتوفر في التحديثات القادمة")
+        self.radio2.setStyleSheet("""
+            QRadioButton {
+                color: rgba(255, 255, 255, 100);
+                font-size: 14px;
+                padding: 5px;
+            }
+            QRadioButton::indicator {
+                width: 20px;
+                height: 20px;
+                border: 3px solid rgba(255, 255, 255, 80);
+                border-radius: 12px;
+                background: transparent;
+            }
+            QRadioButton::indicator:unchecked {
+                background: transparent;
+                border: 3px solid rgba(255, 255, 255, 80);
+            }
+            QRadioButton::indicator:disabled {
+                background: transparent;
+                border: 3px solid rgba(255, 255, 255, 50);
+            }
+            QRadioButton:disabled {
+                color: rgba(255, 255, 255, 100);
+            }
+        """)
+        
+        # Set custom tooltip style
+        self.radio2.setStyleSheet(self.radio2.styleSheet() + """
+            QToolTip {
+                background-color: rgba(0, 0, 0, 200);
+                color: white;
+                border: 1px solid rgba(255, 255, 255, 100);
+                border-radius: 5px;
+                padding: 5px;
+                font-size: 12px;
+            }
+        """)
+        
+        # Add radio buttons to group
+        self.button_group.addButton(self.radio1)
+        self.button_group.addButton(self.radio2)
+        
+        # Connect radio button changes to signal
+        self.radio1.toggled.connect(self.on_selection_changed)
+        self.radio2.toggled.connect(self.on_selection_changed)
+        
+        # Layout
+        layout = QVBoxLayout()
+        layout.setSpacing(8)
+        layout.addWidget(self.title_label)
+        
+        # Radio buttons layout
+        radio_layout = QHBoxLayout()
+        radio_layout.addWidget(self.radio1)
+        radio_layout.addWidget(self.radio2)
+        radio_layout.addStretch()
+        layout.addLayout(radio_layout)
+        
+        self.setLayout(layout)
+    
+    def get_selected_option(self):
+        """Returns the selected synaxar option"""
+        if self.radio1.isChecked():
+            return 1
+        elif self.radio2.isChecked():
+            return 2
+        else:
+            return 1  # Default fallback
+    
+    def on_selection_changed(self):
+        """Called when radio button selection changes"""
+        # This will be connected to parent dialog's method
+        pass
 
 class CustomRow(QWidget):
     def __init__(self, label_text):
@@ -73,12 +195,13 @@ class CustomRow(QWidget):
 
         self.setLayout(layout)
 
-class BishopDialog(QDialog):
+class ConfirmationDialog(QDialog):
     def __init__(self, parent=None, coptic_date="", type=""):
         super().__init__(parent)
         
         self.coptic_date = coptic_date
-        dialog_title = type + coptic_date if coptic_date else ""
+        self.type = type
+        dialog_title = self.type + coptic_date if coptic_date else "صلاة"
         self.setWindowTitle(dialog_title)
         self.setFixedSize(450, 300)
         
@@ -113,10 +236,42 @@ class BishopDialog(QDialog):
         header = self.create_header()
         main_layout.addWidget(header)
         
-        # Main content
-        content_container = QFrame()
-        content_container.setStyleSheet("background: transparent; border: none;")
-        content_layout = QVBoxLayout(content_container)
+        # Create scroll area for content
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                background: transparent;
+                border: none;
+            }
+            QScrollBar:vertical {
+                background: rgba(255, 255, 255, 100);
+                width: 8px;
+                border-radius: 4px;
+                margin: 0;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255, 255, 255, 200);
+                border-radius: 4px;
+                min-height: 20px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: rgba(255, 255, 255, 255);
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: transparent;
+            }
+        """)
+        
+        # Main content widget
+        content_widget = QWidget()
+        content_widget.setStyleSheet("background: transparent; border: none;")
+        content_layout = QVBoxLayout(content_widget)
         content_layout.setContentsMargins(15, 15, 15, 15)
         content_layout.setSpacing(12)
 
@@ -164,8 +319,13 @@ class BishopDialog(QDialog):
         # Connect row2 text change to enable/disable row3
         self.row2.line_edit.textChanged.connect(self.on_row2_text_changed)
 
+        # Synaxar section (only for "قداس" type)
+        self.synaxar_section = None
+        if self.type == "قداس":
+            self.synaxar_section = SynaxarSection()
+
         # Save Button
-        self.update_button = QPushButton("حفـظ")
+        self.update_button = QPushButton("تحميل الملف")
         self.update_button.clicked.connect(self.update_powerpoint)
         self.update_button.setStyleSheet("""
             QPushButton {
@@ -201,6 +361,15 @@ class BishopDialog(QDialog):
         # Add remaining widgets
         content_layout.addWidget(self.row2)
         content_layout.addWidget(self.row3)
+        
+        # Add synaxar section if type is "قداس"
+        if self.synaxar_section:
+            # Add separator line
+            separator = QFrame()
+            separator.setFrameShape(QFrame.HLine)
+            separator.setStyleSheet("color: rgba(255, 255, 255, 100); margin: 10px 0;")
+            content_layout.addWidget(separator)
+            content_layout.addWidget(self.synaxar_section)
 
         # Button layout
         button_layout = QHBoxLayout()
@@ -208,7 +377,9 @@ class BishopDialog(QDialog):
         button_layout.addStretch()  # Add stretch at the end to push button right
         content_layout.addLayout(button_layout)
 
-        main_layout.addWidget(content_container, 1)
+        # Set the content widget to scroll area and add to main layout
+        scroll_area.setWidget(content_widget)
+        main_layout.addWidget(scroll_area, 1)
         
         # Set Arabic RTL layout
         self.setLayoutDirection(Qt.RightToLeft)
@@ -337,7 +508,10 @@ class BishopDialog(QDialog):
         title_layout = QHBoxLayout()
         
         # Title
-        title_text = "حضور الأسقف - " + self.coptic_date if self.coptic_date else "حضور الأسقف"
+        if self.coptic_date:
+            title_text = f"{self.type} - {self.coptic_date}"
+        else:
+            title_text = self.type
         title_label = QLabel(title_text)
         title_font = QFont()
         title_font.setPointSize(16)
@@ -392,6 +566,11 @@ class BishopDialog(QDialog):
     def update_powerpoint(self):
         presentation = Presentation(relative_path(r"Data\CopyData\في حضور الاسقف و اساقفة ضيوف.pptx"))
 
+        # Get synaxar option if available
+        synaxar_option = None
+        if self.synaxar_section:
+            synaxar_option = self.synaxar_section.get_selected_option()
+
         for slide in presentation.slides:
             slide_contains_word = False
             slide_contains_word2 = False
@@ -436,6 +615,12 @@ class BishopDialog(QDialog):
                                     run.text = run.text.replace("epickopoc", "mmytropolityc")
                                     run.text = run.text.replace("`epickopou tyc", "mmytropolityc")
 
+        # Handle synaxar option if available
+        if synaxar_option:
+            # You can add synaxar-specific processing here
+            # For example, modify specific slides or text based on the selected option
+            pass
+
         presentation.save(relative_path(r"Data\حضور الأسقف.pptx"))
         # Let the main application handle closing the dialog
 
@@ -457,4 +642,4 @@ class BishopDialog(QDialog):
 
 
 # Keep the old class name as an alias for backward compatibility
-Bishop = BishopDialog
+Confirm = ConfirmationDialog

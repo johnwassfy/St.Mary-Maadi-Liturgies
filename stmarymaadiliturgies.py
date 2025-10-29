@@ -32,6 +32,7 @@ class MainWindow(QMainWindow):
             self.bishop_window = None
             self.bishop = False
             self.GuestBishop = 0
+            self.seneksar = 1
             self.setWindowTitle("St. Mary Maadi Liturgies")
             self.setWindowIcon(QIcon(relative_path(r"Data\الصور\Logo.ico")))
             self.setGeometry(400, 100, 625, 600)
@@ -86,11 +87,10 @@ class MainWindow(QMainWindow):
             self.restore_main_frame()
 
             # Create the update button (single button for both states)
-            self.update_button = self.create_update_button(566)
-            self.create_button("تحديث الملفات", 566, self.update_section_names)
-            self.create_button("في حضور الأسقف", 566, self.open_bishop_window)
-            self.create_button("اضافة تعديل خاص", 566, self.open_bishop_window)
-            self.create_button("إعادة تشغيل", 566, self.restart_app)
+            self.update_button = self.create_update_button(560)
+            self.create_button("تحديث الملفات", 560, self.update_section_names)
+            self.create_button("اضافة تعديل خاص", 560, lambda: self.open_confirmation_window("تعديل خاص"))
+            self.create_button("إعادة تشغيل", 560, self.restart_app)
 
             asyncio.run(self.update_labels())
 
@@ -145,7 +145,7 @@ class MainWindow(QMainWindow):
 
     def create_update_button(self, y):
         """Create the single update button with initial state."""
-        button_texts = ["تحديث الملفات", "في حضور الأسقف", "اضافة تعديل خاص", "تحديث", "إعادة تشغيل"]
+        button_texts = ["تحديث الملفات", "اضافة تعديل خاص", "تحديث", "إعادة تشغيل"]
         button_width = 115
         spacing = 10
         total_width = (button_width * len(button_texts)) + (spacing * (len(button_texts) - 1))
@@ -361,7 +361,7 @@ class MainWindow(QMainWindow):
             button.clicked.connect(action)
 
     def create_button(self, text, y, action):
-        button_texts = ["تحديث الملفات", "في حضور الأسقف", "اضافة تعديل خاص"]
+        button_texts = ["تحديث الملفات", "اضافة تعديل خاص"]
         if self.show_update_button:
             button_texts.append("تحديث البرنامج")
         else:
@@ -459,33 +459,70 @@ class MainWindow(QMainWindow):
 
         button.clicked.connect(action)
 
-    def open_bishop_window(self):
-        from GuestWindow import Bishop
+    def open_confirmation_window(self, prayer_type="قداس"):
+        from Confirmation_Dialog import Confirm
         self.bishop = False
         self.GuestBishop = 0
-        if not self.bishop_window:
-            self.bishop_window = Bishop()
-            self.bishop_window.row2.line_edit.textChanged.connect(self.update_checkbox_state)
-            self.bishop_window.update_button.clicked.connect(self.update_bishop_variables)
-        self.bishop_window.show()
+        self.seneksar = 1  # Default to 1 (عناوين فقط)
+        # Convert coptic date list to readable string
+        coptic_date_string = self.get_coptic_date_string()
+        
+        # Create dialog with parent and show it modally
+        confirmation_dialog = Confirm(parent=self, coptic_date=coptic_date_string, type=prayer_type)
+        confirmation_dialog.row2.line_edit.textChanged.connect(lambda: self.update_checkbox_state(confirmation_dialog))
+        confirmation_dialog.update_button.clicked.connect(lambda: self.update_bishop_variables(confirmation_dialog))
+        if confirmation_dialog.synaxar_section:
+            confirmation_dialog.synaxar_section.radio1.toggled.connect(lambda: self.update_synaxar_option(confirmation_dialog))
+            confirmation_dialog.synaxar_section.radio2.toggled.connect(lambda: self.update_synaxar_option(confirmation_dialog))
+            # Set initial value from the dialog
+            self.seneksar = confirmation_dialog.synaxar_section.get_selected_option()
+        # Show as modal dialog
+        result = confirmation_dialog.exec_()
+        
+        # Return True if user saved (accepted), False if cancelled/closed
+        return result == confirmation_dialog.Accepted
 
-    def update_checkbox_state(self):
+    def get_coptic_date_string(self):
+        """Convert coptic date list to readable Arabic string"""
+        if not hasattr(self, 'coptic_date') or not self.coptic_date:
+            return ""
+        
+        m = self.getmonth(self.coptic_date[1])
+        m = self.convert_to_arabic_digits(m)
+        coptic_date_text = f"{self.convert_to_arabic_digits(self.coptic_date[2])} {m}، {self.convert_to_arabic_digits(self.coptic_date[0])}"
+        
+        return coptic_date_text
+
+    def update_checkbox_state(self, dialog):
         # If row2's line edit has text, check the checkbox
-        if self.bishop_window.row2.line_edit.text():
-            self.bishop_window.checkbox1.setChecked(True)
+        if dialog.row2.line_edit.text():
+            dialog.checkbox1.setChecked(True)
         else:
-            self.bishop_window.checkbox1.setChecked(False)
+            dialog.checkbox1.setChecked(False)
 
-    def update_bishop_variables(self):
-        # Update self.bishop based on the checkbox state in Bishop window
-        self.bishop = self.bishop_window.checkbox1.isChecked()
+    def update_bishop_variables(self, dialog):
+        # Update self.bishop based on the checkbox state in Bishop dialog
+        self.bishop = dialog.checkbox1.isChecked()
 
-        if self.bishop_window.row2.line_edit.text():
+        if dialog.row2.line_edit.text():
             self.GuestBishop += 1
-        if self.bishop_window.row3.line_edit.text():
+        if dialog.row3.line_edit.text():
             self.GuestBishop += 1
-        # Hide the Bishop window after updating variables
-        self.bishop_window.hide()
+        
+        # Update synaxar option if available
+        if dialog.synaxar_section:
+            self.seneksar = dialog.synaxar_section.get_selected_option()
+        else:
+            # Ensure default value if no synaxar section
+            self.seneksar = 1
+        
+        # Close the Bishop dialog after updating variables
+        dialog.accept()
+    
+    def update_synaxar_option(self, dialog):
+        """Update the synaxar option when radio buttons change"""
+        if dialog.synaxar_section:
+            self.seneksar = dialog.synaxar_section.get_selected_option()
 
     def open_elmonasbat_Window(self):
         # Remove old frame
@@ -734,6 +771,7 @@ class MainWindow(QMainWindow):
         from qudasDialog import SectionSelectionDialog
         import os
         from Season import get_season_name
+        from PyQt5.QtWidgets import QMessageBox
 
         try:
             presentation_opened = False
@@ -747,9 +785,16 @@ class MainWindow(QMainWindow):
                 # If already open, just show the dialog without reopening the presentation
                 presentation_opened = True
             else:
+                # Show confirmation dialog for bishop settings
+                result = self.open_confirmation_window("قداس")
+                
+                if not result:
+                    return  # User cancelled/closed dialog, exit the function
+                
+                # User confirmed and saved settings, proceed with opening the presentation
                 match self.season:
                     case 0 | 6 | 13 | 30 | 31:
-                        odasat.odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop)
+                        odasat.odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop, self.seneksar)
                         presentation_opened = True
                     case 1 | 1.1:
                         odasat.odasElnayrooz(self.coptic_date, self.bishop, self.GuestBishop)
@@ -908,7 +953,13 @@ class MainWindow(QMainWindow):
                 # If already open and was opened by this button, just show the dialog
                 presentation_opened = True
             else:
-                # Open the presentation with the appropriate content
+                # Show confirmation dialog for bishop settings
+                result = self.open_confirmation_window("باكر")
+                
+                if not result:
+                    return  # User cancelled/closed dialog, exit the function
+                
+                # User confirmed and saved settings, proceed with opening the presentation
                 adam = False
                 if self.current_date.weekday() in [0, 1, 6]:
                     adam = True
@@ -992,7 +1043,13 @@ class MainWindow(QMainWindow):
                 # If already open and was opened by this button, just show the dialog
                 presentation_opened = True
             else:
-                # Open the presentation with the appropriate content
+                # Show confirmation dialog for bishop settings
+                result = self.open_confirmation_window("عشية")
+                
+                if not result:
+                    return  # User cancelled/closed dialog, exit the function
+                
+                # User confirmed and saved settings, proceed with opening the presentation
                 adam = False
                 if self.current_date.weekday() in [0, 1, 6]:
                     adam = True

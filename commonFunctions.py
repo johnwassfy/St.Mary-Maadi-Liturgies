@@ -748,14 +748,30 @@ def insert_image_to_slides_same_file(original_presentation_path, image_path):
 def hide_slides(presentation, hide_array):
     for start_slide, end_slide in hide_array:
         # print(start_slide, end_slide)
-        for i in range(start_slide, end_slide + 1):
-            presentation.Slides(i).SlideShowTransition.Hidden = True
+        try:
+            for i in range(start_slide, end_slide + 1):
+                try:
+                    presentation.Slides(i).SlideShowTransition.Hidden = True
+                except Exception as e:
+                    print(f"Warning: Could not hide slide {i}. Skipping. Error: {str(e)}")
+                    continue
+        except Exception as e:
+            print(f"Warning: Error processing slide range {start_slide}-{end_slide}. Skipping. Error: {str(e)}")
+            continue
 
 def show_slides(presentation, show_array):
     for start_slide, end_slide in show_array:
         # print(start_slide, end_slide)
-        for i in range(start_slide, end_slide + 1):
-            presentation.Slides(i).SlideShowTransition.Hidden = False
+        try:
+            for i in range(start_slide, end_slide + 1):
+                try:
+                    presentation.Slides(i).SlideShowTransition.Hidden = False
+                except Exception as e:
+                    print(f"Warning: Could not show slide {i}. Skipping. Error: {str(e)}")
+                    continue
+        except Exception as e:
+            print(f"Warning: Error processing slide range {start_slide}-{end_slide}. Skipping. Error: {str(e)}")
+            continue
 
 def find_Readings_Date (month, day):
     special_days = {
