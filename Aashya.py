@@ -13,8 +13,8 @@ def aashyaSanawy(season, copticdate, adam = False, Bishop = False, guestBishop =
     elzoksologyat(excel, season, "عشية")
 
     if cd.weekday() == 6:
-        katamars = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (عشية).pptx")
-        katamars_sheet = "قطمارس الاحاد للعشية"
+        katamars = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
+        katamars_sheet = "القطمارس السنوي آحاد"
         km = copticdate[1]
         kd = (copticdate[2] - 1) // 7 + 1
     else: 
@@ -233,8 +233,8 @@ def aashyaKiahk(copticdate, adam = False, Bishop = False, guestBishop = 0):
     elzoksologyat(excel, 5, "عشية")
 
     if cd.weekday() == 6:
-        katamars = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (عشية).pptx")
-        katamars_sheet = "قطمارس الاحاد للعشية"
+        katamars = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
+        katamars_sheet = "القطمارس السنوي آحاد"
         km = copticdate[1]
         kd = (copticdate[2] - 1) // 7 + 1
     else: 
@@ -625,3 +625,5 @@ def aashyaEltagaly(copticdate, adam = False, Bishop = False, guestBishop = 0):
 
     presentation1.SlideShowSettings.Run()
 
+def aashyaElmilad():
+    pass

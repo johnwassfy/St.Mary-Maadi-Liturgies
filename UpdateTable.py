@@ -1520,6 +1520,133 @@ def sanawyAyam():
     # 8) Finally, save the workbook
     wb.save(file_path)
 
+def sanawyA7ad():
+    ws = wb["القطمارس السنوي آحاد"]
+
+    # Set column widths for reference
+    ws.column_dimensions['A'].width = 10
+    ws.column_dimensions['B'].width = 15
+
+    # 1) Set starting day and month in columns A and B
+    for row in ws.iter_rows(min_row=2, min_col=1, max_col=ws.max_column - 2, values_only=False):
+        for cell in row:
+            cell.value = None
+
+    data = [
+        (1, 1), (2, 1), (3, 1), (4, 1), (1, 2), (2, 2), (3, 2), (4, 2), (1, 3), (2, 3), (3, 3), (4, 3),
+        (1, 4), (2, 4), (3, 4), (4, 4), (1, 5), (2, 5), (3, 5), (4, 5), (1, 6), (2, 6), (3, 6), (4, 6),
+        (3, 9), (4, 9), (1, 10), (2, 10), (3, 10), (4, 10), (1, 11), (2, 11), (3, 11), (4, 11), (1, 12), 
+        (2, 12), (3, 12), (4, 12), (1, 13), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (5, 6), (5, 9), 
+        (5, 10), (5, 11), (5, 12)
+    ]
+
+
+    # Insert the data into the worksheet starting from row 2
+    for i, row in enumerate(data, start=2):
+        ws.cell(row=i, column=1, value=row[0])
+        ws.cell(row=i, column=2, value=row[1])
+
+
+    # 2) Read the PPTX file
+    pptx_file = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
+    prs = pptx.Presentation(pptx_file)
+
+    # 3) Define search words and collect matching slides
+    sanawy_search_words = [
+        "مزمور عشية",
+        "إنجيل عشية",
+        "مزمور باكر",
+        "إنجيل باكر",
+        "معلمنا بولس الرسول",
+        "الكاثوليكون",
+        "الإبركسيس",
+        "المزمور (",
+        "الإنجيل من",
+    ]
+    matching_slides = {word: [] for word in sanawy_search_words}
+
+    total_slides = len(prs.slides)
+    
+    # 4) Get all visible slide numbers (non-hidden)
+    visible_slides = [i + 1 for i, slide in enumerate(prs.slides) if slide._element.get("show") != "0"]
+
+    # 5) Populate matching_slides with slide numbers for each search word
+    for i, slide in enumerate(prs.slides, start=1):
+        text = ""
+        for shape in slide.shapes:
+            if hasattr(shape, 'text'):
+                text += shape.text.lower()
+        for word in sanawy_search_words:
+            if word.lower() in text:
+                matching_slides[word].append(i)
+
+    # -------------------------------------------------------------------------
+    # 6) Place slide numbers into the sheet according to your patterns.
+    # -------------------------------------------------------------------------
+
+    # A) The rest of the words are entered normally in consecutive rows starting at row 2,
+    #    in their respective columns. (Skipped columns: E, I, O, and R)
+    normal_columns = {
+        "مزمور عشية": 3,            # Column c
+        "إنجيل عشية": 4,            # Column D
+        "مزمور باكر": 6,            # Column F
+        "إنجيل باكر": 7,            # Column G
+        "معلمنا بولس الرسول": 9,   # Column H
+        "الكاثوليكون": 10,         # Column J
+        "الإبركسيس": 11,            # Column K
+        "المزمور (": 12,           # Column L
+        "الإنجيل من": 13            # Column M
+    }
+    for word, col in normal_columns.items():
+        slides_list = matching_slides[word]
+        row = 2
+        for slide_num in slides_list:
+            ws.cell(row=row, column=col).value = slide_num
+            row += 1
+
+    # -------------------------------------------------------------------------
+    # 7) Now fill in the skipped columns by using the previous column's value.
+    #    For each skipped column, if the previous column (which contains a slide number)
+    #    is not empty and is an integer, we find the next visible slide after that number,
+    #    subtract 1, and write it in the skipped column.
+    #
+    # Skipped columns and their corresponding previous columns:
+    #   Column E (5)  <- Column D (4)  ("إنجيل عشية")
+    #   Column I (9)  <- Column H (8)  ("إنجيل باكر")
+    #   Column O (15) <- Column N (14) ("الإنجيل من")
+    #   Column R (18) <- Column Q (17) ("انجيل مساء الاحد")
+    # -------------------------------------------------------------------------
+
+    last_slide = total_slides
+
+    # For Column E: based on Column D
+    for row in range(2, ws.max_row + 1):
+        next_val = ws.cell(row=row, column=6).value
+        if isinstance(next_val, int):
+            ws.cell(row=row, column=5).value = next_val - 1
+
+    # For Column H: based on Column I
+    for row in range(2, ws.max_row + 1):
+        next_val = ws.cell(row=row, column=9).value
+        if isinstance(next_val, int):
+            ws.cell(row=row, column=8).value = next_val - 1
+
+    # For Column N: based on Column M
+    for row in range(2, ws.max_row + 1):
+        prev_val = ws.cell(row=row, column=13).value
+        if isinstance(prev_val, int):
+            next_slide = next((s for s in visible_slides if s > prev_val), last_slide) - 1
+            ws.cell(row=row, column=14).value = next_slide
+
+    values_to_copy = [ws.cell(row=41, column=col).value for col in range(3, 15)]
+    for row in range(42, 51):
+        for col_index, value in enumerate(values_to_copy, start=3):
+            ws.cell(row=row, column=col_index, value=value)
+
+
+    # 8) Finally, save the workbook
+    wb.save(file_path)
+
 def seneksar():
     ws = wb["السنكسار"]
     

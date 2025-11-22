@@ -172,11 +172,11 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
         kd = copticdate[2]
         katamars_offsets = [10, 11, 12, 13, 14, 15]
     elif cd.weekday() == 6:
-        prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
-        katamars_sheet = "قطمارس الاحاد للقداس"
+        prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
+        katamars_sheet = "القطمارس السنوي آحاد"
         km = copticdate[1]
         kd = (copticdate[2] - 1) // 7 + 1
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
+        katamars_offsets = [9, 10, 11, 12, 13, 14]
     else: 
         prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
         katamars_sheet = "القطمارس السنوي أيام"
@@ -507,11 +507,11 @@ def odasElnayrooz(copticdate, Bishop=False, guestBishop=0):
     replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
 
     if cd.weekday() == 6:
-        prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
-        katamars_sheet = "قطمارس الاحاد للقداس"
+        prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
+        katamars_sheet = "القطمارس السنوي آحاد"
         km = copticdate[1]
         kd = (copticdate[2] - 1) // 7 + 1
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
+        katamars_offsets = [9, 10, 11, 12, 13, 14]
     else: 
         prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
         katamars_sheet = "القطمارس السنوي أيام"
@@ -1091,11 +1091,11 @@ def odasKiahk(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
 
     if cd.weekday() == 6:
-        prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
-        katamars_sheet = "قطمارس الاحاد للقداس"
+        prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
+        katamars_sheet = "القطمارس السنوي آحاد"
         km = copticdate[1]
         kd = (copticdate[2] - 1) // 7 + 1
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
+        katamars_offsets = [9, 10, 11, 12, 13, 14]
     else: 
         prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
         katamars_sheet = "القطمارس السنوي أيام"
@@ -4407,11 +4407,11 @@ def odasSomElRosol(copticdate, Bishop=False, guestBishop=0):
     replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
 
     if cd.weekday() == 6:
-        prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
-        katamars_sheet = "قطمارس الاحاد للقداس"
+        prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
+        katamars_sheet = "القطمارس السنوي آحاد"
         km = copticdate[1]
         kd = (copticdate[2] - 1) // 7 + 1
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
+        katamars_offsets = [9, 10, 11, 12, 13, 14]
     else: 
         prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
         katamars_sheet = "القطمارس السنوي أيام"
@@ -4717,11 +4717,11 @@ def odas3ydElrosol(copticdate, Bishop=False, guestBishop=0):
     replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
 
     if cd.weekday() == 6:
-        prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
-        katamars_sheet = "قطمارس الاحاد للقداس"
+        prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
+        katamars_sheet = "القطمارس السنوي آحاد"
         km = 11
         kd = 1
-        katamars_offsets = [3, 4, 5, 6, 7, 8]
+        katamars_offsets = [9, 10, 11, 12, 13, 14]
     else: 
         prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
         katamars_sheet = "القطمارس السنوي أيام"
@@ -5264,11 +5264,11 @@ def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0):
 
     if cd.weekday() == 6 :
         if copticdate[1] == 1:
-            prs2 = relative_path(r"Data\القطمارس\الاحاد\القطمارس السنوي احاد (القداس).pptx")
-            katamars_sheet = "قطمارس الاحاد للقداس"
+            prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
+            katamars_sheet = "القطمارس السنوي آحاد"
             km = 1
             kd = 4
-            katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [3, 4, 5, 6, 7, 8])
+            katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [9, 10, 11, 12, 13, 14])
         else:
             prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
             katamars_sheet = "القطمارس السنوي أيام"

@@ -1284,6 +1284,24 @@ def move_sections_range(presentation, start_section_name, end_section_name, targ
         presentation.SectionProperties.Move(move_index, target_index + 1)
         target_index += 1
 
+def move_sections_range_v2(presentation, start_section_id, end_section_id, target_section_id):
+    sections = {presentation.SectionProperties.SectionID(i): i for i in range(1, presentation.SectionProperties.Count + 1)}
+    if start_section_id not in sections or end_section_id not in sections or target_section_id not in sections:
+        raise ValueError("One or more specified section IDs are invalid.")
+    start_index = sections[start_section_id]
+    end_index = sections[end_section_id]
+    target_index = sections[target_section_id]
+    if start_index > end_index:
+        raise ValueError("Start section must come before or be the same as the end section.")
+    move_indices = list(range(start_index, end_index + 1))
+    if target_index >= start_index and target_index <= end_index:
+        raise ValueError("Target section cannot be within the range of sections to move.")
+    if target_index > end_index:
+        target_index -= len(move_indices)
+    for move_index in move_indices:
+        presentation.SectionProperties.Move(move_index, target_index + 1)
+        target_index += 1
+
 def run_vba_with_slide_id_bakr_aashya(excel, sheet, prs, presentation, slide_section_id = '{A5B9CE2F-90E3-44D7-B22F-CAE6783C8E2F}'):
 
     slide = find_slide_num_v2(excel, sheet, slide_section_id, 2, 1)
@@ -1384,6 +1402,7 @@ def elzoksologyat (excel_path, season, bakerOR3ashyaORtasbha):
         case 1: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{9A902651-94A5-4D6A-83A0-BF404F380CD5}", bakerOR3ashyaORtasbha])
         case 2: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{264E4307-BE55-4799-9151-3D149372B553}", bakerOR3ashyaORtasbha])
         case 29: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{DC61EC21-9EF0-4E7C-8E4E-CD4269024AE6}", bakerOR3ashyaORtasbha])
+        case 4 | 4.1 : show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{0276E405-8591-4E11-91ED-A86BDAEE711A}", "{D31A1C96-E6BC-41E0-A28E-A6F9769C185B}", "{84AB6DBC-49E9-4462-8B30-F01B81955172}", bakerOR3ashyaORtasbha])
         case 5: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ['{D92BB540-7883-4DD1-A6A7-1E0A76337CF2}', '{D622430F-FECE-4075-85A5-AFCFB40851AB}', '{DA8C1040-76BE-40FE-A02D-791EEB63045C}', '{C13ED8FB-8409-4503-AB7D-D9DF2DA0CBE7}', '{75722E63-5075-4CAF-9D6F-C5591C6AC389}', '{72C6D456-0F5A-4A81-82BB-06406C1912B3}'])
         case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ['{D44C71EC-63B2-4404-886F-C06106494AA4}', '{7C22CB67-76C9-4102-BF71-E76EFA7F9CC2}', '{6B4AE8CD-BEBF-46D6-B948-EC0EE4A8E823}', '{9D8CE5B8-388E-4BFB-9501-7D65B99CD64B}', '{C3B15270-DF51-4212-942E-C99136F27899}'])
         case 28: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{81E5C2F6-C71A-4711-83D2-FBF56C7FD101}", bakerOR3ashyaORtasbha])
@@ -1569,7 +1588,8 @@ def get_open_presentations():
 
 # excel = relative_path(r"Files Data.xlsx")
 # sheet = "رفع بخور"
-# arr = ["مرد الانجيل السنوي", "اري ابرسفافين"]
+# arr = ["قدوس الميلاد", "مزمور باكر عيد الميلاد قبطي", "طواف مزمور عشية وباكر عيد الميلاد",
+#                             "المزمور", "الانجيل", "تكملة على حسب المناسبة"]
 # print(find_section_Ids_with_names(excel, sheet, arr))
 # arr2 = ["{4329E910-BD2C-4FBB-8FF3-A59F06EE9D45}", "{5BB65881-3E8A-4130-839D-6EB6F9D5FAFA}"]
 # print(find_section_names_with_ids(excel, sheet, arr2))

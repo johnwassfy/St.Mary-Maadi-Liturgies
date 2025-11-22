@@ -62,11 +62,15 @@ class HoverButton(QPushButton):
         super().leaveEvent(event)
         
 class TasbhaSelectionDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, season=None):
         super().__init__(parent)
         self.selected_option = None
         
-        self.setWindowTitle("الابصلمودية المقدسة")
+        if season == 5:
+            self.setWindowTitle("الابصلمودية الكيهكية المقدسة")
+        else:
+            self.setWindowTitle("الابصلمودية المقدسة")
+
         self.setFixedSize(480, 400)
         
         # Make dialog modal - will be attached to parent window
@@ -93,7 +97,7 @@ class TasbhaSelectionDialog(QDialog):
         """)
         
         # Header
-        header = self.create_header()
+        header = self.create_header(season)
         main_layout.addWidget(header)
         
         # Main content
@@ -118,7 +122,7 @@ class TasbhaSelectionDialog(QDialog):
         # Set Arabic RTL layout
         self.setLayoutDirection(Qt.RightToLeft)
 
-    def create_header(self):
+    def create_header(self, season=None):
         header = QFrame()
         header.setFixedHeight(50)
         header.setStyleSheet("""
@@ -151,7 +155,10 @@ class TasbhaSelectionDialog(QDialog):
             pass
         
         # Title
-        title_label = QLabel("الإبصلمودية المقدسة")
+        if season == 5:
+            title_label = QLabel("الإبصلمودية الكيهكية المقدسة")
+        else:
+            title_label = QLabel("الإبصلمودية المقدسة")
         title_font = QFont()
         title_font.setPointSize(16)
         title_font.setBold(True)
@@ -294,7 +301,7 @@ class TasbhaSelectionDialog(QDialog):
         buttons_layout.addWidget(evening_button)
         
         return buttons_frame    
-    
+
     def style_button(self, button, icon_name=None):
         button_font = QFont()
         button_font.setPointSize(18)
@@ -320,7 +327,7 @@ class TasbhaSelectionDialog(QDialog):
                 button.setLayoutDirection(Qt.RightToLeft)  # RTL for Arabic text
             except Exception as e:
                 print(f"Icon error: {e}")
-            
+
     def button_clicked(self, option):
         self.selected_option = option
         self.accept()

@@ -518,7 +518,7 @@ class MainWindow(QMainWindow):
         
         # Close the Bishop dialog after updating variables
         dialog.accept()
-    
+
     def update_synaxar_option(self, dialog):
         """Update the synaxar option when radio buttons change"""
         if dialog.synaxar_section:
@@ -902,7 +902,7 @@ class MainWindow(QMainWindow):
         return
 
     def handle_baker_button_click(self):
-        from baker import bakerSanawy, bakerKiahk
+        from baker import bakerSanawy, bakerKiahk, bakerElmilad
         from qudasDialog import SectionSelectionDialog
         from PyQt5.QtWidgets import QMessageBox
         import os
@@ -968,6 +968,8 @@ class MainWindow(QMainWindow):
                         bakerSanawy(self.season, self.coptic_date, adam, self.bishop, self.GuestBishop)
                         self.active_presentation_source = "باكر"  # Set the active button
                         presentation_opened = True
+                    case 4: 
+                        bakerElmilad(self.season, self.coptic_date, self.bishop, self.GuestBishop)
                     case 5:
                         bakerKiahk(self.coptic_date, adam, self.bishop, self.GuestBishop)
                         self.active_presentation_source = "باكر"  # Set the active button
@@ -1127,7 +1129,7 @@ class MainWindow(QMainWindow):
                 return
             
             # If no tasbha is open, show the selection dialog
-            dialog = TasbhaSelectionDialog(self)
+            dialog = TasbhaSelectionDialog(self, self.season)
             result = dialog.exec_()
             
             if result == QDialog.Accepted and dialog.selected_option:
@@ -1147,8 +1149,12 @@ class MainWindow(QMainWindow):
                     
                 elif dialog.selected_option == "evening":
                     # Run evening tasbha
-                    tasbha.tasbha(self.coptic_date, True, self.season)
-                    presentation_file = relative_path(r"الإبصلمودية.pptx")
+                    if self.season == 5:  # Kiahk season
+                        tasbha.kiahk_aashya(self.coptic_date)
+                        presentation_file = relative_path(r"الإبصلمودية الكيهكية.pptx")
+                    else:
+                        tasbha.tasbha(self.coptic_date, True, self.season)
+                        presentation_file = relative_path(r"الإبصلمودية.pptx")
                     presentation_opened = True
                 
                 # After opening the presentation, show the section selection dialog
@@ -1167,8 +1173,8 @@ class MainWindow(QMainWindow):
                         title_prefix = "تسبحة نصف الليل"
                         sheet_name = "تسبحة كيهك" if self.season == 5 else "التسبحة"
                     else:
-                        title_prefix = "تسبحة عشية"
-                        sheet_name = "التسبحة"
+                        title_prefix = "تسبحة عشية كيهك" if self.season == 5 else "تسبحة عشية"
+                        sheet_name = "تسبحة كيهك" if self.season == 5 else "التسبحة"
                     
                     title = f"{title_prefix} {coptic_date_text} / {arabic_date_text}"
                     
