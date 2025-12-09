@@ -625,5 +625,5 @@ def aashyaEltagaly(copticdate, adam = False, Bishop = False, guestBishop = 0):
 
     presentation1.SlideShowSettings.Run()
 
-def aashyaElmilad():
+def aashyaElmilad(copticdate, adam = False, Bishop = False, guestBishop = 0):
     pass
