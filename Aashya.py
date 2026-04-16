@@ -626,4 +626,25 @@ def aashyaEltagaly(copticdate, adam = False, Bishop = False, guestBishop = 0):
     presentation1.SlideShowSettings.Run()
 
 def aashyaElmilad(copticdate, adam = False, Bishop = False, guestBishop = 0):
-    pass
+    from copticDate import CopticCalendar
+    cd = CopticCalendar().coptic_to_gregorian(copticdate)
+    prs = relative_path(r"رفع بخور عشية و باكر.pptx")  # Using the relative path
+    excel = relative_path(r"Files Data.xlsx")
+    excel2 = relative_path(r"Tables.xlsx")
+    des_sheet ="رفع بخور"
+    replacefile(prs, relative_path(r"Data\CopyData\رفع بخور عشية و باكر.pptx"))
+
+    elzoksologyat(excel, 29, "عشية")
+
+    katamars = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+    katamars_sheet = "القطمارس السنوي أيام"
+    katamars_values = fetch_data_arrays(excel2, katamars_sheet, 4, 29, [3, 4, 5])
+    elmzmor = katamars_values[0]
+    elengil = katamars_values[1]
+    elengil2 = katamars_values[2]
+
+    milad_aashya_show_full_sections = ["ارباع عيد الميلاد", "ربع الملاك غبريال", 
+                                       "ختام ارباع الناقوس الفرايحي", "اوشية الراقدين", "تفضل يا رب",
+                                       ""]
+
+    milad_aashya_hide_full_sections = []

@@ -56,16 +56,16 @@ def get_season(date):
     elif (month == 1 and (17 <= day <= 19)) or (month == 7 and day == 10):
         season = 2  # عيدي الصليب
     elif [baramonElmilad[1], baramonElmilad[2]]<= [month, day] < [Elmilad[1], Elmilad[2]]:
-        season = 3 # برامون الميلاد
+        season = 3 # برمون الميلاد
     elif [month, day] == [Elmilad[1], Elmilad[2]]:
         season = 4 # عيد الميلاد
-    elif [month, day] == [Elmilad[1] + 1, Elmilad[2]]:
+    elif [coptic_date[0], month, day] == coptic.coptic_date_after(1, [coptic.current_coptic_datetime[0], Elmilad[1], Elmilad[2]]):
         season = 4.1 # اليوم الثاني من الميلاد
     elif month == 4:
         season = 5  # كيهك
     elif (
         day == 29
-        and month not in [5, 6]
+        and month not in [5, 6, 7]
         and not (El2yama <= [month, day] <= el3nsara)
     ):
         season = 32  # تذكار الاعياد السيدية
@@ -76,7 +76,7 @@ def get_season(date):
     elif month == 5 and day == 6:
         season = 7  #الختان
     elif baramonElghetas  <= [month, day] < [5, 11]:
-        season = 8   # برامون الغطاس
+        season = 8   # برمون الغطاس
     elif [month, day] == [5, 11]:
         season = 9   # عيد الغطاس
     elif [month, day] == [5, 12]:
@@ -164,14 +164,14 @@ def get_season_name(season_number):
         1: "عيد النيروز",
         1.1: "فترة النيروز",
         2: "عيد الصليب",
-        3: "برامون الميلاد",
+        3: "برمون الميلاد",
         4: "عيد الميلاد المجيد",
         4.1: "اليوم الثاني من الميلاد",
         4.2 : "فترة الميلاد",
         5: "شهر كيهك",
         6: "صوم الميلاد",
         7: "عيد الختان",
-        8: "برامون الغطاس",
+        8: "برمون الغطاس",
         9: "عيد الغطاس",
         9.1: "اليوم الثاني من الغطاس",
         10: "عرس قانا الجليل",

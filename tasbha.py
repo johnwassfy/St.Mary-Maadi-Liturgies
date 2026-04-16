@@ -19,9 +19,16 @@ def tasbha(copticdate, Aashya, season):
         replacefile(relative_path(r"الذكصولوجيات.pptx"), relative_path(r"Data\CopyData\الذكصولوجيات.pptx"))
         elzoksologyat(excel, season, "نصف الليل")
     
-    # tasbha_values =  ["تين ثينو", "الذكصولوجيات", "ني اثنوس تيرو", "ثيؤطوكية الأحد 7-9", "ثيؤطوكية الأحد 16-18", "قانون الايمان", "قدوس قدوس قدوس", "تين ناف"]
+    tasbha_values =  ["تين ثينو", "الذكصولوجيات", "ني اثنوس تيرو", "ثيؤطوكية الأحد 8-9", "ثيؤطوكية الأحد 7",
+                      "ثيؤطوكية الأحد 16-18", "قانون الايمان", "قدوس قدوس قدوس", "تين ناف",
+                      "الهوس الكبير", "ختام الهوس الكبير", "قطع الهوس الصيامي"]
     
-    tasbha_values = ['{5ADE5763-A478-4AF7-A88C-0DB7B091DF06}', '{40E9947C-C8E3-4367-92E7-64F6896E8A5F}', '{E052F467-3B39-4F35-9D72-8B11039F040B}', '{64CE0420-479F-4F12-AE0C-F1218BF21635}', '{4E843BF3-1D30-4BED-905C-E66AA3D90EC5}', '{A12368B5-4E89-4682-AF79-DC1979BA120B}', '{F2F363F3-5DD8-474B-94A0-6895758AB76D}', '{9A6F925B-011F-483C-B6B1-783155284B27}']
+    tasbha_values = ['{5ADE5763-A478-4AF7-A88C-0DB7B091DF06}', '{40E9947C-C8E3-4367-92E7-64F6896E8A5F}', 
+                     '{E052F467-3B39-4F35-9D72-8B11039F040B}', '{135E244E-5122-4BAC-990F-51E8AFDE735A}', 
+                     '{64CE0420-479F-4F12-AE0C-F1218BF21635}', '{4E843BF3-1D30-4BED-905C-E66AA3D90EC5}', 
+                     '{A12368B5-4E89-4682-AF79-DC1979BA120B}', '{F2F363F3-5DD8-474B-94A0-6895758AB76D}', 
+                     '{9A6F925B-011F-483C-B6B1-783155284B27}', '{4AE2F498-C91B-435D-8E82-9A866F187759}', 
+                     '{D8402209-E02C-4FB8-A033-D4863409FE41}', '{1121D26E-0054-40A1-B975-98CF3EEC81C2}']
 
     if weekday == 6 or weekday == 0 or weekday == 1:
         # adam_data = ["ابصالية الأحد 1", "ابصالية الأحد الثانية", "ابصالية الاثنين", "ابصالية الثلاثاء",
@@ -52,6 +59,10 @@ def tasbha(copticdate, Aashya, season):
                 ebsalyElmonasba = '{DCF0D2EF-0E5D-4349-8B22-523BE5D2C719}'
             case 2: #عيد الصليب
                 ebsalyElmonasba = '{1970A997-AC32-4FF7-B7A2-DAF83BF4F40B}'
+            case 15: #الصوم الكبير 
+                ebsalyElmonasba = '{8118B768-D1EB-4208-B0FC-713F8F1ED4D2}'
+            case 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11 : #آحاد الصوم الكبير
+                ebsalyElmonasba = ['{74ACFCDF-6B3F-4CD5-A3F3-6427F3E663EA}', '{FF1309BE-9696-4346-9D44-91FB9EA2B289}', '{EFE69ECD-C38B-451B-871C-5D0CEA1BF289}', '{A3B608CF-1E74-48EF-831C-A2AA623E0D8C}', '{B71E2935-571C-4296-AD7A-745B403BC3B7}', '{1FBAC5F9-BADE-4971-B51C-547F30C07896}', '{FB7C51C7-62BD-46F8-B3D7-E4C27F2CE41C}', '{21E14B7F-98BB-4E30-B6E9-A704C06F1CCF}']
             case 24: #الخميسن
                 ebsalyElmonasba = '{43AC03AD-AC75-480D-987F-66CB8CBE3883}'
             case 29: #عيد التجلي
@@ -63,7 +74,7 @@ def tasbha(copticdate, Aashya, season):
             case default:
                 ebsalyElmonasba = ''
         if season != 0 :
-            show_full_sections.append(ebsalyElmonasba)
+            show_full_sections.extend(ebsalyElmonasba if isinstance(ebsalyElmonasba, list) else [ebsalyElmonasba])
         
     else :
         # wats_data = ["ابصالية الأربعاء", "ابصالية الخميس", "ابصالية الجمعة", "ابصالية السبت",
@@ -94,6 +105,8 @@ def tasbha(copticdate, Aashya, season):
                 ebsalyElmonasba = '{EAE15FFA-C230-4B43-9FCF-316199A1C57F}'
             case 2: #عيد الصليب
                 ebsalyElmonasba = '{07BB69AA-4BA1-4166-9978-AF812FA02FD7}'
+            case 15: #الصوم الكبير
+                ebsalyElmonasba = '{BC8DC302-85CD-4FA8-98AD-4C89B3685D2C}'
             case 29: #عيد التجلي
                 ebsalyElmonasba = '{95F02DE0-6540-4250-B6D4-213F4C9B73FC}'
             case 30: #صوم العذراء
@@ -103,21 +116,24 @@ def tasbha(copticdate, Aashya, season):
             case default:
                 ebsalyElmonasba = ''
         if season != 0 :
-            show_full_sections.append(ebsalyElmonasba)
+            show_full_sections.extend([ebsalyElmonasba])
 
     if Aashya == True :
-        hide_full_sections_ranges.extend([[tasbha_values[0], tasbha_values[1]], [tasbha_values[5], tasbha_values[6]]])
+        hide_full_sections_ranges.extend([[tasbha_values[0], tasbha_values[1]], [tasbha_values[6], tasbha_values[7]]])
         show_full_sections.append(tasbha_values[2])
 
     elif Aashya == False and weekday<6:
-        show_full_sections.append(tasbha_values[3])
+        show_full_sections.extend([tasbha_values[3], tasbha_values[4]])
 
     if (23.1 <= season <= 24.1) or (season >= 25 and season <= 26)  or ((([copticdate[1], copticdate[2]] > el3nsara) or (copticdate[1] <= 3)) and weekday == 6):
-        show_full_sections.append(tasbha_values[4])
+        show_full_sections.append(tasbha_values[5])
         if Aashya == False :
-            show_full_sections.append(tasbha_values[7])
+            show_full_sections.append(tasbha_values[8])
         show_hide_insertImage_replaceText(prs, excel, sheet, show_full_sections, None, show_full_sections_ranges, hide_full_sections_ranges, None, ["لأنك قمت","aktwnk", "آك طونك"])
     else:
+        if season == 15.4 or season == 15.5 or season == 15.6 or season == 15.7 or season == 15.8 or\
+           season == 15.9 or season == 15.1 or season == 15.11 :
+            show_full_sections.extend([tasbha_values[9], tasbha_values[10], tasbha_values[11]])
         show_hide_insertImage_replaceText(prs, excel, sheet, show_full_sections, None, show_full_sections_ranges, hide_full_sections_ranges, None, None)
     
     powerpoint = win32com.client.Dispatch("PowerPoint.Application")
@@ -127,12 +143,8 @@ def tasbha(copticdate, Aashya, season):
     if Aashya == False : run_vba_with_slide_id_bakr_aashya(excel, sheet, prs, presentation, '{40E9947C-C8E3-4367-92E7-64F6896E8A5F}')
 
     if weekday < 6 and Aashya == False:
-        move_index = ['{64CE0420-479F-4F12-AE0C-F1218BF21635}']
-        target_index = ['{68B92169-4103-465B-B31B-28B5C35D1468}']
-        if weekday > 1 :
-            move_index.append('{DBBEB49F-3396-41D0-81FF-0A028C3CB4DA}')
-            target_index.append('{0420AA0C-B21A-478D-88EA-8378E9539EDE}')
-    
+        move_index = ['{64CE0420-479F-4F12-AE0C-F1218BF21635}', '{135E244E-5122-4BAC-990F-51E8AFDE735A}']
+        target_index = ['{68B92169-4103-465B-B31B-28B5C35D1468}', '{64CE0420-479F-4F12-AE0C-F1218BF21635}']    
         move_sections_v2(presentation, move_index, target_index)
 
     presentation.SlideShowSettings.Run()

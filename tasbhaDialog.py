@@ -1,8 +1,6 @@
-from PyQt5.QtWidgets import (QDialog, QPushButton, QVBoxLayout, QLabel, QFrame, 
-                            QGraphicsDropShadowEffect, QHBoxLayout, QSpacerItem, 
-                            QSizePolicy)
-from PyQt5.QtGui import QFont, QPixmap, QColor, QPainter, QBrush, QPalette
-from PyQt5.QtCore import Qt, QSize, QRect
+from PyQt5.QtWidgets import QDialog, QPushButton, QVBoxLayout, QLabel, QFrame, QHBoxLayout
+from PyQt5.QtGui import QFont, QPixmap
+from PyQt5.QtCore import Qt, QSize
 from commonFunctions import relative_path
 import qtawesome as qta
 

@@ -1,13 +1,14 @@
 from PyQt5.QtWidgets import (QDialog, QPushButton, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
                            QScrollArea, QWidget, QLineEdit, QSizePolicy, QTabWidget)
 from PyQt5.QtGui import QFont, QPixmap, QColor
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, QTimer
 from commonFunctions import relative_path, open_presentation_relative_path
 import pandas as pd
 import win32com.client
 import pythoncom
 import qtawesome as qta
 import os
+import re
 
 class SectionSelectionDialog(QDialog):
     def __init__(self, parent=None, title="القداس", sheet_name=""):
@@ -24,7 +25,7 @@ class SectionSelectionDialog(QDialog):
         self.sheet_name = sheet_name
         self.title = title
         self.excel_path = relative_path(r"Files Data.xlsx")        # Adjust size if it's رفع بخور (make it taller)
-        if sheet_name == "رفع بخور":
+        if sheet_name in ("رفع بخور", "التسبحة", "تسبحة كيهك"):
             base_height = 550
         else:
             base_height = 480
@@ -87,8 +88,8 @@ class SectionSelectionDialog(QDialog):
         # Determine PowerPoint file path
         self.determine_file_path()
         
-        # Special case for رفع بخور - create two scroll areas
-        if sheet_name == "رفع بخور":
+        # Special case for رفع بخور and التسبحة and تسبحة كيهك - create two scroll areas
+        if sheet_name in ("رفع بخور", "التسبحة", "تسبحة كيهك"):
             # Create a tab widget to hold both sections
             self.tab_widget = QTabWidget()
             self.tab_widget.setLayoutDirection(Qt.RightToLeft)
@@ -217,7 +218,8 @@ class SectionSelectionDialog(QDialog):
             tab2_layout.addWidget(self.scroll_area2)
             
             # Add tabs to tab widget
-            self.tab_widget.addTab(tab1, "عشية و باكر")
+            tab1_label = "عشية و باكر" if sheet_name == "رفع بخور" else "الإبصلمودية"
+            self.tab_widget.addTab(tab1, tab1_label)
             self.tab_widget.addTab(tab2, "الذكصولوجيات")
             
             # Add tab widget to content layout
@@ -1056,3 +1058,589 @@ class SectionSelectionDialog(QDialog):
         if event.buttons() == Qt.LeftButton and hasattr(self, '_drag_pos'):
             self.move(event.globalPos() - self._drag_pos)
             event.accept()
+
+
+class Elbas5aSectionSelectionDialog(SectionSelectionDialog):
+    def __init__(
+        self,
+        parent=None,
+        title="أسبوع الآلام",
+        presentation_path="",
+        filter_mode="",
+        filter_key="",
+        filter_keywords=None,
+        always_include_section_ids=None,
+        source_button_id="",
+        source_button_label="",
+    ):
+        QDialog.__init__(self, parent)
+        self.selected_option = None
+        self.title = title
+        self.sheet_name = ""
+        self.excel_path = relative_path(r"Files Data.xlsx")
+        self.presentation_path = os.path.abspath(presentation_path) if presentation_path else ""
+        self.filter_mode = filter_mode or ""
+        self.filter_key = filter_key or ""
+        self.filter_keywords = filter_keywords or []
+        self.always_include_section_ids = always_include_section_ids or []
+        self.source_button_id = source_button_id
+        self.source_button_label = source_button_label
+        self.section_buttons = []
+        self.section_records = []
+        self.filtered_records = []
+        self.active_filter_mode = "all"
+        self.active_keyword = ""
+        self.filter_buttons_row = []
+        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | Qt.WindowTitleHint)
+        self.setModal(True)
+        self.determine_file_path()
+        self._setup_holyweek_ui()
+
+    def _setup_holyweek_ui(self):
+        self.setWindowTitle(self.title)
+        self.setFixedSize(550, 480)
+        self._position_like_parent()
+        self.setLayoutDirection(Qt.RightToLeft)
+        self.setStyleSheet(
+            """
+            QDialog {
+                background: qlineargradient(
+                    x1: 0, y1: 0, x2: 1, y2: 1,
+                    stop: 0 rgba(107, 6, 6, 245),
+                    stop: 0.6 rgba(140, 30, 30, 245),
+                    stop: 1 rgba(180, 80, 80, 245)
+                );
+                border-radius: 10px;
+                border: 1px solid rgba(200, 200, 200, 150);
+            }
+            """
+        )
+
+        new_main_layout = QVBoxLayout(self)
+        new_main_layout.setContentsMargins(0, 0, 0, 0)
+        new_main_layout.setSpacing(0)
+
+        header = self.create_header()
+        new_main_layout.addWidget(header)
+
+        content_container = QFrame()
+        content_container.setStyleSheet("background: transparent; border: none;")
+        content_layout = QVBoxLayout(content_container)
+        content_layout.setContentsMargins(15, 10, 15, 10)
+        content_layout.setSpacing(10)
+
+        self.search_bar = QLineEdit()
+        self.search_bar.setPlaceholderText("بحث")
+        self.search_bar.setFixedHeight(40)
+        self.search_bar.setLayoutDirection(Qt.RightToLeft)
+        self.search_bar.setStyleSheet(
+            """
+            QLineEdit {
+                text-align: center;
+                border: 2px solid rgba(255, 255, 255, 120);
+                border-radius: 15px;
+                padding: 5px 10px;
+                background-color: rgba(255, 255, 255, 220);
+                font-size: 16px;
+                color: #3a0000;
+            }
+            QLineEdit:focus {
+                border-color: #ffd4d4;
+                background-color: #ffffff;
+            }
+            """
+        )
+        self.search_bar.textChanged.connect(self.filter_buttons)
+        content_layout.addWidget(self.search_bar)
+
+        self.filter_buttons_container = QFrame()
+        self.filter_buttons_container.setStyleSheet("background: transparent; border: none;")
+        self.filter_buttons_layout = QHBoxLayout(self.filter_buttons_container)
+        self.filter_buttons_layout.setContentsMargins(0, 0, 0, 0)
+        self.filter_buttons_layout.setSpacing(6)
+        self.filter_buttons_layout.setAlignment(Qt.AlignCenter)
+        content_layout.addWidget(self.filter_buttons_container)
+
+        self.build_filter_buttons()
+
+        self.status_label = QLabel("")
+        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setStyleSheet("color: #ffe8a3; font-size: 13px; font-weight: bold; background: transparent;")
+        self.status_label.hide()
+        content_layout.addWidget(self.status_label)
+
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setStyleSheet(
+            """
+            QScrollArea {
+                background-color: transparent;
+                border: none;
+            }
+            """
+        )
+        self.scroll_area.verticalScrollBar().setStyleSheet(
+            """
+            QScrollBar:vertical {
+                border: none;
+                background: transparent;
+                width: 10px;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255, 255, 255, 100);
+                border-radius: 5px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                background: none;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: none;
+            }
+            """
+        )
+
+        self.scroll_content = QWidget()
+        self.buttons_layout = QVBoxLayout(self.scroll_content)
+        self.buttons_layout.setAlignment(Qt.AlignTop)
+        self.buttons_layout.setSpacing(10)
+        self.scroll_area.setWidget(self.scroll_content)
+        content_layout.addWidget(self.scroll_area, 1)
+
+        new_main_layout.addWidget(content_container, 1)
+
+        self.show_loading_message("جاري تحميل الأقسام...")
+
+        QTimer.singleShot(50, self.extract_and_render_sections)
+
+    def create_header(self):
+        header = QFrame()
+        header.setFixedHeight(50)
+        header.setStyleSheet(
+            """
+            QFrame {
+                background: qlineargradient(
+                    x1: 0, y1: 0, x2: 1, y2: 0,
+                    stop: 0 #8b0000,
+                    stop: 1 #c03232
+                );
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+            }
+            """
+        )
+
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(15, 0, 15, 0)
+
+        title_layout = QHBoxLayout()
+        try:
+            icon_label = QLabel()
+            icon = qta.icon("fa5s.list", color="white").pixmap(18, 18)
+            icon_label.setPixmap(icon)
+            icon_label.setStyleSheet("background: transparent;")
+            title_layout.addWidget(icon_label)
+            title_layout.addSpacing(8)
+        except:
+            pass
+
+        title_text = self.title
+        if self.source_button_label:
+            title_text = f"{self.source_button_label} - {self.title}"
+        title_label = QLabel(title_text)
+        title_font = QFont()
+        title_font.setPointSize(13)
+        title_font.setBold(True)
+        title_label.setFont(title_font)
+        title_label.setStyleSheet("color: white; background: transparent;")
+        title_layout.addWidget(title_label)
+
+        back_button = QPushButton("العودة")
+        back_button.setCursor(Qt.PointingHandCursor)
+        back_button.setFixedHeight(34)
+        back_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: rgba(255, 255, 255, 205);
+                border: none;
+                border-radius: 12px;
+                color: #3a0000;
+                font-size: 13px;
+                font-weight: bold;
+                min-width: 90px;
+                padding: 6px 12px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 240, 240, 240);
+            }
+            """
+        )
+        back_button.clicked.connect(self.reject)
+
+        header_layout.addLayout(title_layout)
+        header_layout.addStretch()
+        header_layout.addWidget(back_button)
+        return header
+
+    def _position_like_parent(self):
+        parent = self.parentWidget()
+        if parent is not None:
+            self.move(parent.frameGeometry().topLeft())
+
+    def build_filter_buttons(self):
+        while self.filter_buttons_layout.count():
+            item = self.filter_buttons_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+        self.filter_buttons_row = []
+
+        mode = (self.filter_mode or "").strip().lower()
+        if mode == "by-key" and self.filter_key:
+            all_button = self._create_filter_button("كل الأقسام", "all")
+            key_button = self._create_filter_button(self.filter_key, "by-key")
+            self.filter_buttons_layout.addWidget(all_button)
+            self.filter_buttons_layout.addWidget(key_button)
+            self.filter_buttons_row.extend([all_button, key_button])
+        elif mode == "by-keywords" and self.filter_keywords:
+            all_button = self._create_filter_button("كل الأقسام", "clear-search")
+            self.filter_buttons_layout.addWidget(all_button)
+            self.filter_buttons_row.append(all_button)
+            for keyword in self.filter_keywords:
+                if not keyword:
+                    continue
+                keyword_button = self._create_filter_button(str(keyword), "search-keyword", str(keyword))
+                self.filter_buttons_layout.addWidget(keyword_button)
+                self.filter_buttons_row.append(keyword_button)
+
+        self._refresh_filter_button_styles()
+
+    def _create_filter_button(self, text, mode_value, keyword_value=""):
+        button = QPushButton(text)
+        button.setCursor(Qt.PointingHandCursor)
+        button.setProperty("modeValue", mode_value)
+        button.setProperty("keywordValue", keyword_value)
+        if mode_value == "search-keyword":
+            button.setProperty("smallText", True)
+        else:
+            button.setProperty("smallText", False)
+        button.clicked.connect(self.on_filter_mode_button_clicked)
+        button.setStyleSheet(self._filter_button_style(False))
+        return button
+
+    def _filter_button_style(self, active):
+        small_text = False
+        sender_button = self.sender()
+        if sender_button is not None:
+            small_text = bool(sender_button.property("smallText"))
+        font_size = "11px" if small_text else "12px"
+
+        if active:
+            return (
+                "QPushButton {"
+                "background-color: rgba(255, 255, 255, 235);"
+                "border: 2px solid rgba(140, 30, 30, 210);"
+                "border-radius: 10px;"
+                "color: #4a0000;"
+                f"font-size: {font_size};"
+                "font-weight: bold;"
+                "padding: 6px 10px;"
+                "min-height: 28px;"
+                "}"
+            )
+        return (
+            "QPushButton {"
+            "background-color: rgba(255, 255, 255, 195);"
+            "border: 1px solid rgba(255, 255, 255, 120);"
+            "border-radius: 10px;"
+            "color: #3a0000;"
+            f"font-size: {font_size};"
+            "font-weight: bold;"
+            "padding: 6px 10px;"
+            "min-height: 28px;"
+            "}"
+            "QPushButton:hover {"
+            "background-color: rgba(255, 240, 240, 225);"
+            "}"
+        )
+
+    def _refresh_filter_button_styles(self):
+        for button in self.filter_buttons_row:
+            mode_value = button.property("modeValue")
+            keyword_value = button.property("keywordValue")
+            small_text = bool(button.property("smallText"))
+            is_active = False
+            if self.active_filter_mode == "all" and mode_value == "all":
+                is_active = True
+            elif self.active_filter_mode == "by-key" and mode_value == "by-key":
+                is_active = True
+            elif self.active_filter_mode == "keyword" and mode_value == "keyword" and self.normalize_text(str(keyword_value)) == self.normalize_text(self.active_keyword):
+                is_active = True
+            button.setStyleSheet(self._filter_button_style_with_size(is_active, small_text))
+
+    def _filter_button_style_with_size(self, active, small_text):
+        font_size = "11px" if small_text else "12px"
+        if active:
+            return (
+                "QPushButton {"
+                "background-color: rgba(255, 255, 255, 235);"
+                "border: 2px solid rgba(140, 30, 30, 210);"
+                "border-radius: 10px;"
+                "color: #4a0000;"
+                f"font-size: {font_size};"
+                "font-weight: bold;"
+                "padding: 6px 10px;"
+                "min-height: 28px;"
+                "}"
+            )
+        return (
+            "QPushButton {"
+            "background-color: rgba(255, 255, 255, 195);"
+            "border: 1px solid rgba(255, 255, 255, 120);"
+            "border-radius: 10px;"
+            "color: #3a0000;"
+            f"font-size: {font_size};"
+            "font-weight: bold;"
+            "padding: 6px 10px;"
+            "min-height: 28px;"
+            "}"
+            "QPushButton:hover {"
+            "background-color: rgba(255, 240, 240, 225);"
+            "}"
+        )
+
+    def on_filter_mode_button_clicked(self):
+        button = self.sender()
+        if not button:
+            return
+        mode_value = button.property("modeValue")
+        keyword_value = button.property("keywordValue")
+
+        if mode_value == "search-keyword":
+            keyword_text = str(keyword_value or "").strip()
+            if keyword_text:
+                self.search_bar.setText(keyword_text)
+                self.search_bar.setFocus()
+                self.search_bar.setCursorPosition(len(self.search_bar.text()))
+            return
+
+        if mode_value == "clear-search":
+            self.search_bar.clear()
+            self.search_bar.setFocus()
+            return
+
+        self.active_filter_mode = str(mode_value or "all")
+        self.active_keyword = str(keyword_value or "")
+        self._refresh_filter_button_styles()
+        self.extract_and_render_sections()
+
+    def show_loading_message(self, text):
+        while self.buttons_layout.count():
+            item = self.buttons_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        self.buttons_layout.addStretch(1)
+        loading = QLabel(text)
+        loading.setAlignment(Qt.AlignCenter)
+        loading.setStyleSheet("color: white; font-size: 16px; font-weight: bold; background: transparent;")
+        self.buttons_layout.addWidget(loading)
+        self.buttons_layout.addStretch(1)
+
+    def determine_file_path(self):
+        if self.presentation_path:
+            self.file_path = self.presentation_path
+            return
+        super().determine_file_path()
+
+    def set_button_style(self, button):
+        button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: rgba(255, 255, 255, 200);
+                border: none;
+                border-radius: 12px;
+                color: #3a0000;
+                padding: 10px;
+                font-size: 14px;
+                font-weight: bold;
+                text-align: center;
+                min-height: 30px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 240, 240, 230);
+                color: #690000;
+                border: 1px solid rgba(255, 255, 255, 50);
+            }
+            """
+        )
+        button.setLayoutDirection(Qt.RightToLeft)
+
+    def extract_and_render_sections(self):
+        while self.buttons_layout.count():
+            item = self.buttons_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        self.section_buttons = []
+        records = self._extract_section_records(self.file_path)
+        self.section_records = records
+        filtered = self._apply_context_filter(records)
+
+        if records and not filtered:
+            # If filter returns no sections, fallback to full section list (Option A).
+            self.status_label.setText("لا توجد نتائج مطابقة للفلتر، يتم عرض كل الأقسام")
+            self.status_label.show()
+            filtered = records
+        else:
+            self.status_label.hide()
+
+        self.filtered_records = filtered
+        if not filtered:
+            label = QLabel("لم يتم العثور على أقسام")
+            label.setAlignment(Qt.AlignCenter)
+            label.setStyleSheet("color: white; font-size: 16px; font-weight: bold; background: transparent;")
+            self.buttons_layout.addWidget(label)
+            return
+
+        for rec in filtered:
+            button = QPushButton(rec["name"])
+            self.set_button_style(button)
+            button.clicked.connect(lambda _, idx=rec["slide_index"]: self.go_to_slide(self.file_path, idx))
+            self.buttons_layout.addWidget(button)
+            self.section_buttons.append(button)
+
+    def _extract_section_records(self, file_path):
+        records = []
+        try:
+            pythoncom.CoInitialize()
+            try:
+                powerpoint = win32com.client.GetActiveObject("PowerPoint.Application")
+            except:
+                powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+
+            presentation = None
+            just_opened = False
+            for pres in powerpoint.Presentations:
+                if os.path.abspath(pres.FullName.lower()) == os.path.abspath(file_path.lower()):
+                    presentation = pres
+                    break
+
+            if presentation is None:
+                presentation = powerpoint.Presentations.Open(file_path, WithWindow=False)
+                just_opened = True
+
+            if presentation.SectionProperties.Count > 0:
+                for i in range(1, presentation.SectionProperties.Count + 1):
+                    name = presentation.SectionProperties.Name(i)
+                    first_slide_index = presentation.SectionProperties.FirstSlide(i)
+                    slide_id = ""
+                    try:
+                        slide_id = str(presentation.Slides(first_slide_index).SlideID)
+                    except:
+                        slide_id = ""
+                    section_guid = self._extract_guid_from_text(name)
+                    records.append(
+                        {
+                            "name": name,
+                            "normalized": self.normalize_text(name),
+                            "slide_index": first_slide_index,
+                            "section_id": section_guid,
+                            "slide_id": slide_id,
+                        }
+                    )
+            else:
+                for i in range(1, presentation.Slides.Count + 1):
+                    slide = presentation.Slides.Item(i)
+                    text = ""
+                    for shape in slide.Shapes:
+                        if shape.HasTextFrame and shape.TextFrame.HasText:
+                            raw = shape.TextFrame.TextRange.Text
+                            if raw and raw.strip():
+                                text = raw.strip()
+                                break
+                    if text:
+                        records.append(
+                            {
+                                "name": text,
+                                "normalized": self.normalize_text(text),
+                                "slide_index": i,
+                                "section_id": self._extract_guid_from_text(text),
+                                "slide_id": str(slide.SlideID),
+                            }
+                        )
+
+            if just_opened:
+                presentation.Close()
+        except Exception as e:
+            self.status_label.setText(f"خطأ في قراءة الأقسام: {str(e)}")
+            self.status_label.show()
+        finally:
+            pythoncom.CoUninitialize()
+
+        return records
+
+    def _apply_context_filter(self, records):
+        if not records:
+            return []
+
+        filter_mode = (self.filter_mode or "").strip().lower()
+        filtered = []
+
+        if self.active_filter_mode == "all":
+            filtered = list(records)
+        elif self.active_filter_mode == "by-key" and filter_mode == "by-key" and self.filter_key:
+            target = self.normalize_text(self.filter_key)
+            filtered = [rec for rec in records if target in rec["normalized"]]
+        elif filter_mode == "by-keywords":
+            # For by-keywords mode we show all sections, and keyword chips just fill search bar text.
+            filtered = list(records)
+        else:
+            filtered = list(records)
+
+        if not self.always_include_section_ids:
+            return filtered
+
+        # Always include hardcoded constant sections even when keyword/key filtering is active.
+        keep_set = set(id(rec) for rec in filtered)
+        for rec in records:
+            if self._matches_constant_section(rec):
+                keep_set.add(id(rec))
+
+        return [rec for rec in records if id(rec) in keep_set]
+
+    def _matches_constant_section(self, record):
+        constants = [str(x).strip() for x in self.always_include_section_ids if str(x).strip()]
+        if not constants:
+            return False
+
+        name_norm = record.get("normalized", "")
+        section_id = str(record.get("section_id", "") or "")
+        slide_id = str(record.get("slide_id", "") or "")
+        for item in constants:
+            item_norm = self.normalize_text(item)
+            if item == section_id or item == slide_id:
+                return True
+            if item_norm and item_norm in name_norm:
+                return True
+        return False
+
+    def _extract_guid_from_text(self, text):
+        match = re.search(r"\{[0-9A-Fa-f-]{36}\}", text or "")
+        return match.group(0) if match else ""
+
+    def filter_buttons(self):
+        search_text = self.normalize_text(self.search_bar.text().strip())
+        visible = 0
+        for button in self.section_buttons:
+            is_visible = (search_text in self.normalize_text(button.text()))
+            button.setVisible(is_visible)
+            if is_visible:
+                visible += 1
+
+        if visible == 0 and self.section_buttons:
+            self.status_label.setText("لا توجد نتائج للبحث")
+            self.status_label.show()
+        elif self.status_label.text() == "لا توجد نتائج للبحث":
+            self.status_label.hide()

@@ -49,14 +49,14 @@ def update_all_tables(year=None):
             ws_dates["F5"] = 29
             
         YoumEidElmilad = ws_dates["F5"].value
-        if(copticDate.coptic_to_gregorian([copticYear,4, YoumEidElmilad]).weekday() == 7):
+        if(copticDate.coptic_to_gregorian([copticYear,4, YoumEidElmilad]).weekday() == 0):
             ws_dates["F4"] = YoumEidElmilad-3
         elif(copticDate.coptic_to_gregorian([copticYear,4, YoumEidElmilad]).weekday() == 6):
             ws_dates["F4"] = YoumEidElmilad-2
         else:
             ws_dates["F4"] = YoumEidElmilad-1
     
-        if(copticDate.coptic_to_gregorian([copticYear, 5, 11]).weekday() == 7):
+        if(copticDate.coptic_to_gregorian([copticYear, 5, 11]).weekday() == 0):
             ws_dates["F7"] = 8
         elif(copticDate.coptic_to_gregorian([copticYear, 5, 11]).weekday() == 6):
             ws_dates["F7"] = 9
@@ -470,14 +470,14 @@ def a3yad ():
     else:
         write_to_excel_cell(file_path, sheet_name, "F5", 29)
     YoumEidElmilad = read_excel_cell(file_path, sheet_name, "F5")
-    if(copticDate.coptic_to_gregorian([copticYear,4, YoumEidElmilad]).weekday() == 7):
+    if(copticDate.coptic_to_gregorian([copticYear,4, YoumEidElmilad]).weekday() == 0):
         write_to_excel_cell(file_path, sheet_name, "F4", YoumEidElmilad-3)
     elif(copticDate.coptic_to_gregorian([copticYear,4, YoumEidElmilad]).weekday() == 6):
         write_to_excel_cell(file_path, sheet_name, "F4", YoumEidElmilad-2)
     else:
         write_to_excel_cell(file_path, sheet_name, "F4", YoumEidElmilad-1)
 
-    if(copticDate.coptic_to_gregorian([copticYear, 5, 11]).weekday() == 7):
+    if(copticDate.coptic_to_gregorian([copticYear, 5, 11]).weekday() == 0):
         write_to_excel_cell(file_path, sheet_name, "F7", 8)
     elif(copticDate.coptic_to_gregorian([copticYear, 5, 11]).weekday() == 6):
         write_to_excel_cell(file_path, sheet_name, "F7", 9)
@@ -1318,3 +1318,4 @@ def All(progress_callback=None):
     seneksar()
     katamarsEl5amasyn()
 
+a3yad()

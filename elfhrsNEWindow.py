@@ -126,8 +126,8 @@ class elfhrswindow(QMainWindow):
 
         # Add the buttons
         self.add_buttons(["باكر و عشية", "القداس", "قداس الطفل", "الإبصلمودية السنوية", 
-                          "الإبصلمودية الكيهكية", "الذكصولوجيات", "المدائح والتماجيد"], 
-                         ["رفع بخور", "القداس", "قداس الطفل", "التسبحة", "تسبحة كيهك", "الذكصولوجيات", "المدائح"])
+                          "الإبصلمودية الكيهكية", "الذكصولوجيات", "المدائح والتماجيد", "اللقان"], 
+                         ["رفع بخور", "القداس", "قداس الطفل", "التسبحة", "تسبحة كيهك", "الذكصولوجيات", "المدائح", "اللقان"])
 
         # Create a label with the text "القطمارس"
         self.label = QLabel("القطمارس", self)
@@ -252,6 +252,8 @@ class elfhrswindow(QMainWindow):
                 file_path = r"Data\CopyData\الذكصولوجيات.pptx"
             case "المدائح والتماجيد":
                 file_path = r"Data\CopyData\كتاب المدائح.pptx"
+            case "اللقان":
+                file_path = r"Data\CopyData\صلاة اللقان.pptx"
 
         file_path = relative_path(file_path)
 
@@ -428,6 +430,9 @@ class elfhrswindow(QMainWindow):
                 (relative_path(r"Data\CopyData\الإبصلمودية.pptx"), "التسبحة"),
                 (relative_path(r"Data\CopyData\الإبصلمودية الكيهكية.pptx"), "تسبحة كيهك"),
                 (relative_path(r"Data\CopyData\كتاب المدائح.pptx"), "المدائح"),
+                (relative_path(r"Data\CopyData\صلاة اللقان.pptx"), "اللقان"),
+                (relative_path(r"Data\اسبوع الالام\البصخة المقدسة.pptx"), "البصخة"),
+                (relative_path(r"Data\اسبوع الالام\خميس العهد.pptx"), "خميس العهد")
             ]
 
             excel_file = relative_path(r'Files Data.xlsx')

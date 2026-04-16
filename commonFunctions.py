@@ -1404,7 +1404,8 @@ def elzoksologyat (excel_path, season, bakerOR3ashyaORtasbha):
         case 29: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{DC61EC21-9EF0-4E7C-8E4E-CD4269024AE6}", bakerOR3ashyaORtasbha])
         case 4 | 4.1 : show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{0276E405-8591-4E11-91ED-A86BDAEE711A}", "{D31A1C96-E6BC-41E0-A28E-A6F9769C185B}", "{84AB6DBC-49E9-4462-8B30-F01B81955172}", bakerOR3ashyaORtasbha])
         case 5: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ['{D92BB540-7883-4DD1-A6A7-1E0A76337CF2}', '{D622430F-FECE-4075-85A5-AFCFB40851AB}', '{DA8C1040-76BE-40FE-A02D-791EEB63045C}', '{C13ED8FB-8409-4503-AB7D-D9DF2DA0CBE7}', '{75722E63-5075-4CAF-9D6F-C5591C6AC389}', '{72C6D456-0F5A-4A81-82BB-06406C1912B3}'])
-        case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ['{D44C71EC-63B2-4404-886F-C06106494AA4}', '{7C22CB67-76C9-4102-BF71-E76EFA7F9CC2}', '{6B4AE8CD-BEBF-46D6-B948-EC0EE4A8E823}', '{9D8CE5B8-388E-4BFB-9501-7D65B99CD64B}', '{C3B15270-DF51-4212-942E-C99136F27899}'])
+        case 9 | 9.1 : show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ['{0CCD34B1-6F04-4043-A26F-8A1AC895B7F6}', '{2E7B19F0-0A12-468D-8080-CE8CC25CFB4E}', '{1D8E1CE8-DD12-4876-B140-508806EABA7E}', '{63F7B608-665D-4F5D-893B-0CC9060AFBAF}', bakerOR3ashyaORtasbha])
+        case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ['{D44C71EC-63B2-4404-886F-C06106494AA4}', '{7C22CB67-76C9-4102-BF71-E76EFA7F9CC2}', '{6B4AE8CD-BEBF-46D6-B948-EC0EE4A8E823}', '{9D8CE5B8-388E-4BFB-9501-7D65B99CD64B}', '{C3B15270-DF51-4212-942E-C99136F27899}', bakerOR3ashyaORtasbha])
         case 28: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{81E5C2F6-C71A-4711-83D2-FBF56C7FD101}", bakerOR3ashyaORtasbha])
         case 29: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{DC61EC21-9EF0-4E7C-8E4E-CD4269024AE6}", bakerOR3ashyaORtasbha])
         case default: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, [bakerOR3ashyaORtasbha])
@@ -1430,6 +1431,106 @@ def find_section_Ids_with_names(excel_path, sheet, names):
         return section_ids
     except Exception as e:
         print(f"Error reading Excel file: {e}")
+        return []
+
+def find_section_id_with_partial_name(excel_path, sheet, partial_name, execlude_partial_name=None):
+    try:
+        # Load the Excel file
+        wb = load_workbook(excel_path, data_only=True)
+        ws = wb[sheet]
+
+        # Search all rows and collect all matching IDs
+        section_ids = []
+        for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=4, values_only=True):
+            section_name = row[0]
+            section_id = row[1]
+
+            if section_name is not None:
+                section_name_str = str(section_name)
+                include_match = partial_name in section_name_str
+                exclude_match = execlude_partial_name is not None and execlude_partial_name in section_name_str
+
+                if include_match and not exclude_match:
+                    section_ids.append(section_id)
+
+        return section_ids
+    except Exception as e:
+        print(f"Error reading Excel file: {e}")
+        return []
+
+def delete_sections_by_partial_names(excel_path, sheet, ppt_file, partial_names):
+    """
+    Delete any section (including its slides) whose section name contains
+    any value from partial_names.
+
+    Parameters:
+    - excel_path: Path to Excel file that stores section names and IDs
+    - sheet: Excel sheet name
+    - ppt_file: Path to PowerPoint file
+    - partial_names: String or list of strings to match against section names
+
+    Returns:
+    - List of deleted section names
+    """
+    import pythoncom
+
+    try:
+        if isinstance(partial_names, str):
+            partial_names = [partial_names]
+
+        if not partial_names:
+            return []
+
+        # Collect section IDs from Excel using all provided partial names.
+        section_ids = []
+        for partial_name in partial_names:
+            section_ids.extend(find_section_id_with_partial_name(excel_path, sheet, partial_name))
+
+        if not section_ids:
+            return []
+
+        # Keep order but remove duplicates.
+        section_ids = list(dict.fromkeys(section_ids))
+        normalized_ids = {str(section_id).strip().lower() for section_id in section_ids}
+
+        deleted_sections = []
+        presentation = None
+        opened_here = False
+
+        pythoncom.CoInitialize()
+        try:
+            powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+            absolute_path = os.path.abspath(ppt_file)
+
+            # Reuse an already-open presentation if available.
+            for pres in powerpoint.Presentations:
+                if os.path.abspath(pres.FullName).lower() == absolute_path.lower():
+                    presentation = pres
+                    break
+
+            if presentation is None:
+                presentation = powerpoint.Presentations.Open(absolute_path)
+                opened_here = True
+
+            # Delete in reverse order to avoid index shift while deleting sections.
+            for i in range(presentation.SectionProperties.Count, 0, -1):
+                current_section_id = str(presentation.SectionProperties.SectionID(i)).strip().lower()
+                if current_section_id in normalized_ids:
+                    deleted_sections.append(presentation.SectionProperties.Name(i))
+                    presentation.SectionProperties.Delete(i, True)
+
+            presentation.Save()
+
+            if opened_here:
+                presentation.Close()
+
+        finally:
+            pythoncom.CoUninitialize()
+
+        return deleted_sections
+
+    except Exception as e:
+        print(f"Error deleting sections from PowerPoint file: {e}")
         return []
 
 def find_section_names_with_ids(excel, sheet, ids):
@@ -1517,9 +1618,17 @@ def show_hide_insertImage_replaceText(ppt_file, excel_path, sheet_name,
         width_inches = width_pixels / dpi
         height_inches = height_pixels / dpi
 
-        # Image position and size
+        # Get slide dimensions
+        slide_width = presentation.slide_width
+        slide_height = presentation.slide_height
+        
+        # Convert slide height from EMU (English Metric Units) to inches
+        # 914400 EMU = 1 inch
+        slide_height_inches = slide_height / 914400
+
+        # Image position and size - bottom aligned to slide bottom
         left = Inches(0)
-        top = Inches(1.980315)
+        top = Inches(slide_height_inches - height_inches)
         width = Inches(width_inches)
         height = Inches(height_inches)
 
@@ -1587,16 +1696,22 @@ def get_open_presentations():
     return open_presentations
 
 # excel = relative_path(r"Files Data.xlsx")
-# sheet = "رفع بخور"
-# arr = ["قدوس الميلاد", "مزمور باكر عيد الميلاد قبطي", "طواف مزمور عشية وباكر عيد الميلاد",
-#                             "المزمور", "الانجيل", "تكملة على حسب المناسبة"]
+# sheet = "البصخة"
+# arr = ["تين ثينو", "الذكصولوجيات", "ني اثنوس تيرو", "ثيؤطوكية الأحد 8-9", "ثيؤطوكية الأحد 7",
+#        "ثيؤطوكية الأحد 16-18", "قانون الايمان", "قدوس قدوس قدوس", "تين ناف"]
 # print(find_section_Ids_with_names(excel, sheet, arr))
-# arr2 = ["{4329E910-BD2C-4FBB-8FF3-A59F06EE9D45}", "{5BB65881-3E8A-4130-839D-6EB6F9D5FAFA}"]
+# arr = ['عيد الغطاس - حبقوق (يارب سمعت صوتك)', 'عيد الغطاس - حزقيال (ثم حملنى الروح)']
+# print(find_section_Ids_with_names(excel, sheet, arr))
+# arr = ["قدوس الغطاس", "مزمور باكر عيد الغطاس قبطي", "طواف مزمور عشية وباكر عيد الغطاس",
+#        "المزمور", "الانجيل", "تكملة على حسب المناسبة"]
+# print(find_section_Ids_with_names(excel, sheet, arr))
+# arr2 = ['{BBBAC16F-044D-4F33-8068-620F498B59CD}', '{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}', '{03E2AC57-01DD-4702-A7A7-186D0E009F55}', '{8DD599A1-D7AC-4AA8-A52B-31BFD527E68E}', '{DEDC0CCA-3854-4E18-8CB2-5D6FEC5BABCC}', '{D95C2E5C-8772-445E-AE3E-2F50770CFC61}', '{B7D98377-B994-4654-B49C-DE10E0DDE4F1}', '{C2F28915-B86E-4596-8EB2-7455EF4E91BD}', '{42181297-997B-4C4C-B43B-4E9D8A23858D}', '{6A153E48-DAA6-4874-ACA3-3EB14F3DC960}', '{DD757736-F2EB-40FA-9016-1E28087A0BE5}', '{59DBF0F6-1D86-41E8-B37A-8AA2368AA8AB}', '{E6CBA825-E339-438B-84B4-326FC5C299C1}', '{973DBBAC-E645-4981-B3F5-5DB1413508D0}', '{DFBFA7AB-D078-4C2A-A184-5823F2253ED4}', '{79502253-2043-4F29-96A3-0E65F6F2C484}']
+# print(find_section_id_with_partial_name(excel, sheet, "تسبحة الساعة"))
 # print(find_section_names_with_ids(excel, sheet, arr2))
 # print(find_slide_num_v2(excel, sheet, "تكملة للملاك ميخائيل 1", 1, 1))
 # print(find_slide_nums_arrays_v2(excel, sheet, ['{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}'], 2, [1, 2, 1, 2]))
 
-# pptx_file = r"قداس.pptx"  # Path to your PowerPoint file
+# # pptx_file = r"قداس.pptx"  # Path to your PowerPoint file
 # image_file = r"Data\Designs\القيامة.png"  # Path to the image file
 # insert_image_to_slides_same_file(pptx_file, image_file)
 

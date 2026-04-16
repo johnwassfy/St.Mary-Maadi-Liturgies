@@ -40,6 +40,13 @@ class MainWindow(QMainWindow):
             self.show_update_button = False
             self.glow_effect_counter = 0
             self.active_presentation_source = None  # Track which button opened a shared presentation
+            
+            # Operation flags to prevent concurrent execution
+            self.operation_in_progress = False
+            self.update_in_progress = False
+            
+            # Cursor management to prevent stuck loading cursor
+            self.cursor_override_count = 0
 
             # Try checking for updates early
             update_found, version = self.check_for_updates_silent()
@@ -143,6 +150,34 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
             print(f"Initialization Error: {str(e)}\n{stack_trace}")
 
+    def set_busy_cursor(self):
+        """Safely set busy cursor with tracking to prevent stuck cursors."""
+        try:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            self.cursor_override_count += 1
+        except Exception as e:
+            print(f"Error setting cursor: {e}")
+
+    def restore_normal_cursor(self):
+        """Safely restore normal cursor with tracking."""
+        try:
+            if self.cursor_override_count > 0:
+                QApplication.restoreOverrideCursor()
+                self.cursor_override_count -= 1
+        except Exception as e:
+            print(f"Error restoring cursor: {e}")
+
+    def ensure_normal_cursor(self):
+        """Force restore normal cursor by clearing all overrides."""
+        try:
+            while self.cursor_override_count > 0:
+                QApplication.restoreOverrideCursor()
+                self.cursor_override_count -= 1
+            # Safety: restore even if count is wrong
+            QApplication.restoreOverrideCursor()
+        except Exception:
+            pass
+
     def create_update_button(self, y):
         """Create the single update button with initial state."""
         button_texts = ["تحديث الملفات", "اضافة تعديل خاص", "تحديث", "إعادة تشغيل"]
@@ -203,63 +238,77 @@ class MainWindow(QMainWindow):
 
     def check_for_updates_active(self):
         """Check for updates and update the single button's state."""
-        found, server_version = self.check_for_updates_silent()
+        # Prevent concurrent update checks
+        if self.update_in_progress:
+            return
+        
+        self.update_in_progress = True
+        self.update_button.setEnabled(False)
+        self.set_busy_cursor()
+        
+        try:
+            found, server_version = self.check_for_updates_silent()
 
-        if found:
-            self.show_update_button = True
-            self.glow_effect_counter = 1
+            if found:
+                self.show_update_button = True
+                self.glow_effect_counter = 1
 
-            # Update the existing button
-            self.update_button.setText("تحديث البرنامج")
-            self.update_button.setToolTip("تحديث إلى أحدث إصدار من البرنامج")
-            self.update_button.setIcon(qta.icon('fa5s.download', color='white'))
-            self.update_button.setIconSize(QSize(20, 20))
-            font = QFont()
-            font.setBold(True)
-            font.setPointSize(9)
-            self.update_button.setFont(font)
-
-            # Disconnect previous signal and connect to new handler
-            try:
-                self.update_button.clicked.disconnect()
-            except Exception:
-                pass
-            self.update_button.clicked.connect(self.handle_update_prompt)
-
-            # Add glow effect
-            glow = QGraphicsDropShadowEffect(self.update_button)
-            glow.setOffset(0)
-            glow.setBlurRadius(30)
-            glow.setColor(QColor(0, 255, 0))
-            self.update_button.setGraphicsEffect(glow)
-
-            self.notification_bar.show_message(f"✅ تحديث جديد متوفر (الإصدار {server_version})!", duration=5000)
-        else:
-            # Revert to "Check for Updates" if not already in that state
-            if self.show_update_button:
-                self.show_update_button = False
-                self.glow_effect_counter = 0
-                self.update_button.setText("البحث عن تحديث")
-                self.update_button.setToolTip("التحقق من وجود تحديث")
-                self.update_button.setIcon(qta.icon('fa5s.sync-alt', color='white'))
-                self.update_button.setIconSize(QSize(18, 18))
+                # Update the existing button
+                self.update_button.setText("تحديث البرنامج")
+                self.update_button.setToolTip("تحديث إلى أحدث إصدار من البرنامج")
+                self.update_button.setIcon(qta.icon('fa5s.download', color='white'))
+                self.update_button.setIconSize(QSize(20, 20))
                 font = QFont()
                 font.setBold(True)
-                font.setPointSize(8)
+                font.setPointSize(9)
                 self.update_button.setFont(font)
-                self.update_button.setGraphicsEffect(None)
+
+                # Disconnect previous signal and connect to new handler
                 try:
                     self.update_button.clicked.disconnect()
                 except Exception:
                     pass
-                self.update_button.clicked.connect(self.check_for_updates_active)
+                self.update_button.clicked.connect(self.handle_update_prompt)
 
-            self.notification_bar.show_message("أنت تستخدم أحدث إصدار أو لا يوجد اتصال.", duration=4000)
+                # Add glow effect
+                glow = QGraphicsDropShadowEffect(self.update_button)
+                glow.setOffset(0)
+                glow.setBlurRadius(30)
+                glow.setColor(QColor(0, 255, 0))
+                self.update_button.setGraphicsEffect(glow)
 
-        # Refresh the UI
-        self.update_button.show()
-        self.update()
-        self.repaint()
+                self.notification_bar.show_message(f"✅ تحديث جديد متوفر (الإصدار {server_version})!", duration=5000)
+            else:
+                # Revert to "Check for Updates" if not already in that state
+                if self.show_update_button:
+                    self.show_update_button = False
+                    self.glow_effect_counter = 0
+                    self.update_button.setText("البحث عن تحديث")
+                    self.update_button.setToolTip("التحقق من وجود تحديث")
+                    self.update_button.setIcon(qta.icon('fa5s.sync-alt', color='white'))
+                    self.update_button.setIconSize(QSize(18, 18))
+                    font = QFont()
+                    font.setBold(True)
+                    font.setPointSize(8)
+                    self.update_button.setFont(font)
+                    self.update_button.setGraphicsEffect(None)
+                    try:
+                        self.update_button.clicked.disconnect()
+                    except Exception:
+                        pass
+                    self.update_button.clicked.connect(self.check_for_updates_active)
+
+                self.notification_bar.show_message("أنت تستخدم أحدث إصدار أو لا يوجد اتصال.", duration=4000)
+
+            # Refresh the UI
+            self.update_button.show()
+            self.update()
+            self.repaint()
+        
+        finally:
+            self.restore_normal_cursor()
+            self.update_button.setEnabled(True)
+            self.update_in_progress = False
 
     async def add_button_with_image(self, parent, image_path, geometry, text, action=None):
         import os
@@ -590,7 +639,7 @@ class MainWindow(QMainWindow):
             stack_trace = traceback.format_exc()
             self.notification_bar.show_message(f"Error opening Elfhrs window: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
             print(f"Elfhrs Window Error: {str(e)}\n{stack_trace}")
-    
+
     def open_taranym_window(self):
         from TaranymWindow import Taranymwindow
         if self.centralWidget():
@@ -601,19 +650,31 @@ class MainWindow(QMainWindow):
 
     def update_section_names(self):
         from sectionNames import extract_section_info2
+        
+        # Prevent concurrent updates
+        if self.operation_in_progress:
+            self.notification_bar.show_message("عملية جارية... يرجى الانتظار", duration=2000)
+            return
+        
+        self.operation_in_progress = True
+        self.set_busy_cursor()
+        self.notification_bar.show_message("جاري تحديث الملفات... قد يستغرق بضع ثوان", duration=3000)
+        
         try:
             file_sheet_pairs = [
                 (relative_path(r"Data\CopyData\قداس.pptx"), "القداس"),
                 (relative_path(r"Data\CopyData\قداس الطفل.pptx"), "قداس الطفل"),
-                (relative_path(r"Data\CopyData\باكر.pptx"), "باكر"),
-                (relative_path(r"Data\CopyData\عشية.pptx"), "عشية"),
                 (relative_path(r"Data\CopyData\رفع بخور عشية و باكر.pptx"), "رفع بخور"),
                 (relative_path(r"Data\CopyData\الذكصولوجيات.pptx"), "الذكصولوجيات"),
                 (relative_path(r"Data\CopyData\في حضور الاسقف و اساقفة ضيوف.pptx"), "في حضور الأسقف"),
                 (relative_path(r"Data\CopyData\الإبصلمودية.pptx"), "التسبحة"),
                 (relative_path(r"Data\CopyData\الإبصلمودية الكيهكية.pptx"), "تسبحة كيهك"),
-                (relative_path(r"Data\CopyData\كتاب المدائح.pptx"), "المدائح")
-            ]
+                (relative_path(r"Data\CopyData\كتاب المدائح.pptx"), "المدائح"),
+                (relative_path(r"Data\CopyData\صلاة اللقان.pptx"), "اللقان"),
+                (relative_path(r"Data\اسبوع الالام\البصخة المقدسة.pptx"), "البصخة"),
+                (relative_path(r"Data\اسبوع الالام\خميس العهد.pptx"), "خميس العهد"),
+                (relative_path(r"Data\اسبوع الالام\الجمعة العظيمة.pptx"), "الجمعة العظيمة")
+                ]
 
             excel_file = relative_path(r'Files Data.xlsx')
             
@@ -624,6 +685,9 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             self.show_error_message(str(e))
+        finally:
+            self.restore_normal_cursor()
+            self.operation_in_progress = False
 
     def season_picture(self):
         match self.season :
@@ -772,6 +836,14 @@ class MainWindow(QMainWindow):
         import os
         from Season import get_season_name
         from PyQt5.QtWidgets import QMessageBox
+        
+        # Prevent concurrent operations
+        if self.operation_in_progress:
+            self.notification_bar.show_message("عملية جارية... يرجى الانتظار", duration=2000)
+            return
+        
+        self.operation_in_progress = True
+        self.set_busy_cursor()
 
         try:
             presentation_opened = False
@@ -781,50 +853,97 @@ class MainWindow(QMainWindow):
             open_presentations = get_open_presentations()
             is_already_open = any(open_pres.lower() == presentation_file for open_pres in open_presentations)
             
+            # Check if current season has a qudas function available
+            # Seasons that don't have qudas functions implemented yet
+            seasons_without_function = [
+                11,   # دخول المسيح الهيكل
+                18,   # أسبوع الالام
+                19,   # خميس العهد
+                20,   # الجمعة العظيمة
+                21,   # سبت النور
+                23,   # دخول المسيح أرض مصر
+                23.1, # دخول المسيح أرض مصر والخمسين المقدسة
+                23.2, # عيد العنصرة ودخول المسيح أرض مصر
+                23.3  # عيد الصعود ودخول المسيح أرض مصر
+            ]
+            
+            if self.season in seasons_without_function:
+                # Show appropriate message based on season type
+                if self.season in [19, 20, 21]:
+                    # Special messages for Holy Week
+                    match self.season:
+                        case 19:
+                            self.notification_bar.show_message("صلوات خميس العهد متوفرة في ملف واحد: المناسبات > اسبوع الالام > خميس العهد", 10000)
+                        case 20:
+                            self.notification_bar.show_message("لا يوجد قداس يوم الجمعة العظيمة: المناسبات > اسبوع الالام > الجمعة العظيمة", 10000)
+                        case 21:
+                            self.notification_bar.show_message("صلوات سبت الفرح متوفرة في ملف واحد: المناسبات > اسبوع الالام > ليلة ابوغلمسيس", 10000)
+                else:
+                    # Generic message for other unimplemented seasons
+                    self.notification_bar.show_message(f"قداس {get_season_name(self.season)} غير متوفر حاليا", duration=5000)
+                return
+            
             if is_already_open:
                 # If already open, just show the dialog without reopening the presentation
                 presentation_opened = True
             else:
+                # Restore normal cursor before showing dialog to user
+                self.restore_normal_cursor()
+                
                 # Show confirmation dialog for bishop settings
                 result = self.open_confirmation_window("قداس")
                 
                 if not result:
                     return  # User cancelled/closed dialog, exit the function
                 
-                # User confirmed and saved settings, proceed with opening the presentation
+                # User confirmed and saved settings, set busy cursor again for processing
+                self.set_busy_cursor()
+                
+                # Proceed with opening the presentation
                 match self.season:
                     case 0 | 6 | 13 | 30 | 31:
                         odasat.odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop, self.seneksar)
                         presentation_opened = True
                     case 1 | 1.1:
-                        odasat.odasElnayrooz(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasElnayrooz(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
                     case 2:
-                        odasat.odasElsalyb(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasElsalyb(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        presentation_opened = True
+                    case 3 | 8:
+                        odasat.odasbaramonElmiladAndEl8etas(self.coptic_date, self.bishop, self.GuestBishop)
                         presentation_opened = True
                     case 4:
                         odasat.odasElmilad(self.bishop, self.GuestBishop)
                         presentation_opened = True
+                    case 4.1 | 4.2:
+                        odasat.odasAfterElmilad(self.coptic_date, self.bishop, self.GuestBishop)
                     case 5:
                         odasat.odasKiahk(self.coptic_date, self.bishop, self.GuestBishop)
                         presentation_opened = True
+                    case 7:
+                        odasat.odasEl5etan(self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 9 | 9.1:
+                        odasat.odasEl8ytas(self.coptic_date, self.bishop, self.GuestBishop)
+                        presentation_opened = True
+                    case 10:
+                        odasat.odas3orsKanaElgalyl(self.bishop, self.GuestBishop, self.seneksar)                        
+                        presentation_opened = True
+                    case 12:
+                        odasat.odasSomNynawa(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        presentation_opened = True
                     case 14:
-                        odasat.odasElbeshara(self.bishop, self.GuestBishop)
+                        odasat.odasElbeshara(self.bishop, self.GuestBishop, self.seneksar)
                         presentation_opened = True
                     case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11:
-                        odasat.odasElSomElkbyr(self.coptic_date, self.season, self.bishop, self.GuestBishop)
+                        odasat.odasElSomElkbyr(self.coptic_date, self.season, self.bishop, self.GuestBishop, self.seneksar)
                         presentation_opened = True
                     case 16:
-                        odasat.odasSbtLe3azr(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasSbtLe3azr(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
                         presentation_opened = True
                     case 17:
                         odasat.odasElsh3anyn(self.coptic_date, self.bishop, self.GuestBishop)
                         presentation_opened = True
-                    case 19:
-                        self.notification_bar.show_message("صلوات خميس العهد متوفرة في ملف واحد: المناسبات > اسبوع الالام > خميس العهد", 10000)
-                    case 20:
-                        self.notification_bar.show_message("لا يوجد قداس يوم الجمعة العظيمة: المناسبات > اسبوع الالام > الجمعة العظيمة", 10000)
-                    case 21:
-                        self.notification_bar.show_message("صلوات سبت الفرح متوفرة في ملف واحد: المناسبات > اسبوع الالام > ليلة ابوغلمسيس", 10000)
                     case 22:
                         odasat.odasEl2yama(self.coptic_date, self.bishop, self.GuestBishop)
                         presentation_opened = True
@@ -835,22 +954,22 @@ class MainWindow(QMainWindow):
                         odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, True)
                         presentation_opened = True
                     case 25:
-                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, False)
                         presentation_opened = True
                     case 26:
                         odasat.odasEl3nsara(self.coptic_date, self.bishop, self.GuestBishop)
                         presentation_opened = True
                     case 27:
-                        odasat.odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
                         presentation_opened = True
                     case 28:
-                        odasat.odas3ydElrosol(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odas3ydElrosol(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
                         presentation_opened = True
                     case 29:
-                        odasat.odasEltagaly(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasEltagaly(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
                         presentation_opened = True
                     case 32:
-                        odasat.odas29thOfMonth(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odas29thOfMonth(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
                         presentation_opened = True
                     case default:
                         self.notification_bar.show_message(f"قداس {get_season_name(self.season)} غير متوفر حاليا")
@@ -866,16 +985,23 @@ class MainWindow(QMainWindow):
                 arabic_date_text = self.get_arabic_month_date(self.current_date)
                 title = f"قداس {coptic_date_text} / {arabic_date_text}"
                 sheet_name = "القداس"
+                # Restore normal cursor before showing dialog to user
+                self.restore_normal_cursor()
                 # Create and show the dialog
                 dialog = SectionSelectionDialog(self, title, sheet_name)
                 dialog.exec_()
+                # Set busy cursor again if needed for any post-dialog processing
+                self.set_busy_cursor()
                 
         except Exception as e:
             import traceback
             stack_trace = traceback.format_exc()
-            self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
+            self.notification_bar.show_message(f"خطأ في فتح القداس: {str(e)}", duration=5000)
             print(f"Qudas Error: {str(e)}\n{stack_trace}")
-    
+        finally:
+            self.restore_normal_cursor()
+            self.operation_in_progress = False
+
     def handle_qadas_eltfl_button_click(self):
         # from odasatEltfl import (odasElSomElkbyr, odasEltflSomElrosol, odasEltfl3ydElrosol, odasSanawy, 
         #                          odasEltflElnayrooz, odasEltflKiahk)
@@ -902,11 +1028,19 @@ class MainWindow(QMainWindow):
         return
 
     def handle_baker_button_click(self):
-        from baker import bakerSanawy, bakerKiahk, bakerElmilad
+        from baker import bakerSanawy, bakerKiahk, bakerElmilad, bakerEl8etas
         from qudasDialog import SectionSelectionDialog
         from PyQt5.QtWidgets import QMessageBox
         import os
         from Season import get_season_name
+        
+        # Prevent concurrent operations
+        if self.operation_in_progress:
+            self.notification_bar.show_message("عملية جارية... يرجى الانتظار", duration=2000)
+            return
+        
+        self.operation_in_progress = True
+        self.set_busy_cursor()
         
         try:
             presentation_file = os.path.abspath(relative_path(r"رفع بخور عشية و باكر.pptx")).lower()
@@ -917,11 +1051,13 @@ class MainWindow(QMainWindow):
             
             if is_already_open and self.active_presentation_source != "باكر":
                 # File is open but was opened by a different button
+                self.restore_normal_cursor()
                 reply = QMessageBox.question(self, "تحذير",
                                   "هذا الملف مفتوح حاليًا في عرض عشية. هل تريد إغلاق الملف وفتحه كباكر؟",
                                   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 
                 if reply == QMessageBox.Yes:
+                    self.set_busy_cursor()
                     # Close all open PowerPoint presentations
                     import win32com.client
                     import pythoncom
@@ -953,12 +1089,16 @@ class MainWindow(QMainWindow):
                 # If already open and was opened by this button, just show the dialog
                 presentation_opened = True
             else:
+                # Restore cursor before showing confirmation dialog to user
+                self.restore_normal_cursor()
                 # Show confirmation dialog for bishop settings
                 result = self.open_confirmation_window("باكر")
                 
                 if not result:
                     return  # User cancelled/closed dialog, exit the function
                 
+                # User confirmed, set busy cursor for processing
+                self.set_busy_cursor()
                 # User confirmed and saved settings, proceed with opening the presentation
                 adam = False
                 if self.current_date.weekday() in [0, 1, 6]:
@@ -974,6 +1114,10 @@ class MainWindow(QMainWindow):
                         bakerKiahk(self.coptic_date, adam, self.bishop, self.GuestBishop)
                         self.active_presentation_source = "باكر"  # Set the active button
                         presentation_opened = True
+                    case 9 | 9.1:
+                        bakerEl8etas(self.season, self.coptic_date, self.bishop, self.GuestBishop)
+                        self.active_presentation_source = "باكر"  # Set the active button
+                        presentation_opened = True
                     case _:
                         self.notification_bar.show_message(f"رفع بخور باكر {get_season_name(self.season)} غير متوفر حاليا")
             
@@ -987,18 +1131,32 @@ class MainWindow(QMainWindow):
                 arabic_date_text = self.get_arabic_month_date(self.current_date)
                 title = f"رفع بخور باكر {coptic_date_text} / {arabic_date_text}"
                 sheet_name = "رفع بخور"
+                # Restore cursor before showing dialog to user
+                self.restore_normal_cursor()
                 # Create and show the dialog
                 dialog = SectionSelectionDialog(self, title, sheet_name)
                 dialog.exec_()
         
         except Exception as e:
-            self.show_error_message(str(e))    
-    
+            self.notification_bar.show_message(f"خطأ في فتح باكر: {str(e)}", duration=5000)
+            print(f"Baker Error: {str(e)}")
+        finally:
+            self.restore_normal_cursor()
+            self.operation_in_progress = False    
+
     def handle_3ashya_button_click(self):
         from Aashya import aashyaKiahk, aashyaSanawy, aashyaEltagaly
         from qudasDialog import SectionSelectionDialog
         from PyQt5.QtWidgets import QMessageBox
         import os
+        
+        # Prevent concurrent operations
+        if self.operation_in_progress:
+            self.notification_bar.show_message("عملية جارية... يرجى الانتظار", duration=2000)
+            return
+        
+        self.operation_in_progress = True
+        self.set_busy_cursor()
         
         try:
             presentation_file = os.path.abspath(relative_path(r"رفع بخور عشية و باكر.pptx")).lower()
@@ -1009,11 +1167,13 @@ class MainWindow(QMainWindow):
             
             if is_already_open and self.active_presentation_source != "عشية":
                 # File is open but was opened by a different button
+                self.restore_normal_cursor()
                 reply = QMessageBox.question(self, "تحذير",
                               "هذا الملف مفتوح حاليًا في عرض باكر. هل تريد إغلاق الملف وفتحه كعشية؟",
                               QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 
                 if reply == QMessageBox.Yes:
+                    self.set_busy_cursor()
                     # Close all open PowerPoint presentations
                     import win32com.client
                     import pythoncom
@@ -1045,12 +1205,16 @@ class MainWindow(QMainWindow):
                 # If already open and was opened by this button, just show the dialog
                 presentation_opened = True
             else:
+                # Restore cursor before showing confirmation dialog to user
+                self.restore_normal_cursor()
                 # Show confirmation dialog for bishop settings
                 result = self.open_confirmation_window("عشية")
                 
                 if not result:
                     return  # User cancelled/closed dialog, exit the function
                 
+                # User confirmed, set busy cursor for processing
+                self.set_busy_cursor()
                 # User confirmed and saved settings, proceed with opening the presentation
                 adam = False
                 if self.current_date.weekday() in [0, 1, 6]:
@@ -1080,6 +1244,8 @@ class MainWindow(QMainWindow):
                 arabic_date_text = self.get_arabic_month_date(self.current_date)
                 title = f"رفع بخور عشية {coptic_date_text} / {arabic_date_text}"
                 sheet_name = "رفع بخور"
+                # Restore cursor before showing dialog to user
+                self.restore_normal_cursor()
                 # Create and show the dialog
                 dialog = SectionSelectionDialog(self, title, sheet_name)
                 dialog.exec_()
@@ -1087,14 +1253,25 @@ class MainWindow(QMainWindow):
         except Exception as e:
             import traceback
             stack_trace = traceback.format_exc()
-            self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
+            self.notification_bar.show_message(f"خطأ في فتح عشية: {str(e)}", duration=5000)
             print(f"Aashya Error: {str(e)}\n{stack_trace}")
+        finally:
+            self.restore_normal_cursor()
+            self.operation_in_progress = False
 
     def handle_tasbha_button_click(self):
         from tasbhaDialog import TasbhaSelectionDialog
         import tasbha
         from qudasDialog import SectionSelectionDialog
         import os
+        
+        # Prevent concurrent operations
+        if self.operation_in_progress:
+            self.notification_bar.show_message("عملية جارية... يرجى الانتظار", duration=2000)
+            return
+        
+        self.operation_in_progress = True
+        self.set_busy_cursor()
         
         try:
             # Check if either Tasbha presentation is already open
@@ -1123,19 +1300,23 @@ class MainWindow(QMainWindow):
                 
                 title = f"{title_prefix} {coptic_date_text} / {arabic_date_text}"
                 
+                # Restore cursor before showing dialog to user
+                self.restore_normal_cursor()
                 # Create and show the dialog
                 sections_dialog = SectionSelectionDialog(self, title, sheet_name)
                 sections_dialog.exec_()
                 return
             
             # If no tasbha is open, show the selection dialog
+            self.restore_normal_cursor()
             dialog = TasbhaSelectionDialog(self, self.season)
             result = dialog.exec_()
-            
+
             if result == QDialog.Accepted and dialog.selected_option:
                 presentation_file = None
                 presentation_opened = False
                 
+                self.set_busy_cursor()
                 # Run the corresponding tasbha function based on user selection
                 if dialog.selected_option == "midnight":
                     # Run midnight tasbha
@@ -1178,6 +1359,8 @@ class MainWindow(QMainWindow):
                     
                     title = f"{title_prefix} {coptic_date_text} / {arabic_date_text}"
                     
+                    # Restore cursor before showing dialog to user
+                    self.restore_normal_cursor()
                     # Create and show the dialog
                     sections_dialog = SectionSelectionDialog(self, title, sheet_name)
                     sections_dialog.exec_()
@@ -1185,22 +1368,36 @@ class MainWindow(QMainWindow):
         except Exception as e:
             import traceback
             stack_trace = traceback.format_exc()
-            self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
+            self.notification_bar.show_message(f"خطأ في فتح التسبحة: {str(e)}", duration=5000)
             print(f"Tasbha Error: {str(e)}\n{stack_trace}")
+        finally:
+            self.restore_normal_cursor()
+            self.operation_in_progress = False
 
     def handle_ellakan_button_click(self):
         from elLakanDialog import LakanSelectionDialog
-        import tasbha
+        import lakan
+        
+        # Prevent concurrent operations
+        if self.operation_in_progress:
+            self.notification_bar.show_message("عملية جارية... يرجى الانتظار", duration=2000)
+            return
+        
+        self.operation_in_progress = True
+        self.set_busy_cursor()
         
         try:
             # Show the selection dialog
             dialog = LakanSelectionDialog(self)
+            self.restore_normal_cursor()
             result = dialog.exec_()
-            
+            adam = False
+            if self.current_date.weekday() in [0, 1, 6]:
+                adam = True
             if result == QDialog.Accepted and dialog.selected_option:
                 # Run the corresponding tasbha function based on user selection
                 if dialog.selected_option == "Baptism":
-                    return
+                    lakan.lakanEl8etas(adam)
                 elif dialog.selected_option == "Holy Thursday":
                     open_presentation_relative_path(r"Data\اسبوع الالام\خميس العهد.pptx")
                 elif dialog.selected_option == "Apostles":
@@ -1208,13 +1405,33 @@ class MainWindow(QMainWindow):
         except Exception as e:
             import traceback
             stack_trace = traceback.format_exc()
-            self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
-            print(f"Tasbha Error: {str(e)}\n{stack_trace}")
+            self.notification_bar.show_message(f"خطأ في فتح اللقان: {str(e)}", duration=5000)
+            print(f"Lakan Error: {str(e)}\n{stack_trace}")
+        finally:
+            self.restore_normal_cursor()
+            self.operation_in_progress = False
 
     def handle_elbas5a_button_click(self):
         from elbas5aDialog import Elbas5aDialog
-        dialog = Elbas5aDialog(self)
-        dialog.exec_()
+        
+        # Prevent concurrent operations
+        if self.operation_in_progress:
+            self.notification_bar.show_message("عملية جارية... يرجى الانتظار", duration=2000)
+            return
+        
+        self.operation_in_progress = True
+        self.set_busy_cursor()
+        
+        try:
+            self.restore_normal_cursor()
+            dialog = Elbas5aDialog(self)
+            dialog.exec_()
+        except Exception as e:
+            self.notification_bar.show_message(f"خطأ في فتح أسبوع الآلام: {str(e)}", duration=5000)
+            print(f"Elbas5a Error: {str(e)}")
+        finally:
+            self.restore_normal_cursor()
+            self.operation_in_progress = False
 
     def handle_agbya_button_click(self):
         return
@@ -1473,7 +1690,7 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message("⚠ ملف التحديث غير صالح أو لا يمكن تحليله.", duration=5000)
         except Exception as e:
             self.notification_bar.show_message(f"⚠ خطأ غير متوقع: {str(e)}", duration=5000)
-    
+
     def download_update(self, installer_url):
         import requests
         import os
@@ -1607,7 +1824,7 @@ class MainWindow(QMainWindow):
                 self.last_open_presentations = current_presentations
         except Exception as e:
             print(f"Error checking PowerPoint changes: {e}")    
-    
+
     def refresh_button_states(self, skip_timer=False):
         """
         Updates glow effects on buttons based on currently open presentations.

@@ -149,7 +149,7 @@ class LakanSelectionDialog(QDialog):
             pass
         
         # Title
-        title_label = QLabel("الإبصلمودية المقدسة")
+        title_label = QLabel("صلاة اللقان")
         title_font = QFont()
         title_font.setPointSize(16)
         title_font.setBold(True)

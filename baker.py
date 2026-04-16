@@ -1,5 +1,7 @@
-import os
-from commonFunctions import *
+from commonFunctions import elzoksologyat, replacefile, relative_path, fetch_data_arrays, \
+                            open_presentation_relative_path, find_Readings_Date, \
+                            show_hide_insertImage_replaceText, run_vba_with_slide_id_bakr_aashya, \
+                            find_slide_index_by_title, show_slides, find_slide_nums_arrays_v2, move_sections_v2
 import win32com.client
 
 "_____________________________________OLD CODE_DESIGN_____________________________________"
@@ -621,6 +623,192 @@ def bakerElmilad(season, copticdate, Bishop = False, guestBishop = 0):
                 end_index += 1
 
     move_sections_v2(presentation1, ['{A0DD24B6-1053-42A1-8391-038649B3219B}'], ['{9DACDA4B-74BF-4F4B-A961-DA43C70DC545}'])
+
+    presentation2.Close()
+    if guestBishop > 0:
+        presentation3.Close()
+
+    presentation1.SlideShowSettings.Run()
+
+def bakerEl8etas(season, copticdate, Bishop = False, guestBishop = 0):
+    prs = relative_path(r"رفع بخور عشية و باكر.pptx")  # Using the relative path
+    excel = relative_path(r"Files Data.xlsx")
+    excel2 = relative_path(r"Tables.xlsx")
+    des_sheet ="رفع بخور"
+    ghetasText = ["لأنك اعتمدت", "ak[i`wmc", "آك تشى أومس"]
+    img = relative_path(r"Data\Designs\الغطاس.png")
+    replacefile(prs, relative_path(r"Data\CopyData\رفع بخور عشية و باكر.pptx"))
+
+    elzoksologyat(excel, season, "باكر")
+
+    katamars = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+    katamars_sheet = "القطمارس السنوي أيام"
+    km, kd = find_Readings_Date(copticdate[1], copticdate[2])
+
+    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, [6, 7, 8])
+    elmzmor = katamars_values[0]
+    elengil = katamars_values[1]
+    elengil2 = katamars_values[2]
+
+    # baker_el8etas_show_full_sections = ["اوشية المرضى", "السبع طرائق", "اوشية القرابين", "تسبحة الملائكة", 
+    #                                     "ارباع الناقوس الفرايحي", "ارباع عيد الغطاس", "مرد مزمور الغطاس",
+    #                                     "ختام ارباع الناقوس الفرايحي", "مرد انجيل باكر الغطاس", "فاي اريه بي اوو"]
+    
+    # baker_el8etas_hide_full_sections = ["قدوس الصلب", "قدوس الصعود", "مرد الانجيل السنوي",
+    #                                     "اري ابرسفافين", "ختام ارباع الناقوس السنوي"]
+
+    baker_el8etas_show_full_sections = ['{069F7A79-999B-4223-82AE-CAF356118167}', '{71529C3D-4CB9-4ADE-9A8D-8548F134885B}', '{385BAEA4-D798-4AD0-920D-ADEC0B972186}', '{2C897F14-44CC-430E-9BE1-EB379FE7A9C7}', '{2ECE1F1B-C143-4CE2-B550-348BEE185974}', '{08277E26-4A59-441A-90BE-E448498302F7}', '{0778A679-4B1A-4079-AF21-5F40399D10CD}', '{BE2427EB-1DEA-40D3-97DE-E3743137C999}', '{B87EBA1A-E0E4-4E68-87D7-3C4A798CF278}', '{AED33E2E-F583-42AF-AF20-C811E5203043}', '{B7D98377-B994-4654-B49C-DE10E0DDE4F1}']
+    baker_el8etas_hide_full_sections = ['{F5175F64-5E0E-4336-A80A-F953446C58B3}', '{AE3146ED-6425-4136-9613-0253836230D1}', '{BEECCC68-2AEF-4568-91AA-98BCD14D3B92}', '{49534D46-CF48-4D9B-ADBF-B776827F6670}', '{BE52E209-B022-45B3-8B56-2C35B7DE60D1}']
+
+    # baker_el8etas_values = ["قدوس الغطاس", "مزمور باكر عيد الغطاس قبطي", "طواف مزمور عشية وباكر عيد الغطاس",
+    #                         "المزمور", "الانجيل", "تكملة على حسب المناسبة"]
+
+    baker_el8etas_values = find_slide_nums_arrays_v2(excel, des_sheet, 
+                           ['{71529C3D-4CB9-4ADE-9A8D-8548F134885B}', '{0454623B-38D8-412E-8AE3-50B569CC7249}', '{5E0A385B-5416-46B4-8AE7-C3380D6A58A7}', '{6D1E6E7D-EECE-483C-A3AE-C135D02E717C}', '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{A18EDC94-F257-4FAC-99C7-0A8EA70F0FAF}'], 
+                           2, [1, 2, 2, 2, 2, 1])
+
+    Elkhetam = baker_el8etas_values[5]
+
+    elengil3 = baker_el8etas_values[4]
+    elmzmor1 = baker_el8etas_values[3]
+
+    tawaf_mazmor_el8etas = baker_el8etas_values[2]
+    mazmor_baker_el8etas = baker_el8etas_values[1]
+
+    agios = baker_el8etas_values[0]
+
+    if Bishop == True:
+        prs3 = relative_path(r"Data\حضور الأسقف.pptx")
+        sheet = "في حضور الأسقف"
+
+        # bishop_show_values = ['تكملة في حضور الاسقف', 'مارو اتشاسف', 'فليرفعوه', 'في حضور الأسقف']
+
+        bishop_show_values = ['{F76B0D75-0474-45B5-B79F-7416F354543A}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}',
+                              '{23533FC3-43FE-456F-9454-70C3088055E7}', '{A9183893-7B7E-459F-8547-F7A8F7D2D521}']
+                
+        baker_el8etas_show_full_sections.extend(bishop_show_values)
+
+        if guestBishop > 0:
+            # bishop_values = ["صلاة الشكر", "صلاة الشكر", "طوبه هينا الكبيرة", "طوبه هينا الكبيرة", 
+            #                  "نيم بينيوت", "نيم بينيوت", "الاسبسمس", "الاسبسمس"]
+
+            # bishopDes_values = ["تكملة في حضور الاسقف", "طوبه هينا الكبيرة", "مارو اتشاسف"]
+            
+            bishop_values = find_slide_nums_arrays_v2(excel, sheet, 
+                            ['{6851F163-CBEF-4014-A853-CE100557BA6A}', '{6851F163-CBEF-4014-A853-CE100557BA6A}',
+                             '{B084BC40-61E1-4477-98DA-15CFB06AEE91}', '{B084BC40-61E1-4477-98DA-15CFB06AEE91}',
+                             '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', 
+                             '{D1378DB5-29D1-4800-9D96-10F2535EEB57}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}'], 
+                            2, [1, 2, 1, 2, 1, 2, 1, 2])
+
+            bishopDes_values = find_slide_nums_arrays_v2(excel, des_sheet, 
+                               ['{F76B0D75-0474-45B5-B79F-7416F354543A}', 
+                                '{8DD21CDE-CB6B-4D5B-B995-D2747AB69ED1}', 
+                                '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}'],                  
+                               2, [2, 2, 2])
+
+            elshokr = bishopDes_values[0]
+            elshokr1 = bishop_values[0]
+            elshokr2 = bishop_values[1]
+
+            tobhyna = bishopDes_values[1]
+            tobhyna1 = bishop_values[2]
+            tobhyna2 = bishop_values[3]
+
+            maro = bishopDes_values[2]
+            maro1 = bishop_values[4]
+            maro2 = bishop_values[5]
+
+            if guestBishop < 2:
+                elshokr2 = elshokr2-1
+                tobhyna2 = tobhyna2-2
+                maro2 = maro2-1
+        
+            start_positions = [elengil3, elmzmor1, maro, agios, tobhyna, elshokr]
+            start_slides = [elengil, elmzmor, maro1, agios, tobhyna1, elshokr1]
+            end_slides = [elengil2, elmzmor, maro2, agios, tobhyna2, elshokr2]
+
+    if guestBishop == 0:
+        start_positions = [elengil3, elmzmor1, agios]
+        start_slides = [elengil, elmzmor, agios]
+        end_slides = [elengil2, elmzmor, agios]
+
+    show_hide_insertImage_replaceText(prs, excel, des_sheet, baker_el8etas_show_full_sections, baker_el8etas_hide_full_sections, image_path=img, new_Text=ghetasText)
+
+    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+    powerpoint.Visible = True  # Open PowerPoint application
+    presentation1 = open_presentation_relative_path(prs)
+    presentation2 = open_presentation_relative_path(katamars)
+
+    if guestBishop > 0:
+        presentation3 = open_presentation_relative_path(prs3)
+            
+    show_array = [[mazmor_baker_el8etas, mazmor_baker_el8etas], [tawaf_mazmor_el8etas, tawaf_mazmor_el8etas]]
+    
+    khetam_el8etas = find_slide_index_by_title(presentation1, "الغطاس", Elkhetam)
+    show_array.append([khetam_el8etas, khetam_el8etas])
+
+    run_vba_with_slide_id_bakr_aashya(excel, des_sheet, prs, presentation1)
+
+    show_slides(presentation1, show_array)
+
+    # Initialize variables for current position, slide, and end index
+    current_position = start_positions[0]
+    current_start_slide = int(start_slides[0])
+    current_end_slide = int(end_slides[0])
+
+    # Initialize index for start position, slide, and end slide
+    position_index = 1
+    slide_index = 1
+    end_index = 1
+
+    while current_start_slide <= current_end_slide and slide_index <= presentation1.Slides.Count:
+        if (current_position == elengil3 or current_position == elmzmor1):
+            source_slide = presentation2.Slides(current_end_slide)
+            source_slide.Copy()
+            new_slide = presentation1.Slides.Paste(current_position)
+            pic_shape = new_slide.Shapes.AddPicture(img, LinkToFile=False, SaveWithDocument=True, Left=0, Top=144, Width=720, Height=396)
+            pic_shape.ZOrder(1)
+            new_slide.SlideShowTransition.Hidden = False
+            current_end_slide -= 1
+
+        elif current_position == agios :
+            source_slide = presentation1.Slides(current_end_slide)
+            source_slide.Copy()
+            presentation1.Slides.Paste(current_position)
+            current_end_slide -= 1
+            if(current_start_slide > current_end_slide):
+                current_position += 1
+
+        elif Bishop and current_position in {maro, tobhyna, elshokr}:
+            source_slide = presentation3.Slides(current_end_slide)
+            source_slide.Copy()
+            presentation1.Slides.Paste(current_position)
+            current_end_slide -= 1
+            if(current_start_slide > current_end_slide):
+                current_position += 1
+
+        else:
+            source_slide = presentation2.Slides(current_start_slide)
+            source_slide.Copy()
+            new_slide = presentation1.Slides.Paste(current_position)
+            new_slide.SlideShowTransition.Hidden = False
+            current_start_slide += 1
+            current_position += 1
+
+        # Move to the next round if all slides in the current range have been processed
+        if current_start_slide > current_end_slide:
+            # Check if there are more rounds
+            if position_index < len(start_positions):
+                # Update variables for the next round
+                current_position = start_positions[position_index]
+                current_start_slide = start_slides[slide_index]
+                current_end_slide = end_slides[end_index]
+                position_index += 1
+                slide_index += 1
+                end_index += 1
+
+    move_sections_v2(presentation1, ['{BD1D9BBC-5109-4880-BAFF-4C03F37555C1}'], ['{9DACDA4B-74BF-4F4B-A961-DA43C70DC545}'])
 
     presentation2.Close()
     if guestBishop > 0:
