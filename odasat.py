@@ -1,6 +1,5 @@
 import os
 from commonFunctions import *
-import win32com.client
 
 def run_vba_with_slide_id(excel, sheet, prs, presentation, slide_id_pairs=None, sha3anyn = False):
     if slide_id_pairs is None:
@@ -156,15 +155,40 @@ def agbya(presentation, slide_number, custom_show_number):
 
 "_____________________________________NEW_CODE_DESIGN_____________________________________"
 
-def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
+def _initialize_liturgy_session():
+    """
+    Centralized liturgy session setup.
+    Extracts common initialization code repeated in every odas*() function.
+    Returns a dict with paths and basic variables.
+    """
     from copticDate import CopticCalendar
-    cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
+    
+    # Common paths used in all functions
+    prs1 = relative_path(r"قداس.pptx")
     excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
+    des_sheet = "القداس"
+    
+    # Copy base templates (avoid modifying originals)
     replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
     replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    
+    return {
+        'prs1': prs1,
+        'excel': excel,
+        'excel2': excel2,
+        'des_sheet': des_sheet,
+        'CopticCalendar': CopticCalendar
+    }
+
+def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
+    cd = CopticCalendar().coptic_to_gregorian(copticdate)
+    prs1 = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
 
     if season == 13:
         prs2 = relative_path(r"Data\القطمارس\الصوم الكبير و صوم نينوى\قرائات صوم نينوى و فصح يونان.pptx")
@@ -409,8 +433,6 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
     else:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, sanawy_show_full_sections, sanawy_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -496,22 +518,21 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
     elif season == 6:
         move_sections_v2(presentation1, ['{C2F28915-B86E-4596-8EB2-7455EF4E91BD}'], ['{01F61BFD-210C-4F99-A7C7-7308CFAA93F4}'])
     
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop>0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
 def odasElnayrooz(copticdate, Bishop=False, guestBishop=0, seneksar=1):
-    from copticDate import CopticCalendar
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
-    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    prs1 = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
 
     if cd.weekday() == 6:
         prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
@@ -703,8 +724,6 @@ def odasElnayrooz(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     else:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, nayrooz_show_full_sections, nayrooz_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -800,23 +819,22 @@ def odasElnayrooz(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
 def odasElsalyb(copticdate, Bishop=False, guestBishop=0, seneksar=1):
-    from copticDate import CopticCalendar
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
+    prs = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
     SlaybText = ["لأنك صُلِبتَ", "auask", "اف اشك"]
-    replacefile(prs, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
 
     prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
     katamars_sheet = "القطمارس السنوي أيام"
@@ -1003,8 +1021,6 @@ def odasElsalyb(copticdate, Bishop=False, guestBishop=0, seneksar=1):
 
     show_hide_insertImage_replaceText(prs, excel, des_sheet, salyb_show_full_sections, salyb_hide_full_sections, new_Text=SlaybText)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -1123,23 +1139,21 @@ def odasElsalyb(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
 def odasKiahk(copticdate, Bishop=False, guestBishop=0, seneksar=1):
-    from copticDate import CopticCalendar
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs1 = relative_path(r"قداس.pptx") 
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
-
-    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    prs1 = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
 
     if cd.weekday() == 6:
         prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
@@ -1354,8 +1368,6 @@ def odasKiahk(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     else:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, kiahk_show_full_sections, kiahk_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -1470,22 +1482,21 @@ def odasKiahk(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
     
     presentation1.SlideShowSettings.Run()
 
 def odasbaramonElmiladAndEl8etas(copticdate, Bishop=False, guestBishop=0, seneksar=1):
-    from copticDate import CopticCalendar
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs = relative_path(r"قداس.pptx")
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx") 
-    des_sheet ="القداس"
-    replacefile(prs, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    prs = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
     month = copticdate[1]
     weekday = cd.weekday()
     
@@ -1694,8 +1705,6 @@ def odasbaramonElmiladAndEl8etas(copticdate, Bishop=False, guestBishop=0, seneks
 
     show_hide_insertImage_replaceText(prs, excel, des_sheet, baramon_show_full_sections, baramon_hide_full_sections, new_Text=replaceText)
     
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -1824,22 +1833,21 @@ def odasbaramonElmiladAndEl8etas(copticdate, Bishop=False, guestBishop=0, seneks
         # Call the function once for all moves
         move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if Bishop:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
     
 def odasElmilad(Bishop=False, guestBishop=0, seneksar=1):
-    prs = relative_path(r"قداس.pptx")
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
+    _session = _initialize_liturgy_session()
+    prs = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
     image = relative_path(r"Data\Designs\الميلاد.png")
     miladText = ["لأنك ولدت", "aumack", "اف ماسك"]
-    replacefile(prs, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
 
     # milad_show_full_sections = ['مدائح الميلاد', 'قسمة للأب في صوم و عيد الميلاد - أيها السيد الرب إلهنا', 
     #                             'اوشية الزروع و العشب', 'اوشية الزروع و العشب غ', 'فاي اريه بي اوو',
@@ -2025,8 +2033,6 @@ def odasElmilad(Bishop=False, guestBishop=0, seneksar=1):
 
     show_hide_insertImage_replaceText(prs, excel, des_sheet, milad_show_full_sections, milad_hide_full_sections, None, milad_hide_full_sections_range, image, miladText)
     
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -2154,24 +2160,23 @@ def odasElmilad(Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if Bishop:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
 def odasAfterElmilad(copticdate, Bishop=False, guestBishop=0, seneksar=1):
-    from copticDate import CopticCalendar
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs = relative_path(r"قداس.pptx")
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
+    prs = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
     image = relative_path(r"Data\Designs\الميلاد.png")
     miladText = ["لأنك ولدت", "aumack", "اف ماسك"]
-    replacefile(prs, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
 
     # milad_show_full_sections = ['مدائح الميلاد', 'قسمة للآب في صوم الميلاد وعيد الميلاد وسنوى (أيها السيد الرب إلهنا)', 
     #                             'اوشية الزروع و العشب', 'اوشية الزروع و العشب غ', 'فاي اريه بي اوو',
@@ -2362,8 +2367,6 @@ def odasAfterElmilad(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     
     show_hide_insertImage_replaceText(prs, excel, des_sheet, milad_show_full_sections, milad_hide_full_sections, None, None, image, miladText)
     
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -2492,21 +2495,20 @@ def odasAfterElmilad(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if Bishop:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
 def odasEl5etan(Bishop=False, guestBishop=0, seneksar=1):
-    prs = relative_path(r"قداس.pptx")
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
+    _session = _initialize_liturgy_session()
+    prs = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
     el5etanText = ["لأنك ولدت", "aumack", "اف ماسك"]
-    replacefile(prs, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
 
     # el5etan_show_full_sections = ['مدائح الاعياد السيدية', 'قسمة عيد الختان و الدخول المسيح الهيكل (نسبح ونمجد إله الآلهة ورب الأرباب)', 
     #                               'اوشية الزروع و العشب', 'اوشية الزروع و العشب غ', 'مرد انجيل الختان',
@@ -2682,8 +2684,6 @@ def odasEl5etan(Bishop=False, guestBishop=0, seneksar=1):
 
     show_hide_insertImage_replaceText(prs, excel, des_sheet, el5etan_show_full_sections, el5etan_hide_full_sections, None, None, None, el5etanText)
     
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -2787,22 +2787,23 @@ def odasEl5etan(Bishop=False, guestBishop=0, seneksar=1):
                 slide_index += 1
                 end_index += 1
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if Bishop:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
 def odasEl8ytas(copticdate, Bishop=False, guestBishop=0, seneksar=1):
-    prs = relative_path(r"قداس.pptx")
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
+    cd = CopticCalendar().coptic_to_gregorian(copticdate)
+    prs = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
     image = relative_path(r"Data\Designs\الغطاس.png")
     ghetasText = ["لأنك اعتمدت", "ak[i`wmc", "آك تشى أومس"]
-    replacefile(prs, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
 
     # el8etas_show_full_sections = ['مدائح الغطاس', 'قسمة للآب في عيد الغطاس وسنوى (إذ أعطيتنا نعمة البنوة بحميم الميلاد)', 
     #                               'اوشية اهوية السماء', 'اوشية اهوية السماء غ', 'فاي اريه بي اوو',
@@ -2994,8 +2995,6 @@ def odasEl8ytas(copticdate, Bishop=False, guestBishop=0, seneksar=1):
 
     show_hide_insertImage_replaceText(prs, excel, des_sheet, el8etas_show_full_sections, el8etas_hide_full_sections, None, el8etas_hide_full_sections_range, image, ghetasText)
     
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -3121,20 +3120,19 @@ def odasEl8ytas(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
 def odas3orsKanaElgalyl(Bishop=False, guestBishop=0, seneksar=1):
-    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
-    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    _session = _initialize_liturgy_session()
+    prs1 = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
 
     katamars = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
     katamars_sheet = "القطمارس السنوي أيام"
@@ -3309,8 +3307,6 @@ def odas3orsKanaElgalyl(Bishop=False, guestBishop=0, seneksar=1):
 
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, wedding_show_full_sections, wedding_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(katamars)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -3406,10 +3402,10 @@ def odas3orsKanaElgalyl(Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if Bishop:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
@@ -3417,14 +3413,13 @@ def odasDo5olElhykal(Bishop=False, guestBishop=0, seneksar=1):
     return False
 
 def odasSomNynawa(copticdate, Bishop=False, guestBishop=0, seneksar=1):
-    from copticDate import CopticCalendar
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs = relative_path(r"قداس.pptx")
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
-    replacefile(prs, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    prs = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
 
     # milad_show_full_sections = ["الليلويا اي اي ايخون", "نيف سينتى", " انثو تي تي شوري", 
     #                             "مرد الابركسيس لايام الصوم", "قسمة صوم نينوى - الله الرحوم",
@@ -3602,8 +3597,6 @@ def odasSomNynawa(copticdate, Bishop=False, guestBishop=0, seneksar=1):
 
     show_hide_insertImage_replaceText(prs, excel, des_sheet, nynawa_show_full_sections, nynawa_hide_full_sections, None, nynawa_hide_full_sections_ranges)
     
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -3690,22 +3683,21 @@ def odasSomNynawa(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if Bishop:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
 def odasElSomElkbyr(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
-    from copticDate import CopticCalendar
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
-    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    prs1 = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
 
     prs2 = relative_path(r"Data\القطمارس\الصوم الكبير و صوم نينوى\قطمارس الصوم الكبير.pptx")
     katamars_sheet = "قطمارس الصوم الكبير"
@@ -3911,8 +3903,6 @@ def odasElSomElkbyr(copticdate, season, Bishop=False, guestBishop=0, seneksar=1)
     
     som_show_values.extend([[EsmaElsomElkbyr1, EsmaElsomElkbyr1]])
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     
@@ -4014,10 +4004,10 @@ def odasElSomElkbyr(copticdate, season, Bishop=False, guestBishop=0, seneksar=1)
     presentation1.SlideShowSettings.Run()
     # Call the function once for all moves
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop>0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
 def odasElbeshara(Bishop=False, guestBishop=0, seneksar=1):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
@@ -4202,8 +4192,6 @@ def odasElbeshara(Bishop=False, guestBishop=0, seneksar=1):
 
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, beshara_show_full_sections, beshara_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -4297,10 +4285,10 @@ def odasElbeshara(Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
@@ -4480,8 +4468,6 @@ def odasSbtLe3azr(copticdate, Bishop=False, guestBishop=0, seneksar=1):
 
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, le3azr_show_full_sections, le3azr_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -4562,10 +4548,10 @@ def odasSbtLe3azr(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
 def odasElsh3anyn(copticdate, Bishop=False, guestBishop=0):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
@@ -4809,8 +4795,6 @@ def odasElsh3anyn(copticdate, Bishop=False, guestBishop=0):
         elsh3anyn_show_full_sections_ranges, elsh3anyn_hide_full_sections_ranges,
         image)
     
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
 
@@ -4910,8 +4894,8 @@ def odasElsh3anyn(copticdate, Bishop=False, guestBishop=0):
     presentation1.SlideShowSettings.Run()
     
     if guestBishop > 0:
-        presentation3.Close()
-    presentation2.Close()
+        close_presentation_safe(prs3)
+    close_presentation_safe(prs2)
 
 def odasEl2yama(copticdate, Bishop=False, guestBishop=0):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
@@ -5104,8 +5088,6 @@ def odasEl2yama(copticdate, Bishop=False, guestBishop=0):
 
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, el2yama_show_full_sections, el2yama_hide_full_sections, el2yama_show_full_sections_ranges, el2yama_hide_full_sections_ranges, image, el2yamaText)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     
@@ -5218,9 +5200,9 @@ def odasEl2yama(copticdate, Bishop=False, guestBishop=0):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
     
-    presentation2.Close()
+    close_presentation_safe(prs2)
     if guestBishop>0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
@@ -5407,8 +5389,6 @@ def odasEl5amasyn_2_39(copticdate, Bishop=False, guestBishop=0):
 
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, el2yama_show_full_sections, el2yama_hide_full_sections, el2yama_show_full_sections_ranges, None, image, el2yamaText)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     
@@ -5522,9 +5502,9 @@ def odasEl5amasyn_2_39(copticdate, Bishop=False, guestBishop=0):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
  
-    presentation2.Close()
+    close_presentation_safe(prs2)
     if guestBishop>0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
@@ -5583,9 +5563,9 @@ def odasElso3od(copticdate, Bishop=False, guestBishop=0, afterSo3od=False):
     else:
         elso3od_show_full_sections.extend(['{2BB9A97E-3E87-49D7-9213-0C5CE26DD939}'])
 
-    elso3od_values = ["تكملة على حسب المناسبة", "مزمور التوزيع", "مزمور التوزيع", "مرد توزيع الصعود",
-                      "الانجيل", "المزمور", "الابركسيس", "الكاثوليكون", "البولس عربي",
-                      "اجيوس الصعود", "اجيوس الصعود", "مرد انجيل الصعود", "بدء قداس الكلمة"]
+    # elso3od_values = ["تكملة على حسب المناسبة", "مزمور التوزيع", "مزمور التوزيع", "مرد توزيع الصعود",
+    #                   "الانجيل", "المزمور", "الابركسيس", "الكاثوليكون", "البولس عربي",
+    #                   "اجيوس الصعود", "اجيوس الصعود", "مرد انجيل الصعود", "بدء قداس الكلمة"]
     
     elso3od_values = find_slide_nums_arrays_v2(excel, des_sheet, 
                      ['{A18EDC94-F257-4FAC-99C7-0A8EA70F0FAF}', '{C29E5A83-A98B-4077-8194-99A6D803EF53}', '{C29E5A83-A98B-4077-8194-99A6D803EF53}', '{834F8F17-CEC0-4E51-A927-8074D22B6A78}', '{C7D4A109-F792-4661-BAD0-075FD1A1909F}', '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{E234C6C7-3837-4CE4-A541-CDC9627AAAC2}', '{6D4B3F52-63BF-435F-BF0C-C9D41120C2A3}', '{D88055F5-EAA0-4C8E-8249-C364A572BF7B}', '{CD4B95FF-0E0E-42D3-8DC4-224C3DD732F7}', '{CD4B95FF-0E0E-42D3-8DC4-224C3DD732F7}', '{FDACCDF0-22DF-42A8-B31E-94F2B97DAC4B}', '{C08D8D44-E49E-47CE-8027-C8AE26B1AA9A}', '{1DA5C6AA-2FE5-461B-9E2C-40113CFC7804}'],
@@ -5719,8 +5699,6 @@ def odasElso3od(copticdate, Bishop=False, guestBishop=0, afterSo3od=False):
 
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, elso3od_show_full_sections, elso3od_hide_full_sections, elso3od_show_full_sections_ranges, None, image, el2yamaText)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     
@@ -5833,9 +5811,9 @@ def odasElso3od(copticdate, Bishop=False, guestBishop=0, afterSo3od=False):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
  
-    presentation2.Close()
+    close_presentation_safe(prs2)
     if guestBishop>0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
@@ -6019,8 +5997,6 @@ def odasEl3nsara(copticdate, Bishop=False, guestBishop=0):
 
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, el3nsara_show_full_sections, el3nsara_hide_full_sections, None, None, image, el2yamaText)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     
@@ -6133,24 +6109,294 @@ def odasEl3nsara(copticdate, Bishop=False, guestBishop=0):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
  
-    presentation2.Close()
+    close_presentation_safe(prs2)
     if guestBishop>0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
-def odasDo5olElmasy7Masr(copticdate, Bishop=False, guestBishop=0):
-    return
+def odasDo5olElmasy7Masr(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
+    cd = CopticCalendar().coptic_to_gregorian(copticdate)
+    prs1 = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
+
+    prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
+    katamars_sheet = "القطمارس السنوي أيام"
+    km, kd = find_Readings_Date(9, 24)
+    katamars_offsets = [9, 10, 11, 12, 13, 14]
+
+    katamars_values = fetch_data_arrays(excel2, katamars_sheet, km, kd, katamars_offsets)
+    elbouls1 = katamars_values[0]
+    elkatholikon1 = katamars_values[1]
+    elebrksis1 = katamars_values[2]
+    elmzmor = katamars_values[3]
+    elengil = katamars_values[4]
+    elbouls2 = elkatholikon1 - 1
+    elkatholikon2 = elebrksis1 - 1
+    elebrksis2 = elmzmor - 1
+    elengil2 = katamars_values[5]
+
+    seneksar_sheet = "السنكسار"
+    if seneksar == 1:
+        seneksar_prs = relative_path(r"Data\القطمارس\السنكسار.pptx")
+        seneksar_offsets = [3, 4]
+    else:
+        seneksar_offsets = [5, 6]
+    seneksar_values = fetch_data_arrays(excel2, seneksar_sheet, copticdate[1], copticdate[2], seneksar_offsets)
+    seneksar1 = seneksar_values[0]
+    seneksar2 = seneksar_values[1]
+
+    eltagaly_show_values = []
+    eltagaly_hide_values = []
+
+    # eltagaly_show_full_sections = ["الليلويا فاي بيبي", "طاي شوري", "مرد ابركسيس دخول المسيح أرض مصر", 
+    #                                "مرد مزمور دخول المسيح أرض مصر", "فاي اريه بي اوو", "مرد انجيل دخول المسيح أرض مصر",
+    #                                "قسمة عيد دخول المسيح أرض مصر (أيها السيد الرب الهنا.. جاء اليوم الى مصر..)",
+    #                                "مدائح الاعياد السيدية", "اوشية اهوية السماء", "اوشية اهوية السماء غ"]
+    
+    # eltagaly_hide_full_sections = ["مرد المزمور", "مرد الانجيل", "ربع للعذراء",
+    #                                "قسمة القداس الباسيلي (أيها السيد الرب إلهنا)"]
+    
+    # eltagaly_values = ["تكملة على حسب المناسبة", "مزمور التوزيع", "مزمور التوزيع", "مرد توزيع دخول المسيح أرض مصر",
+    #                    "الانجيل", "المزمور", "الابركسيس", "الكاثوليكون", "البولس عربي", "السنكسار", "بدء قداس الكلمة"]
+
+    eltagaly_show_full_sections = ['{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}', '{4D4ADF3D-C5E3-4912-84F2-0CB91C3ED475}', '{6CFFE3AA-240A-4A85-BE89-A1311636F7BA}', '{B7D98377-B994-4654-B49C-DE10E0DDE4F1}', '{292AFDD4-709D-457C-979A-DB9F3F0FC0B0}', '{EB2E0FC4-58C3-41BB-8EAF-0576B8086000}', '{147FD013-1F73-40AC-92A0-5544B48FA888}', '{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}']
+    eltagaly_hide_full_sections = ['{F13A48F2-238D-4617-B84E-9B0A694D9A18}', '{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{ECE652ED-1345-4C6D-B92D-5996CFA27AEE}', '{681FF6A7-4230-4171-8F41-83FD64E8C960}']
+    
+    eltagaly_values = ['{A18EDC94-F257-4FAC-99C7-0A8EA70F0FAF}', '{C29E5A83-A98B-4077-8194-99A6D803EF53}', '{C29E5A83-A98B-4077-8194-99A6D803EF53}', '{1848C53A-97F7-4DE5-80E7-B423E4B79D30}', '{C7D4A109-F792-4661-BAD0-075FD1A1909F}', '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{E234C6C7-3837-4CE4-A541-CDC9627AAAC2}', '{6D4B3F52-63BF-435F-BF0C-C9D41120C2A3}', '{D88055F5-EAA0-4C8E-8249-C364A572BF7B}', '{1DA5C6AA-2FE5-461B-9E2C-40113CFC7804}', '{C08D8D44-E49E-47CE-8027-C8AE26B1AA9A}']
+
+    eltagaly_values = find_slide_nums_arrays_v2(excel, des_sheet, eltagaly_values, 2, [2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
+
+    #الختام
+    elkhetam = eltagaly_values[0]
+    #التوزيع
+    mazmorELtawzy3 = eltagaly_values[1] + 1
+    mazmorELtawzy32 = eltagaly_values[2] - 1
+    mrdMazmorEltawzy3 = eltagaly_values[3]
+    
+    #القرائات
+    elengil3 = eltagaly_values[4]
+    elmazmor3 = eltagaly_values[5]
+    elebrksis3 = eltagaly_values[6]
+    elkatholikon3 = eltagaly_values[7]
+    elbouls3 = eltagaly_values[8]
+    elseneksar = eltagaly_values[9]
+
+    if Bishop == True:
+        prs3 = relative_path(r"Data\حضور الأسقف.pptx")
+        sheet = "في حضور الأسقف"
+
+        # bishop_show_values = ['في حضور الاسقف', 'المزمور', 'مارو اتشاسف', 'امبين يوت اتطايوت', 
+        #                       'ني سافيف تيرو', 'تكملة في حضور الاسقف', 'لحن اك اسمارؤوت']
+
+        #bishop_hide_values = ['سوتيس امين']
+
+        bishop_show_values = ['{2BCF4F8C-25F0-43C5-B224-6528B2EA3F2F}', '{F76B0D75-0474-45B5-B79F-7416F354543A}',
+                              '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', 
+                              '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{A9183893-7B7E-459F-8547-F7A8F7D2D521}', 
+                              '{670DAA94-A6C9-4CCD-B4E2-958C71CD3E44}']
+        
+        bishop_hide_values = ['{4D2B15D5-C978-467C-9D6C-726FE25128B8}']
+        
+        eltagaly_show_full_sections.extend(bishop_show_values)
+        eltagaly_hide_full_sections.extend(bishop_hide_values)
+
+        if guestBishop > 0:
+            # bishop_values = ["صلاة الشكر", "صلاة الشكر", "طوبه هينا الكبيرة", "طوبه هينا الكبيرة", 
+            #                  "نيم بينيوت", "نيم بينيوت", "الهيتنيات", "الهيتنيات",
+            #                  "اي اغابي", "اي اغابي", "مرد الكاثوليكون", "مرد الكاثوليكون",
+            #                  "الاسبسمس", "الاسبسمس"]
+
+            # bishopDes_values = ["تكملة في حضور الاسقف", "طوبه هينا الكبيرة",
+            #                     "امبين يوت اتطايوت", "تكملة الهيتنيات", "بى اهموت غار الصغيرة",
+            #                     "تو ماكريو", "اي اغابي", "ابيت جيك ايفول", "مارو اتشاسف",
+            #                     "الاسبسمس الادام السنوي+الختام", "ختام الاسبسمس الادام",
+            #                     "اوشية الاباء (ب)", "اوشية الاباء غ"]
+            
+            bishop_values = find_slide_nums_arrays_v2(excel, sheet, 
+                            ['{6851F163-CBEF-4014-A853-CE100557BA6A}', '{6851F163-CBEF-4014-A853-CE100557BA6A}', '{B084BC40-61E1-4477-98DA-15CFB06AEE91}', '{B084BC40-61E1-4477-98DA-15CFB06AEE91}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{97203297-EECB-4D41-B2E3-AD9A4863847E}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{7C84083F-E6D3-4669-9130-AC7E8D935A98}', '{D0234C99-69FE-407A-82A9-D7A676919E93}', '{D0234C99-69FE-407A-82A9-D7A676919E93}', '{0B519645-F935-43AE-A9CE-6E2FC03833BB}', '{0B519645-F935-43AE-A9CE-6E2FC03833BB}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}', '{D1378DB5-29D1-4800-9D96-10F2535EEB57}'], 
+                            2, [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2])
+
+            bishopDes_values = find_slide_nums_arrays_v2(excel, des_sheet, 
+                               ['{F76B0D75-0474-45B5-B79F-7416F354543A}', '{8DD21CDE-CB6B-4D5B-B995-D2747AB69ED1}', '{E2968C91-5339-499C-9812-DECCCF58A2CD}', '{646A8184-7F05-453A-A2F1-EB9A77D7F0EE}', '{21891CBB-A1EC-4974-B0B6-F74A4B502BC2}', '{12B7D244-BF4C-401B-A65A-D1621D7DD953}', '{F69B50D8-FB5E-4E8C-AE5C-6DCB4790AFAF}', '{38267404-7625-47AA-B0C8-31BCA5D0435D}', '{62A12AF8-CB6D-4CC5-9DB0-B73A7C24E2AD}', '{0C7A7725-643D-4F7E-A2F0-0C8A36C2A594}', '{1CDFD5FF-8DF5-48CF-A773-F5EEBD56469C}', '{74A33555-8E08-47DF-B3CD-A1B4C7AF2B4E}', '{474487EB-4554-4A30-B351-6EF762D2F2D6}'],                  
+                               2, [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
+
+            elshokr = bishopDes_values[0]
+            elshokr1 = bishop_values[0]
+            elshokr2 = bishop_values[1]
+
+            tobhyna = bishopDes_values[1]
+            tobhyna1 = bishop_values[2]
+            tobhyna2 = bishop_values[3]
+
+            embiniot = bishopDes_values[2]
+            embiniot1 = bishop_values[4]
+            embiniot2 = bishop_values[5]
+
+            hytynyat = bishopDes_values[3]
+            hytynyat1 = bishop_values[6]
+            hytynyat2 = bishop_values[7]
+
+            byhmot8ar = bishopDes_values[4]
+            byhmot8ar1 = bishop_values[4]
+            byhmot8ar2 = bishop_values[5]
+
+            tomakario = bishopDes_values[5] - 1
+            tomakario1 = bishop_values[4]
+            tomakario2 = bishop_values[5]
+
+            eya8aby = bishopDes_values[6] - 1
+            eya8aby1 = bishop_values[8]
+            eya8aby2 = bishop_values[9]
+
+            mrdElkatholikon = bishopDes_values[7]
+            mrdElkatholikon1 = bishop_values[10]
+            mrdElkatholikon2 = bishop_values[11]
+
+            maro = bishopDes_values[8]
+            maro1 = bishop_values[4]
+            maro2 = bishop_values[5]
+
+            esbasmos1 = bishopDes_values[9]
+            esbasmos11 = bishop_values[12]
+            esbasmos12 = bishop_values[13]
+
+            esbasmos2 = bishopDes_values[10]
+            esbasmos21 = bishop_values[12]
+            esbasmos22 = bishop_values[13]
+
+            elaba2basyly = bishopDes_values[11] - 1
+            elaba2basyly1 = bishop_values[0]
+            elaba2basyly2 = bishop_values[1]
+
+            elaba28yry8ory = bishopDes_values[12] - 1
+            elaba28yry8ory1 = bishop_values[0]
+            elaba28yry8ory2 = bishop_values[1]
+
+            if guestBishop < 2:
+                elshokr2 = elshokr2-1
+                tobhyna2 = tobhyna2-2
+                embiniot2 = embiniot2-1
+                hytynyat2 = hytynyat2-3
+                byhmot8ar2 = byhmot8ar2-1
+                tomakario2 = tomakario2-1
+                eya8aby2 = eya8aby2-2
+                mrdElkatholikon2 = mrdElkatholikon2-1
+                maro2 = maro2-1
+                esbasmos12 = esbasmos12-2
+                esbasmos22 = esbasmos22-2
+                elaba2basyly2 = elaba2basyly2-1
+                elaba28yry8ory2 = elaba28yry8ory2-1
+        
+            start_positions = [elaba28yry8ory, elaba2basyly, esbasmos2, esbasmos1, elengil3, elmazmor3, elseneksar, maro, elebrksis3, elkatholikon3, mrdElkatholikon, elbouls3, eya8aby, tomakario, byhmot8ar, hytynyat, embiniot, tobhyna, elshokr]
+            start_slides = [elaba28yry8ory1, elaba2basyly1, esbasmos21, esbasmos11, elengil, elmzmor, seneksar1, maro1, elebrksis1, elkatholikon1, mrdElkatholikon1, elbouls1, eya8aby1, tomakario1, byhmot8ar1, hytynyat1, embiniot1, tobhyna1, elshokr1]
+            end_slides = [elaba28yry8ory2, elaba2basyly2, esbasmos22, esbasmos12, elengil2, elmzmor, seneksar2, maro2, elebrksis2, elkatholikon2, mrdElkatholikon2, elbouls2, eya8aby2, tomakario2, byhmot8ar2, hytynyat2, embiniot2, tobhyna2, elshokr2]
+
+    if guestBishop == 0:
+        start_positions = [elengil3, elmazmor3, elseneksar, elebrksis3, elkatholikon3, elbouls3]
+        start_slides = [elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
+        end_slides = [elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
+
+    if cd.weekday() == 6:
+        show_hide_insertImage_replaceText(prs1, excel, des_sheet, eltagaly_show_full_sections, eltagaly_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
+    else:
+        show_hide_insertImage_replaceText(prs1, excel, des_sheet, eltagaly_show_full_sections, eltagaly_hide_full_sections)
+
+    presentation1 = open_presentation_relative_path(prs1)
+    presentation2 = open_presentation_relative_path(prs2)
+    seneksar_presentation = open_presentation_relative_path(seneksar_prs)
+
+    if guestBishop>0:
+        presentation3 = open_presentation_relative_path(prs3)
+
+    khetamValue = find_slide_index_by_title(presentation1, "دخول المسيح ارض مصر", elkhetam, "up")
+    eltagaly_show_values.extend([[khetamValue, khetamValue]])
+    run_vba_with_slide_id(excel, des_sheet, prs1, presentation1)
+    show_slides(presentation1, eltagaly_show_values)
+    agbya(presentation1, eltagaly_values[10], 1)
+
+    # Initialize variables for current position, slide, and end index
+    current_position = start_positions[0]
+    current_start_slide = int(start_slides[0])
+    current_end_slide = int(end_slides[0])
+    
+    # Initialize index for start position, slide, and end slide
+    position_index = 1
+    slide_index = 1
+    end_index = 1
+    
+    while current_start_slide <= current_end_slide and slide_index <= presentation1.Slides.Count:
+        if current_position == mazmorELtawzy3:
+            source_slide = presentation1.Slides(current_start_slide)
+            source_slide.Copy()
+            slide_index1 = mazmorELtawzy32
+            while slide_index1 >= current_position:
+                new_slide = presentation1.Slides.Paste(slide_index1).SlideShowTransition.Hidden = False
+                slide_index1 -= 1
+            current_start_slide += 1
+
+        elif (current_position == elengil3 or current_position == elmazmor3 or current_position == elebrksis3 
+            or current_position == elkatholikon3 or current_position == elbouls3):
+            source_slide = presentation2.Slides(current_end_slide)
+            source_slide.Copy()
+            new_slide = presentation1.Slides.Paste(current_position)
+            new_slide.SlideShowTransition.Hidden = False
+            current_end_slide -= 1
+            if current_start_slide > current_end_slide:
+                current_position += 1
+
+        elif current_position == elseneksar:
+            source_slide = seneksar_presentation.Slides(current_end_slide)
+            source_slide.Copy()
+            presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
+            current_end_slide -= 1
+            if current_start_slide > current_end_slide:
+                current_position += 1
+
+        elif Bishop and current_position in {elaba28yry8ory, elaba2basyly, byhmot8ar, hytynyat, embiniot, 
+                                             elshokr, tomakario, eya8aby, esbasmos1, esbasmos2, maro, 
+                                             mrdElkatholikon, tobhyna}:
+            source_slide = presentation3.Slides(current_end_slide)
+            source_slide.Copy()
+            if current_position in {elaba28yry8ory, elaba2basyly, byhmot8ar, hytynyat, embiniot, elshokr, maro}:
+                presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = False
+            else:
+                presentation1.Slides.Paste(current_position).SlideShowTransition.Hidden = True
+            current_end_slide -= 1
+            if(current_start_slide > current_end_slide):
+                current_position += 1
+
+        # Move to the next round if all slides in the current range have been processed
+        if current_start_slide > current_end_slide:
+            # Check if there are more rounds
+            if position_index < len(start_positions):
+                # Update variables for the next round
+                current_position = start_positions[position_index]
+                current_start_slide = start_slides[slide_index]
+                current_end_slide = end_slides[end_index]
+                position_index += 1
+                slide_index += 1
+                end_index += 1
+
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
+    if guestBishop > 0:
+        close_presentation_safe(prs3)
+
+    presentation1.SlideShowSettings.Run()
 
 def odasSomElRosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
-    from copticDate import CopticCalendar
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
-    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    prs1 = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
 
     if cd.weekday() == 6:
         prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
@@ -6370,8 +6616,6 @@ def odasSomElRosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     else:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, elrosol_show_full_sections, elrosol_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -6466,22 +6710,21 @@ def odasSomElRosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
  
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop>0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
 def odas3ydElrosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
-    from copticDate import CopticCalendar
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
-    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    prs1 = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
 
     if cd.weekday() == 6:
         prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي احاد.pptx")
@@ -6681,8 +6924,6 @@ def odas3ydElrosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     else:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, elrosol_show_full_sections, elrosol_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -6770,22 +7011,21 @@ def odas3ydElrosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
  
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop>0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
 def odasEltagaly(copticdate, Bishop=False, guestBishop=0, seneksar=1):
-    from copticDate import CopticCalendar
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs1 = relative_path(r"قداس.pptx")  # Using the relative path
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
-    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    prs1 = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
 
     prs2 = relative_path(r"Data\القطمارس\القطمارس السنوي ايام.pptx")
     katamars_sheet = "القطمارس السنوي أيام"
@@ -6976,8 +7216,6 @@ def odasEltagaly(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     else:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, eltagaly_show_full_sections, eltagaly_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -7054,22 +7292,21 @@ def odasEltagaly(copticdate, Bishop=False, guestBishop=0, seneksar=1):
                 slide_index += 1
                 end_index += 1
 
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
 def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0, seneksar=1):
-    from copticDate import CopticCalendar
+    _session = _initialize_liturgy_session()
+    CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
-    prs1 = relative_path(r"قداس.pptx") 
-    excel = relative_path(r"Files Data.xlsx")
-    excel2 = relative_path(r"Tables.xlsx")
-    des_sheet ="القداس"
-    replacefile(prs1, relative_path(r"Data\CopyData\قداس.pptx"))
-    replacefile(relative_path(r"كتاب المدائح.pptx"), relative_path(r"Data\CopyData\كتاب المدائح.pptx"))
+    prs1 = _session['prs1']
+    excel = _session['excel']
+    excel2 = _session['excel2']
+    des_sheet = _session['des_sheet']
 
     if cd.weekday() == 6 :
         if copticdate[1] == 1:
@@ -7142,7 +7379,7 @@ def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     mrdMazmorEltawzy3_elqiyama = twentyNine_values[5]
 
     #الاواشي
-    AwashySeason = CopticCalendar().get_coptic_date_range(copticdate)
+    AwashySeason = CopticCalendar.get_coptic_date_range(copticdate)
     match AwashySeason:
         case "Air": twentyNine_show_full_sections.extend(['{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}'])
         case "Tree": twentyNine_show_full_sections.extend(['{F94B3D1F-649D-4839-BD2E-19439E173129}', '{5DD6BABA-9FE4-4D33-9F90-0C865CB95EE4}'])
@@ -7263,8 +7500,6 @@ def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0, seneksar=1):
 
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, twentyNine_show_full_sections, twentyNine_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -7349,9 +7584,12 @@ def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0, seneksar=1):
                 slide_index += 1
                 end_index += 1
     
-    presentation2.Close()
-    seneksar_presentation.Close()
+    close_presentation_safe(prs2)
+    close_presentation_safe(seneksar_prs)
     if guestBishop>0:
-        presentation3.Close()
-    
+        close_presentation_safe(prs2)
+        close_presentation_safe(seneksar_prs)
+        if guestBishop > 0:
+            close_presentation_safe(prs3)
+                # Update variables for the next round
     presentation1.SlideShowSettings.Run()

@@ -6,6 +6,213 @@ import win32com.client
 from PyQt5.QtGui import QPixmap, QPainter, QColor, QLinearGradient
 from PyQt5.QtCore import Qt, QLineF, QPointF
 
+class PowerPointManager:
+    """Centralized PowerPoint COM lifecycle helper."""
+
+    def _normalize_path(self, path_value):
+        return os.path.abspath(path_value).lower()
+
+    def _co_initialize(self):
+        import pythoncom
+        pythoncom.CoInitialize()
+        return pythoncom
+
+    def _get_active_app(self):
+        try:
+            return win32com.client.GetActiveObject("PowerPoint.Application")
+        except Exception:
+            return None
+
+    def _get_presentations(self, app):
+        """Safely resolve PowerPoint presentations collection."""
+        if app is None:
+            return None
+        try:
+            return app.Presentations
+        except Exception:
+            return None
+
+    def _iter_presentations(self, app):
+        """Yield open presentations defensively when COM is in transient states."""
+        presentations = self._get_presentations(app)
+        if presentations is None:
+            return
+
+        try:
+            count = int(presentations.Count)
+        except Exception:
+            return
+
+        for index in range(1, count + 1):
+            try:
+                yield presentations.Item(index)
+            except Exception:
+                continue
+
+    def ensure_app(self, visible=True):
+        pythoncom = self._co_initialize()
+        try:
+            app = self._get_active_app()
+            if app is None:
+                app = win32com.client.Dispatch("PowerPoint.Application")
+            try:
+                app.Visible = visible
+            except Exception:
+                pass
+            return app
+        finally:
+            pythoncom.CoUninitialize()
+
+    def list_open_paths(self):
+        pythoncom = self._co_initialize()
+        try:
+            app = self._get_active_app()
+            if app is None:
+                return []
+
+            open_paths = []
+            for pres in self._iter_presentations(app):
+                try:
+                    open_paths.append(os.path.abspath(pres.FullName))
+                except Exception:
+                    continue
+            return open_paths
+        finally:
+            pythoncom.CoUninitialize()
+
+    def is_open(self, path_value):
+        normalized_target = self._normalize_path(path_value)
+        for open_path in self.list_open_paths():
+            if self._normalize_path(open_path) == normalized_target:
+                return True
+        return False
+
+    def open(self, path_value, with_window=True):
+        pythoncom = self._co_initialize()
+        try:
+            absolute_path = os.path.abspath(path_value)
+            normalized_target = self._normalize_path(absolute_path)
+
+            app = self._get_active_app()
+            if app is None:
+                app = win32com.client.Dispatch("PowerPoint.Application")
+
+            try:
+                app.Visible = True
+            except Exception:
+                pass
+
+            for pres in self._iter_presentations(app):
+                try:
+                    if self._normalize_path(pres.FullName) == normalized_target:
+                        return pres
+                except Exception:
+                    continue
+
+            presentations = self._get_presentations(app)
+            if presentations is None:
+                raise RuntimeError("PowerPoint presentations collection is not available")
+
+            try:
+                return presentations.Open(absolute_path, WithWindow=with_window)
+            except TypeError:
+                return presentations.Open(absolute_path)
+        finally:
+            pythoncom.CoUninitialize()
+
+    def close(self, path_value):
+        pythoncom = self._co_initialize()
+        try:
+            normalized_target = self._normalize_path(path_value)
+            app = self._get_active_app()
+            if app is None:
+                return False
+
+            for pres in self._iter_presentations(app):
+                try:
+                    if self._normalize_path(pres.FullName) == normalized_target:
+                        pres.Close()
+                        return True
+                except Exception:
+                    continue
+
+            return False
+        finally:
+            pythoncom.CoUninitialize()
+
+    def go_to_slide(self, path_value, slide_index):
+        pythoncom = self._co_initialize()
+        try:
+            absolute_path = os.path.abspath(path_value)
+            normalized_target = self._normalize_path(absolute_path)
+
+            app = self._get_active_app()
+            if app is None:
+                app = win32com.client.Dispatch("PowerPoint.Application")
+
+            try:
+                app.Visible = True
+            except Exception:
+                pass
+
+            presentation = None
+            for pres in self._iter_presentations(app):
+                try:
+                    if self._normalize_path(pres.FullName) == normalized_target:
+                        presentation = pres
+                        break
+                except Exception:
+                    continue
+
+            if presentation is None:
+                presentations = self._get_presentations(app)
+                if presentations is None:
+                    raise RuntimeError("PowerPoint presentations collection is not available")
+                try:
+                    presentation = presentations.Open(absolute_path, WithWindow=True)
+                except TypeError:
+                    presentation = presentations.Open(absolute_path)
+
+            try:
+                slide = presentation.Slides(slide_index)
+                slide.Select()
+            except Exception:
+                pass
+
+            return presentation
+        finally:
+            pythoncom.CoUninitialize()
+
+    def close_all(self):
+        pythoncom = self._co_initialize()
+        try:
+            app = self._get_active_app()
+            if app is None:
+                return 0
+
+            closed_count = 0
+            for pres in self._iter_presentations(app):
+                try:
+                    pres.Close()
+                    closed_count += 1
+                except Exception:
+                    continue
+            return closed_count
+        finally:
+            pythoncom.CoUninitialize()
+
+
+powerpoint_manager = PowerPointManager()
+
+
+
+def _close_workbook(workbook):
+    if workbook is not None:
+        try:
+            workbook.close()
+        except Exception:
+            pass
+
 def relative_path(relative_path):
     """Return absolute path to resource, for dev and frozen apps"""
     if getattr(sys, 'frozen', False):
@@ -218,99 +425,110 @@ def find_season_date(excel_path, sheet_name, words, search_col):
         return f"Error: {str(e)}"
     
 def read_excel_cell(file_path, sheet_name, cell_address):
-    # Load the workbook
-    wb = load_workbook(file_path, read_only=True, data_only=True)
-    
-    # Select the worksheet
-    ws = wb[sheet_name]
-    
-    # Read the value from the specified cell
-    cell_value = ws[cell_address].value
-    
-    # Close the workbook
-    wb.close()
-    
-    return cell_value
+    wb = None
+    try:
+        wb = load_workbook(file_path, read_only=True, data_only=True)
+
+        # Select the worksheet
+        ws = wb[sheet_name]
+
+        # Read the value from the specified cell
+        return ws[cell_address].value
+    finally:
+        _close_workbook(wb)
 
 def find_values_in_row(file_path, sheet_name, column_letter, search_value):
-    # Load the workbook and select the sheet
-    workbook = load_workbook(file_path)
-    sheet = workbook[sheet_name]
-    
-    # Convert the column letter to a number (1-indexed)
-    column_index = utils.column_index_from_string(column_letter)
-    
-    # Iterate through the rows in the specified column
-    for row in sheet.iter_rows(min_col=column_index, max_col=column_index):
-        for cell in row:
-            if cell.value == search_value:
-                # Get the row number
-                row_num = cell.row
-                # Get the values in the next two columns (J and K if column is I)
-                value1 = sheet.cell(row=row_num, column=column_index + 1).value
-                value2 = sheet.cell(row=row_num, column=column_index + 2).value
-                return value1, value2
-    
-    # If the value is not found, return None
-    return None, None
+    workbook = None
+    try:
+        # Load the workbook and select the sheet
+        workbook = load_workbook(file_path)
+        sheet = workbook[sheet_name]
+
+        # Convert the column letter to a number (1-indexed)
+        column_index = utils.column_index_from_string(column_letter)
+
+        # Iterate through the rows in the specified column
+        for row in sheet.iter_rows(min_col=column_index, max_col=column_index):
+            for cell in row:
+                if cell.value == search_value:
+                    # Get the row number
+                    row_num = cell.row
+                    # Get the values in the next two columns (J and K if column is I)
+                    value1 = sheet.cell(row=row_num, column=column_index + 1).value
+                    value2 = sheet.cell(row=row_num, column=column_index + 2).value
+                    return value1, value2
+
+        # If the value is not found, return None
+        return None, None
+    finally:
+        _close_workbook(workbook)
 
 def write_to_excel_cell(file_path, sheet_name, cell_address, value):
-    # Load the workbook
-    wb = load_workbook(filename=file_path)
-    
-    # Select the worksheet
-    ws = wb[sheet_name]
-    
-    # Write the value to the specified cell
-    ws[cell_address] = value
-    
-    # Save the workbook
-    wb.save(file_path)
-    
-    # Close the workbook
-    wb.close()
+    wb = None
+    try:
+        # Load the workbook
+        wb = load_workbook(filename=file_path)
+
+        # Select the worksheet
+        ws = wb[sheet_name]
+
+        # Write the value to the specified cell
+        ws[cell_address] = value
+
+        # Save the workbook
+        wb.save(file_path)
+    finally:
+        _close_workbook(wb)
 
 def read_column(file_path, sheet_name, column):
-    # Load the Excel workbook
-    wb = load_workbook(filename=file_path)
-    
-    # Select the worksheet
-    ws = wb[sheet_name]
-    
-    # Initialize a list to store values
-    column_values = []
-    
-    # Iterate over cells in the column until an empty cell is encountered
-    for cell in ws[column]:
-        if cell.value is not None:
-            column_values.append(cell.value)
-        else:
-            # Break the loop if an empty cell is encountered
-            break
-    
-    return column_values
+    wb = None
+    try:
+        # Load the Excel workbook
+        wb = load_workbook(filename=file_path)
+
+        # Select the worksheet
+        ws = wb[sheet_name]
+
+        # Initialize a list to store values
+        column_values = []
+
+        # Iterate over cells in the column until an empty cell is encountered
+        for cell in ws[column]:
+            if cell.value is not None:
+                column_values.append(cell.value)
+            else:
+                # Break the loop if an empty cell is encountered
+                break
+
+        return column_values
+    finally:
+        _close_workbook(wb)
 
 def find_and_save_values(file_path, sheet_name, column_letter, search_value):
-    # Load the workbook
-    wb = load_workbook(file_path)
-    
-    # Select the worksheet
-    ws = wb[sheet_name]
+    wb = None
+    try:
+        # Load the workbook
+        wb = load_workbook(file_path)
 
-    # Get the maximum row count in the column
-    max_row = ws.max_row
+        # Select the worksheet
+        ws = wb[sheet_name]
 
-    # Iterate over the specified column
-    for row in range(1, max_row + 1):
-        cell_value = ws[column_letter + str(row)].value
-        if cell_value == search_value:
-            # Save corresponding values from adjacent columns
-            value1 = ws.cell(row=row, column=column_letter_to_number(column_letter) + 1).value
-            value2 = ws.cell(row=row, column=column_letter_to_number(column_letter) + 2).value
-            return value1, value2
+        # Get the maximum row count in the column
+        max_row = ws.max_row
 
-    # If the search value is not found, return None
-    return None, None
+        # Iterate over the specified column
+        for row in range(1, max_row + 1):
+            cell_value = ws[column_letter + str(row)].value
+            if cell_value == search_value:
+                # Save corresponding values from adjacent columns
+                value1 = ws.cell(row=row, column=column_letter_to_number(column_letter) + 1).value
+                value2 = ws.cell(row=row, column=column_letter_to_number(column_letter) + 2).value
+                return value1, value2
+
+        # If the search value is not found, return None
+        return None, None
+    finally:
+        _close_workbook(wb)
 
 def column_letter_to_number(letter):
     # Convert column letter to column number
@@ -574,20 +792,27 @@ def hide_slide_ranges_from_sections(ppt_file, excel_path, sheet_name, section_id
     # Save the modified presentation
     presentation.save(ppt_file)
 
+def open_presentation_safe(path_value, with_window=True):
+    return powerpoint_manager.open(path_value, with_window=with_window)
+
+def close_presentation_safe(path_value):
+    return powerpoint_manager.close(path_value)
+
+def get_open_presentations():
+    return powerpoint_manager.list_open_paths()
+
+def close_all_presentations_safe():
+    return powerpoint_manager.close_all()
+
+def open_presentation_on_slide_safe(path_value, slide_index):
+    return powerpoint_manager.go_to_slide(path_value, slide_index)
+
 def open_presentation_relative_path(rp):
     absolute_path = relative_path(rp)
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    
-    # Check if the presentation is already open
     file_name = os.path.basename(absolute_path)
-    for pres in powerpoint.Presentations:
-        if os.path.abspath(pres.FullName).lower() == os.path.abspath(absolute_path).lower():
-            return f"{file_name} is already open", None
-    
-    # If not already open, open the presentation
+
     try:
-        presentation = powerpoint.Presentations.Open(absolute_path)
-        return presentation
+        return open_presentation_safe(absolute_path)
     except Exception as e:
         return f"Error opening {file_name}: {str(e)}", None
 
@@ -854,7 +1079,6 @@ def find_Readings_Date (month, day):
         8: [5, 7],
         9: [5],
         10: [9, 20, 26],
-        11: [26],
         12: [4, 22]
     }
     if month in tot8 and day in tot8[month]:
@@ -1179,9 +1403,10 @@ def find_Readings_Date (month, day):
     if month in hator12 and day in hator12[month]:
         return 3, 12
     
-    # 30 برمهات
+    # 22 كيهك
     kiahk22 = {
-        7: [30]
+        7: [30],
+        11: [26]
     }
     if month in kiahk22 and day in kiahk22[month]:
         return 4, 22
@@ -1406,6 +1631,7 @@ def elzoksologyat (excel_path, season, bakerOR3ashyaORtasbha):
         case 5: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ['{D92BB540-7883-4DD1-A6A7-1E0A76337CF2}', '{D622430F-FECE-4075-85A5-AFCFB40851AB}', '{DA8C1040-76BE-40FE-A02D-791EEB63045C}', '{C13ED8FB-8409-4503-AB7D-D9DF2DA0CBE7}', '{75722E63-5075-4CAF-9D6F-C5591C6AC389}', '{72C6D456-0F5A-4A81-82BB-06406C1912B3}'])
         case 9 | 9.1 : show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ['{0CCD34B1-6F04-4043-A26F-8A1AC895B7F6}', '{2E7B19F0-0A12-468D-8080-CE8CC25CFB4E}', '{1D8E1CE8-DD12-4876-B140-508806EABA7E}', '{63F7B608-665D-4F5D-893B-0CC9060AFBAF}', bakerOR3ashyaORtasbha])
         case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ['{D44C71EC-63B2-4404-886F-C06106494AA4}', '{7C22CB67-76C9-4102-BF71-E76EFA7F9CC2}', '{6B4AE8CD-BEBF-46D6-B948-EC0EE4A8E823}', '{9D8CE5B8-388E-4BFB-9501-7D65B99CD64B}', '{C3B15270-DF51-4212-942E-C99136F27899}', bakerOR3ashyaORtasbha])
+        case 23: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{020F588F-1915-4F3B-8D57-5A862CA0B926}", bakerOR3ashyaORtasbha])
         case 28: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{81E5C2F6-C71A-4711-83D2-FBF56C7FD101}", bakerOR3ashyaORtasbha])
         case 29: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, ["{DC61EC21-9EF0-4E7C-8E4E-CD4269024AE6}", bakerOR3ashyaORtasbha])
         case default: show_slide_ranges_from_sections(pptx_file, excel_path, sheet, [bakerOR3ashyaORtasbha])
@@ -1666,39 +1892,11 @@ def show_hide_insertImage_replaceText(ppt_file, excel_path, sheet_name,
     # Save the modified presentation
     presentation.save(ppt_file)    
 
-def get_open_presentations():
-    """Returns a list of full paths of currently open PowerPoint presentations"""
-    import pythoncom
-    import win32com.client
-    import os
-    
-    open_presentations = []
-    
-    pythoncom.CoInitialize()
-    try:
-        # Try to get an active PowerPoint instance
-        powerpoint = win32com.client.GetActiveObject("PowerPoint.Application")
-        
-        # Check each open presentation
-        for pres in powerpoint.Presentations:
-            try:
-                # Make sure to get absolute path
-                open_presentations.append(os.path.abspath(pres.FullName))
-            except Exception:
-                continue
-                
-    except Exception:
-        # PowerPoint isn't running or no presentations are open
-        pass
-    finally:
-        pythoncom.CoUninitialize()
-        
-    return open_presentations
-
 # excel = relative_path(r"Files Data.xlsx")
-# sheet = "البصخة"
-# arr = ["تين ثينو", "الذكصولوجيات", "ني اثنوس تيرو", "ثيؤطوكية الأحد 8-9", "ثيؤطوكية الأحد 7",
-#        "ثيؤطوكية الأحد 16-18", "قانون الايمان", "قدوس قدوس قدوس", "تين ناف"]
+# sheet = "القداس"
+# arr =["تكملة على حسب المناسبة", "مزمور التوزيع", "مزمور التوزيع", "مرد توزيع دخول المسيح أرض مصر",
+#                        "الانجيل", "المزمور", "الابركسيس", "الكاثوليكون", "البولس عربي", "بدء قداس الكلمة"]
+    
 # print(find_section_Ids_with_names(excel, sheet, arr))
 # arr = ['عيد الغطاس - حبقوق (يارب سمعت صوتك)', 'عيد الغطاس - حزقيال (ثم حملنى الروح)']
 # print(find_section_Ids_with_names(excel, sheet, arr))

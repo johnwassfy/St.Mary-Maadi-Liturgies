@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (QDialog, QPushButton, QVBoxLayout, QLabel, QFrame, 
                            QScrollArea, QWidget, QLineEdit, QSizePolicy, QTabWidget)
 from PyQt5.QtGui import QFont, QPixmap, QColor
 from PyQt5.QtCore import Qt, QSize, QTimer
-from commonFunctions import relative_path, open_presentation_relative_path
+from commonFunctions import relative_path, open_presentation_relative_path, get_open_presentations
 import pandas as pd
 import win32com.client
 import pythoncom
@@ -11,6 +11,9 @@ import os
 import re
 
 class SectionSelectionDialog(QDialog):
+    _sections_cache = {}
+    _dialog_cache = {}
+
     def __init__(self, parent=None, title="القداس", sheet_name=""):
         super().__init__(parent)
         self.selected_option = None
@@ -87,6 +90,12 @@ class SectionSelectionDialog(QDialog):
         
         # Determine PowerPoint file path
         self.determine_file_path()
+
+        # Start monitor timer to auto-close dialog if PowerPoint closes
+        self._ppt_monitor_timer = QTimer(self)
+        self._ppt_monitor_timer.setSingleShot(False)
+        self._ppt_monitor_timer.timeout.connect(self.check_presentation_still_open)
+        self._ppt_monitor_timer.start(1000)  # Check every 1 second
         
         # Special case for رفع بخور and التسبحة and تسبحة كيهك - create two scroll areas
         if sheet_name in ("رفع بخور", "التسبحة", "تسبحة كيهك"):
@@ -229,8 +238,10 @@ class SectionSelectionDialog(QDialog):
             self.zoks_file_path = relative_path(r"الذكصولوجيات.pptx")
             
             # Load data for both presentations after UI is initialized
-            from PyQt5.QtCore import QTimer
-            QTimer.singleShot(100, self.load_dual_presentations)
+            self._dual_load_timer = QTimer(self)
+            self._dual_load_timer.setSingleShot(True)
+            self._dual_load_timer.timeout.connect(self.load_dual_presentations)
+            self._dual_load_timer.start(100)
             
             # Connect search bar to filter both tab contents
             self.search_bar.textChanged.connect(self.filter_dual_buttons)
@@ -294,14 +305,89 @@ class SectionSelectionDialog(QDialog):
             self.search_bar.textChanged.connect(self.filter_buttons)
             
             # Load sections after UI is initialized
-            from PyQt5.QtCore import QTimer
-            QTimer.singleShot(100, self.extract_sections_from_powerpoint)
+            self._load_sections_timer = QTimer(self)
+            self._load_sections_timer.setSingleShot(True)
+            self._load_sections_timer.timeout.connect(self.extract_sections_from_powerpoint)
+            self._load_sections_timer.start(100)
         
         # Add content container to main layout
         main_layout.addWidget(content_container, 1)
         
         # Set RTL layout
         self.setLayoutDirection(Qt.RightToLeft)
+
+    @classmethod
+    def get_dialog(cls, parent, title, sheet_name):
+        key = (sheet_name or "")
+        dialog = cls._dialog_cache.get(key)
+        if dialog is None:
+            dialog = cls(parent, title, sheet_name)
+            cls._dialog_cache[key] = dialog
+        else:
+            dialog.setParent(parent)
+            dialog.sheet_name = sheet_name
+            dialog.set_dialog_title(title)
+        return dialog
+
+    def set_dialog_title(self, title):
+        self.title = title
+        self.setWindowTitle(title)
+        label = getattr(self, "_title_label", None)
+        if label is not None:
+            label.setText(self._compute_title_text())
+
+    def _remove_from_cache(self):
+        key = (self.sheet_name or "")
+        cached = self._dialog_cache.get(key)
+        if cached is self:
+            del self._dialog_cache[key]
+
+    def _close_due_to_ppt_close(self):
+        self._force_close = True
+        self.close()
+
+    def _notify_parent_refresh(self):
+        parent = self.parentWidget()
+        if parent is not None and hasattr(parent, "refresh_button_states"):
+            try:
+                parent.refresh_button_states(skip_timer=True)
+            except Exception:
+                pass
+
+    def _compute_title_text(self):
+        title_text = self.title
+        if getattr(self, "source_button_label", None):
+            title_text = f"{self.source_button_label} - {self.title}"
+        return title_text
+
+    @classmethod
+    def _cache_key(cls, file_path):
+        if not file_path:
+            return None
+        return os.path.abspath(file_path).lower()
+
+    @classmethod
+    def _get_cached_sections(cls, file_path):
+        key = cls._cache_key(file_path)
+        if not key:
+            return None
+        return cls._sections_cache.get(key)
+
+    @classmethod
+    def _set_cached_sections(cls, file_path, items):
+        if not items:
+            return
+        key = cls._cache_key(file_path)
+        if not key:
+            return
+        cls._sections_cache[key] = items
+
+    def _render_section_buttons(self, buttons_layout, items, file_path):
+        for title, slide_index in items:
+            button = QPushButton(title)
+            self.set_button_style(button)
+            button.clicked.connect(lambda _, path=file_path, idx=slide_index: self.go_to_slide(path, idx))
+            buttons_layout.addWidget(button)
         
     def load_dual_presentations(self):
         """Load sections from both presentations for رفع بخور"""
@@ -319,6 +405,11 @@ class SectionSelectionDialog(QDialog):
             widget = item.widget()
             if widget:
                 widget.deleteLater()
+
+        cached = self._get_cached_sections(file_path)
+        if cached:
+            self._render_section_buttons(buttons_layout, cached, file_path)
+            return
         
         try:
             pythoncom.CoInitialize()
@@ -392,36 +483,20 @@ class SectionSelectionDialog(QDialog):
             if just_opened:
                 presentation.Close()
             
-            # Sort section titles alphabetically
+            # Build list for caching and rendering
             if has_sections:
-                # Add buttons for each section
-                for section in section_titles:
-                    button = QPushButton(section)
-                    self.set_button_style(button)
-                    slide_index = section_to_slide[section]
-                    # Store which file to navigate to
-                    button.clicked.connect(lambda _, path=file_path, idx=slide_index: 
-                                         self.go_to_slide(path, idx))
-                    buttons_layout.addWidget(button)
+                items = [(section, section_to_slide[section]) for section in section_titles]
             else:
-                # If using slide titles, sort them alphabetically in Arabic
                 import locale
                 try:
-                    locale.setlocale(locale.LC_ALL, 'ar_SY.UTF-8')  # Arabic locale
+                    locale.setlocale(locale.LC_ALL, 'ar_SY.UTF-8')
                 except:
-                    pass  # If Arabic locale not available, use default
-                
+                    pass
                 slide_titles.sort()
-                
-                # Add buttons for each slide title
-                for title in slide_titles:
-                    button = QPushButton(title)
-                    self.set_button_style(button)
-                    slide_index = section_to_slide[title]
-                    # Store which file to navigate to
-                    button.clicked.connect(lambda _, path=file_path, idx=slide_index: 
-                                         self.go_to_slide(path, idx))
-                    buttons_layout.addWidget(button)
+                items = [(title, section_to_slide[title]) for title in slide_titles]
+
+            self._set_cached_sections(file_path, items)
+            self._render_section_buttons(buttons_layout, items, file_path)
             
             # Show error if no sections or titles found
             if not has_sections and not slide_titles:
@@ -501,6 +576,11 @@ class SectionSelectionDialog(QDialog):
             widget = item.widget()
             if widget:
                 widget.deleteLater()
+
+        cached = self._get_cached_sections(self.file_path)
+        if cached:
+            self._render_section_buttons(self.buttons_layout, cached, self.file_path)
+            return
         
         try:
             pythoncom.CoInitialize()
@@ -574,32 +654,19 @@ class SectionSelectionDialog(QDialog):
             if just_opened:
                 presentation.Close()
             
-            # Sort section titles alphabetically
             if has_sections:
-                # Add buttons for each section
-                for section in section_titles:
-                    button = QPushButton(section)
-                    self.set_button_style(button)
-                    slide_index = self.section_to_slide[section]
-                    button.clicked.connect(lambda _, idx=slide_index: self.go_to_slide(self.file_path, idx))
-                    self.buttons_layout.addWidget(button)
+                items = [(section, self.section_to_slide[section]) for section in section_titles]
             else:
-                # If using slide titles, sort them alphabetically in Arabic
                 import locale
                 try:
-                    locale.setlocale(locale.LC_ALL, 'ar_SY.UTF-8')  # Arabic locale
+                    locale.setlocale(locale.LC_ALL, 'ar_SY.UTF-8')
                 except:
-                    pass  # If Arabic locale not available, use default
-                
+                    pass
                 slide_titles.sort()
-                
-                # Add buttons for each slide title
-                for title in slide_titles:
-                    button = QPushButton(title)
-                    self.set_button_style(button)
-                    slide_index = self.section_to_slide[title]
-                    button.clicked.connect(lambda _, idx=slide_index: self.go_to_slide(self.file_path, idx))
-                    self.buttons_layout.addWidget(button)
+                items = [(title, self.section_to_slide[title]) for title in slide_titles]
+
+            self._set_cached_sections(self.file_path, items)
+            self._render_section_buttons(self.buttons_layout, items, self.file_path)
             
             # Show error if no sections or titles found
             if not has_sections and not slide_titles:
@@ -725,7 +792,7 @@ class SectionSelectionDialog(QDialog):
             header_layout.addSpacing(10)
         except:
             pass        # Title
-        title_label = QLabel(self.title)
+        title_label = QLabel(self._compute_title_text())
         title_font = QFont()
         
         # Dynamically calculate font size based on title length
@@ -759,6 +826,8 @@ class SectionSelectionDialog(QDialog):
         # Give the title plenty of width space
         title_label.setMinimumWidth(350)
         title_label.setMaximumWidth(440)
+
+        self._title_label = title_label
         
         header_layout.addWidget(title_label)
         
@@ -804,6 +873,17 @@ class SectionSelectionDialog(QDialog):
         header_layout.addWidget(close_button)
         
         return header
+
+    def reject(self):
+        self.hide()
+        self._notify_parent_refresh()
+        super().reject()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        timer = getattr(self, "_ppt_monitor_timer", None)
+        if timer is not None and not timer.isActive():
+            timer.start(1000)
     
     def extract_sections_from_powerpoint(self):
         """Extract sections and slide numbers directly from PowerPoint presentation"""
@@ -1046,6 +1126,40 @@ class SectionSelectionDialog(QDialog):
     def normalize_text(self, text):
         """Normalize text by replacing alif with hamza."""
         return text.replace('أ', 'ا').replace('ؤ', 'و').replace('إ', 'ا').replace('آ', 'ا').lower()
+
+    def closeEvent(self, event):
+        for timer_name in ("_dual_load_timer", "_load_sections_timer", "_render_sections_timer", "_ppt_monitor_timer"):
+            timer = getattr(self, timer_name, None)
+            if timer is not None:
+                timer.stop()
+        self._notify_parent_refresh()
+        if getattr(self, "_force_close", False):
+            self._remove_from_cache()
+            self._force_close = False
+        super().closeEvent(event)
+
+    def check_presentation_still_open(self):
+        """Check if the associated PowerPoint presentation is still open; close dialog if not.
+
+        Uses the centralized `get_open_presentations()` helper from commonFunctions to
+        determine which presentations are currently open.
+        """
+        try:
+            if not getattr(self, 'file_path', None):
+                return
+
+            target_path = os.path.abspath(self.file_path).lower()
+            open_list = get_open_presentations() or []
+            normalized = [os.path.abspath(p).lower() for p in open_list if p]
+            if target_path not in normalized:
+                try:
+                    self._close_due_to_ppt_close()
+                    self._notify_parent_refresh()
+                except Exception:
+                    pass
+        except Exception:
+            # Silent on purpose
+            pass
     
     def mousePressEvent(self, event):
         # Allow dragging the frameless window
@@ -1094,6 +1208,12 @@ class Elbas5aSectionSelectionDialog(SectionSelectionDialog):
         self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | Qt.WindowTitleHint)
         self.setModal(True)
         self.determine_file_path()
+        # Start monitor timer to auto-close dialog if PowerPoint closes
+        self._ppt_monitor_timer = QTimer(self)
+        self._ppt_monitor_timer.setSingleShot(False)
+        self._ppt_monitor_timer.timeout.connect(self.check_presentation_still_open)
+        self._ppt_monitor_timer.start(1000)  # Check every 1 second
+        
         self._setup_holyweek_ui()
 
     def _setup_holyweek_ui(self):
@@ -1210,7 +1330,11 @@ class Elbas5aSectionSelectionDialog(SectionSelectionDialog):
 
         self.show_loading_message("جاري تحميل الأقسام...")
 
-        QTimer.singleShot(50, self.extract_and_render_sections)
+        self._render_sections_timer = QTimer(self)
+        self._render_sections_timer.setSingleShot(True)
+        self._render_sections_timer.timeout.connect(self.extract_and_render_sections)
+        self._render_sections_timer.start(50)
+
 
     def create_header(self):
         header = QFrame()

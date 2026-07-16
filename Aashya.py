@@ -1,5 +1,4 @@
 from commonFunctions import *
-import win32com.client
 
 def aashyaSanawy(season, copticdate, adam = False, Bishop = False, guestBishop = 0):
     from copticDate import CopticCalendar
@@ -136,8 +135,6 @@ def aashyaSanawy(season, copticdate, adam = False, Bishop = False, guestBishop =
     else:
         show_hide_insertImage_replaceText(prs, excel, des_sheet, aashya_show_full_sections, aashya_hide_full_sections, aashya_show_full_sections_ranges)
     
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
 
@@ -215,9 +212,9 @@ def aashyaSanawy(season, copticdate, adam = False, Bishop = False, guestBishop =
                 slide_index += 1
                 end_index += 1
 
-    presentation2.Close()
+    close_presentation_safe(katamars)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
@@ -346,8 +343,6 @@ def aashyaKiahk(copticdate, adam = False, Bishop = False, guestBishop = 0):
     else:
         show_hide_insertImage_replaceText(prs, excel, des_sheet, aashya_kiahk_show_full_sections, aashya_kiahk_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
     
@@ -429,9 +424,9 @@ def aashyaKiahk(copticdate, adam = False, Bishop = False, guestBishop = 0):
                 slide_index += 1
                 end_index += 1
 
-    presentation2.Close()
+    close_presentation_safe(katamars)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
@@ -549,8 +544,6 @@ def aashyaEltagaly(copticdate, adam = False, Bishop = False, guestBishop = 0):
     else:
         show_hide_insertImage_replaceText(prs, excel, des_sheet, aashya_show_full_sections, aashya_hide_full_sections, aashya_show_full_sections_ranges)
     
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
 
@@ -619,9 +612,9 @@ def aashyaEltagaly(copticdate, adam = False, Bishop = False, guestBishop = 0):
                 slide_index += 1
                 end_index += 1
 
-    presentation2.Close()
+    close_presentation_safe(katamars)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 

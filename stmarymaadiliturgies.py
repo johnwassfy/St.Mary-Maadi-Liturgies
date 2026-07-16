@@ -1,17 +1,35 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFrame
 from PyQt5.QtGui import QPixmap, QFont, QIcon, QColor
-from PyQt5.QtCore import Qt, pyqtSignal, QSize
+from PyQt5.QtCore import Qt, pyqtSignal, QSize, QTimer
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QDialog
 from copticDate import CopticCalendar
 from datetime import datetime
 from bibleWindow import bibleWindow
 from NotificationBar import NotificationBar
-import asyncio
-from commonFunctions import relative_path, load_background_image, open_presentation_relative_path, get_open_presentations
+import logging
+import os
+import tempfile
+import traceback
+from commonFunctions import (
+    relative_path,
+    load_background_image,
+    open_presentation_relative_path,
+    get_open_presentations,
+    close_presentation_safe,
+    close_all_presentations_safe,
+)
 from sys import exit, argv
 from SplashScreen import ModernSplashScreen
 from UpdatePrompt import UpdatePrompt
 import qtawesome as qta
+
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    log_path = os.path.join(tempfile.gettempdir(), "stmarymaadiliturgies.log")
+    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.INFO)
 
 class ClickableFrame(QFrame):
     clicked = pyqtSignal()
@@ -23,6 +41,8 @@ class ClickableFrame(QFrame):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.notification_bar = NotificationBar(self)
+        self.notification_bar.setGeometry(0, 70, self.width(), 50)
         try:
             self.current_date = datetime.now()
             self.coptic_date = CopticCalendar().gregorian_to_coptic(self.current_date)
@@ -44,9 +64,14 @@ class MainWindow(QMainWindow):
             # Operation flags to prevent concurrent execution
             self.operation_in_progress = False
             self.update_in_progress = False
+            self._modal_dialog_open = False
+            self._rebuilding_main_frame = False
             
             # Cursor management to prevent stuck loading cursor
             self.cursor_override_count = 0
+            self.refresh_timer = QTimer(self)
+            self.refresh_timer.setSingleShot(True)
+            self.refresh_timer.timeout.connect(self.refresh_button_states)
 
             # Try checking for updates early
             update_found, version = self.check_for_updates_silent()
@@ -60,7 +85,8 @@ class MainWindow(QMainWindow):
             try:
                 load_background_image(self.background_label)
             except Exception as e:
-                self.notification_bar.show_message(f"خطأ في تحميل الخلفية: {str(e)}")
+                self._log_exception("Background image failed to load", e)
+                self._safe_show_message(f"خطأ في تحميل الخلفية: {str(e)}")
 
             frame0 = QFrame(self)
             frame0.setGeometry(0, 0, 625, 80)
@@ -99,7 +125,7 @@ class MainWindow(QMainWindow):
             self.create_button("اضافة تعديل خاص", 560, lambda: self.open_confirmation_window("تعديل خاص"))
             self.create_button("إعادة تشغيل", 560, self.restart_app)
 
-            asyncio.run(self.update_labels())
+            QTimer.singleShot(0, self.update_labels)
 
             # Add NotificationBar
             self.notification_bar = NotificationBar(self)
@@ -143,12 +169,24 @@ class MainWindow(QMainWindow):
             self.setup_powerpoint_event_listener()
 
         except Exception as e:
-            import traceback
             stack_trace = traceback.format_exc()
-            self.notification_bar = NotificationBar(self)
-            self.notification_bar.setGeometry(0, 70, self.width(), 50)
-            self.notification_bar.show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
+            self._log_exception("Initialization failed", e)
+            self._safe_show_message(f"Error: {str(e)}\n\nStack Trace:\n{stack_trace}", duration=10000)
             print(f"Initialization Error: {str(e)}\n{stack_trace}")
+
+    def _log_exception(self, message, error):
+        logger.exception("%s: %s", message, error)
+
+    def _safe_show_message(self, message, duration=3000):
+        notification_bar = getattr(self, "notification_bar", None)
+        if notification_bar is not None:
+            try:
+                notification_bar.show_message(message, duration=duration)
+                return
+            except Exception as error:
+                logger.exception("Notification bar failed while showing message: %s", error)
+        logger.warning("Notification fallback: %s", message)
+        print(message)
 
     def set_busy_cursor(self):
         """Safely set busy cursor with tracking to prevent stuck cursors."""
@@ -156,7 +194,7 @@ class MainWindow(QMainWindow):
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.cursor_override_count += 1
         except Exception as e:
-            print(f"Error setting cursor: {e}")
+            self._log_exception("Error setting cursor", e)
 
     def restore_normal_cursor(self):
         """Safely restore normal cursor with tracking."""
@@ -165,7 +203,17 @@ class MainWindow(QMainWindow):
                 QApplication.restoreOverrideCursor()
                 self.cursor_override_count -= 1
         except Exception as e:
-            print(f"Error restoring cursor: {e}")
+            self._log_exception("Error restoring cursor", e)
+
+    def _begin_modal_dialog(self, busy_message="عملية جارية... يرجى الانتظار"):
+        if getattr(self, "_modal_dialog_open", False):
+            self.notification_bar.show_message(busy_message, duration=2000)
+            return False
+        self._modal_dialog_open = True
+        return True
+
+    def _end_modal_dialog(self):
+        self._modal_dialog_open = False
 
     def ensure_normal_cursor(self):
         """Force restore normal cursor by clearing all overrides."""
@@ -310,7 +358,7 @@ class MainWindow(QMainWindow):
             self.update_button.setEnabled(True)
             self.update_in_progress = False
 
-    async def add_button_with_image(self, parent, image_path, geometry, text, action=None):
+    def add_button_with_image(self, parent, image_path, geometry, text, action=None):
         import os
         x, y, width, height = geometry
 
@@ -405,7 +453,7 @@ class MainWindow(QMainWindow):
         """)
         
         if text == "صلاة السجدة":
-            button.clicked.connect(lambda _, p=action: open_presentation_relative_path(p))
+            button.clicked.connect(lambda _, p=action: self.handle_sagda_button_click())
         else:
             button.clicked.connect(action)
 
@@ -510,26 +558,31 @@ class MainWindow(QMainWindow):
 
     def open_confirmation_window(self, prayer_type="قداس"):
         from Confirmation_Dialog import Confirm
+        if not self._begin_modal_dialog():
+            return False
         self.bishop = False
         self.GuestBishop = 0
         self.seneksar = 1  # Default to 1 (عناوين فقط)
-        # Convert coptic date list to readable string
-        coptic_date_string = self.get_coptic_date_string()
-        
-        # Create dialog with parent and show it modally
-        confirmation_dialog = Confirm(parent=self, coptic_date=coptic_date_string, type=prayer_type)
-        confirmation_dialog.row2.line_edit.textChanged.connect(lambda: self.update_checkbox_state(confirmation_dialog))
-        confirmation_dialog.update_button.clicked.connect(lambda: self.update_bishop_variables(confirmation_dialog))
-        if confirmation_dialog.synaxar_section:
-            confirmation_dialog.synaxar_section.radio1.toggled.connect(lambda: self.update_synaxar_option(confirmation_dialog))
-            confirmation_dialog.synaxar_section.radio2.toggled.connect(lambda: self.update_synaxar_option(confirmation_dialog))
-            # Set initial value from the dialog
-            self.seneksar = confirmation_dialog.synaxar_section.get_selected_option()
-        # Show as modal dialog
-        result = confirmation_dialog.exec_()
-        
-        # Return True if user saved (accepted), False if cancelled/closed
-        return result == confirmation_dialog.Accepted
+        try:
+            # Convert coptic date list to readable string
+            coptic_date_string = self.get_coptic_date_string()
+            
+            # Create dialog with parent and show it modally
+            confirmation_dialog = Confirm(parent=self, coptic_date=coptic_date_string, type=prayer_type)
+            confirmation_dialog.row2.line_edit.textChanged.connect(lambda: self.update_checkbox_state(confirmation_dialog))
+            confirmation_dialog.update_button.clicked.connect(lambda: self.update_bishop_variables(confirmation_dialog))
+            if confirmation_dialog.synaxar_section:
+                confirmation_dialog.synaxar_section.radio1.toggled.connect(lambda: self.update_synaxar_option(confirmation_dialog))
+                confirmation_dialog.synaxar_section.radio2.toggled.connect(lambda: self.update_synaxar_option(confirmation_dialog))
+                # Set initial value from the dialog
+                self.seneksar = confirmation_dialog.synaxar_section.get_selected_option()
+            # Show as modal dialog
+            result = confirmation_dialog.exec_()
+            
+            # Return True if user saved (accepted), False if cancelled/closed
+            return result == confirmation_dialog.Accepted
+        finally:
+            self._end_modal_dialog()
 
     def get_coptic_date_string(self):
         """Convert coptic date list to readable Arabic string"""
@@ -574,13 +627,19 @@ class MainWindow(QMainWindow):
             self.seneksar = dialog.synaxar_section.get_selected_option()
 
     def open_elmonasbat_Window(self):
-        # Remove old frame
-        self.frame2.deleteLater()
+        if self._rebuilding_main_frame:
+            return
 
-        # Create new frame
-        self.frame2 = QFrame(self)
-        self.frame2.setGeometry(20, 286, 585, 275)
-        self.frame2.setStyleSheet("""
+        self._rebuilding_main_frame = True
+        try:
+            old_frame = getattr(self, "frame2", None)
+            if old_frame is not None:
+                old_frame.deleteLater()
+
+            # Create new frame
+            self.frame2 = QFrame(self)
+            self.frame2.setGeometry(20, 286, 585, 275)
+            self.frame2.setStyleSheet("""
                 QFrame { 
                     background: qlineargradient(
                         x1: 0, y1: 0, x2: 1, y2: 1,
@@ -591,24 +650,26 @@ class MainWindow(QMainWindow):
                     border-radius: 10px;
                     border: black 2px solid;
                 }
-        """)
+            """)
 
-        # Animated fade-in effect
-        self.fade_in_widget(self.frame2)
+            # Animated fade-in effect
+            self.fade_in_widget(self.frame2)
 
-        # Buttons with enhanced layout
-        buttons = [
-            ("Data/الصور/البصخة.jpg", (13, 15, 100, 100), "اسبوع الالام", self.handle_elbas5a_button_click),
-            ("Data/الصور/السجدة.jpg", (126, 15, 100, 100), "صلاة السجدة", "Data/صلاة السجدة عيد العنصرة.pptx"),
-            ("Data/الصور/اللقان.jpg", (239, 15, 100, 100), "اللقان", self.handle_ellakan_button_click),
-        ]
+            # Buttons with enhanced layout
+            buttons = [
+                ("Data/الصور/البصخة.jpg", (13, 15, 100, 100), "اسبوع الالام", self.handle_elbas5a_button_click),
+                ("Data/الصور/السجدة.jpg", (126, 15, 100, 100), "صلاة السجدة", "Data/صلاة السجدة عيد العنصرة.pptx"),
+                ("Data/الصور/اللقان.jpg", (239, 15, 100, 100), "اللقان", self.handle_ellakan_button_click),
+            ]
 
-        for img, geo, label, action in buttons:
-            asyncio.run(self.add_button_with_image(self.frame2, img, geo, label, action))
+            for img, geo, label, action in buttons:
+                self.add_button_with_image(self.frame2, img, geo, label, action)
 
-        # Styled back button
-        self.add_back_button(self.frame2, self.restore_main_frame)
-        self.frame2.show()
+            # Styled back button
+            self.add_back_button(self.frame2, self.restore_main_frame)
+            self.frame2.show()
+        finally:
+            self._rebuilding_main_frame = False
 
     def open_bible_window(self):
         if self.centralWidget():
@@ -620,19 +681,25 @@ class MainWindow(QMainWindow):
     def open_elfhrs_window(self):
         try:
             from elfhrsNEWindow import elfhrswindow
+
+            if not self._begin_modal_dialog():
+                return
             
-            # Clear central widget if it exists
-            if self.centralWidget():
-                self.clear_central_widget()
-            
-            # Create the elfhrs window content as a widget
-            elfhrs_content = elfhrswindow(self)
-            
-            # Set it as central widget (keeps it within the main application window)
-            self.setCentralWidget(elfhrs_content)
-            
-            # Optional: Update the UI to reflect the current state
-            self.refresh_button_states(skip_timer=True)
+            try:
+                # Clear central widget if it exists
+                if self.centralWidget():
+                    self.clear_central_widget()
+                
+                # Create the elfhrs window content as a widget
+                elfhrs_content = elfhrswindow(self)
+                
+                # Set it as central widget (keeps it within the main application window)
+                self.setCentralWidget(elfhrs_content)
+                
+                # Optional: Update the UI to reflect the current state
+                self.refresh_button_states(skip_timer=True)
+            finally:
+                self._end_modal_dialog()
             
         except Exception as e:
             import traceback
@@ -642,11 +709,16 @@ class MainWindow(QMainWindow):
 
     def open_taranym_window(self):
         from TaranymWindow import Taranymwindow
-        if self.centralWidget():
-            self.clear_central_widget()
+        if not self._begin_modal_dialog():
+            return
+        try:
+            if self.centralWidget():
+                self.clear_central_widget()
 
-        elfhrs_content = Taranymwindow()
-        self.setCentralWidget(elfhrs_content)
+            elfhrs_content = Taranymwindow()
+            self.setCentralWidget(elfhrs_content)
+        finally:
+            self._end_modal_dialog()
 
     def update_section_names(self):
         from sectionNames import extract_section_info2
@@ -673,7 +745,8 @@ class MainWindow(QMainWindow):
                 (relative_path(r"Data\CopyData\صلاة اللقان.pptx"), "اللقان"),
                 (relative_path(r"Data\اسبوع الالام\البصخة المقدسة.pptx"), "البصخة"),
                 (relative_path(r"Data\اسبوع الالام\خميس العهد.pptx"), "خميس العهد"),
-                (relative_path(r"Data\اسبوع الالام\الجمعة العظيمة.pptx"), "الجمعة العظيمة")
+                (relative_path(r"Data\اسبوع الالام\الجمعة العظيمة.pptx"), "الجمعة العظيمة"),
+                (relative_path(r"Data\CopyData\صلاة السجدة.pptx"), "صلاة السجدة"),
                 ]
 
             excel_file = relative_path(r'Files Data.xlsx')
@@ -719,9 +792,14 @@ class MainWindow(QMainWindow):
 
     def open_new_window(self):
         from ChangeDateWindow import ChangeDate
-        new_window = ChangeDate(self.current_date.date(), self.current_date.strftime("%I:%M %p"))
-        new_window.date_updated.connect(self.update_current_date)
-        new_window.exec_()
+        if not self._begin_modal_dialog():
+            return
+        try:
+            new_window = ChangeDate(self.current_date.date(), self.current_date.strftime("%I:%M %p"))
+            new_window.date_updated.connect(self.update_current_date)
+            new_window.exec_()
+        finally:
+            self._end_modal_dialog()
 
     def clear_central_widget(self):
         central_widget = self.centralWidget()
@@ -740,7 +818,7 @@ class MainWindow(QMainWindow):
             self.current_date = datetime.strptime(new_date + ' ' + new_time, '%Y-%m-%d %I:%M %p')
             self.coptic_date = CopticCalendar().gregorian_to_coptic(self.current_date)
             self.season = get_season(self.current_date)
-            asyncio.run(self.update_labels())
+            QTimer.singleShot(0, self.update_labels)
             self.close_dialog()
         except ValueError:
             self.show_error_message("التاريخ/الوقت غير صحيح.")
@@ -749,7 +827,7 @@ class MainWindow(QMainWindow):
         arabic_digits = {'0': '٠', '1': '١', '2': '٢', '3': '٣', '4': '٤', '5': '٥', '6': '٦', '7': '٧', '8': '٨', '9': '٩'}
         return ''.join(arabic_digits[digit] if digit in arabic_digits else digit for digit in str(number))
 
-    async def update_labels(self):
+    def update_labels(self):
         from Season import get_season_name
         from PyQt5.QtGui import QFontMetrics
         label1 = self.findChild(QLabel, "label1")
@@ -824,11 +902,11 @@ class MainWindow(QMainWindow):
         import traceback
         stack_trace = traceback.format_exc()
         full_error = f"Error: {error_message}\n\nStack Trace:\n{stack_trace}"
-        self.notification_bar.show_message(full_error, duration=10000)  # Longer duration for stack traces
+        self._safe_show_message(full_error, duration=10000)  # Longer duration for stack traces
         print(full_error)  # Also print to console for debugging
 
     def show_message(self, message):
-        self.notification_bar.show_message(message, duration=3000)
+        self._safe_show_message(message, duration=3000)
 
     def handle_qadas_button_click(self):
         import odasat
@@ -988,7 +1066,7 @@ class MainWindow(QMainWindow):
                 # Restore normal cursor before showing dialog to user
                 self.restore_normal_cursor()
                 # Create and show the dialog
-                dialog = SectionSelectionDialog(self, title, sheet_name)
+                dialog = SectionSelectionDialog.get_dialog(self, title, sheet_name)
                 dialog.exec_()
                 # Set busy cursor again if needed for any post-dialog processing
                 self.set_busy_cursor()
@@ -1058,25 +1136,11 @@ class MainWindow(QMainWindow):
                 
                 if reply == QMessageBox.Yes:
                     self.set_busy_cursor()
-                    # Close all open PowerPoint presentations
-                    import win32com.client
-                    import pythoncom
-                    pythoncom.CoInitialize()
-                    try:
-                        powerpoint = win32com.client.GetActiveObject("PowerPoint.Application")
-                        for pres in powerpoint.Presentations:
-                            if os.path.abspath(pres.FullName.lower()) == presentation_file:
-                                pres.Close()
-                                break
-                    except Exception as e:
-                        print(f"Error closing presentation: {str(e)}")
-                    finally:
-                        pythoncom.CoUninitialize()
-                    
-                    # Wait a bit for PowerPoint to properly close
-                    import time
-                    time.sleep(0.5)
-                    
+                    closed = close_presentation_safe(presentation_file)
+                    if not closed:
+                        self.notification_bar.show_message("تعذر إغلاق الملف الحالي", duration=3000)
+                    self.active_presentation_source = None
+
                     # Now proceed with opening the file
                     is_already_open = False
                 else:
@@ -1134,7 +1198,7 @@ class MainWindow(QMainWindow):
                 # Restore cursor before showing dialog to user
                 self.restore_normal_cursor()
                 # Create and show the dialog
-                dialog = SectionSelectionDialog(self, title, sheet_name)
+                dialog = SectionSelectionDialog.get_dialog(self, title, sheet_name)
                 dialog.exec_()
         
         except Exception as e:
@@ -1174,25 +1238,11 @@ class MainWindow(QMainWindow):
                 
                 if reply == QMessageBox.Yes:
                     self.set_busy_cursor()
-                    # Close all open PowerPoint presentations
-                    import win32com.client
-                    import pythoncom
-                    pythoncom.CoInitialize()
-                    try:
-                        powerpoint = win32com.client.GetActiveObject("PowerPoint.Application")
-                        for pres in powerpoint.Presentations:
-                            if os.path.abspath(pres.FullName.lower()) == presentation_file:
-                                pres.Close()
-                                break
-                    except Exception as e:
-                        print(f"Error closing presentation: {str(e)}")
-                    finally:
-                        pythoncom.CoUninitialize()
-                    
-                    # Wait a bit for PowerPoint to properly close
-                    import time
-                    time.sleep(0.5)
-                    
+                    closed = close_presentation_safe(presentation_file)
+                    if not closed:
+                        self.notification_bar.show_message("تعذر إغلاق الملف الحالي", duration=3000)
+                    self.active_presentation_source = None
+
                     # Now proceed with opening the file
                     is_already_open = False
                 else:
@@ -1247,7 +1297,7 @@ class MainWindow(QMainWindow):
                 # Restore cursor before showing dialog to user
                 self.restore_normal_cursor()
                 # Create and show the dialog
-                dialog = SectionSelectionDialog(self, title, sheet_name)
+                dialog = SectionSelectionDialog.get_dialog(self, title, sheet_name)
                 dialog.exec_()
                 
         except Exception as e:
@@ -1274,6 +1324,8 @@ class MainWindow(QMainWindow):
         self.set_busy_cursor()
         
         try:
+            if not self._begin_modal_dialog():
+                return
             # Check if either Tasbha presentation is already open
             standard_tasbha_file = os.path.abspath(relative_path(r"الإبصلمودية.pptx")).lower()
             kiahk_tasbha_file = os.path.abspath(relative_path(r"الإبصلمودية الكيهكية.pptx")).lower()
@@ -1303,7 +1355,7 @@ class MainWindow(QMainWindow):
                 # Restore cursor before showing dialog to user
                 self.restore_normal_cursor()
                 # Create and show the dialog
-                sections_dialog = SectionSelectionDialog(self, title, sheet_name)
+                sections_dialog = SectionSelectionDialog.get_dialog(self, title, sheet_name)
                 sections_dialog.exec_()
                 return
             
@@ -1362,7 +1414,7 @@ class MainWindow(QMainWindow):
                     # Restore cursor before showing dialog to user
                     self.restore_normal_cursor()
                     # Create and show the dialog
-                    sections_dialog = SectionSelectionDialog(self, title, sheet_name)
+                    sections_dialog = SectionSelectionDialog.get_dialog(self, title, sheet_name)
                     sections_dialog.exec_()
                     
         except Exception as e:
@@ -1371,6 +1423,7 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message(f"خطأ في فتح التسبحة: {str(e)}", duration=5000)
             print(f"Tasbha Error: {str(e)}\n{stack_trace}")
         finally:
+            self._end_modal_dialog()
             self.restore_normal_cursor()
             self.operation_in_progress = False
 
@@ -1387,6 +1440,8 @@ class MainWindow(QMainWindow):
         self.set_busy_cursor()
         
         try:
+            if not self._begin_modal_dialog():
+                return
             # Show the selection dialog
             dialog = LakanSelectionDialog(self)
             self.restore_normal_cursor()
@@ -1408,6 +1463,7 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message(f"خطأ في فتح اللقان: {str(e)}", duration=5000)
             print(f"Lakan Error: {str(e)}\n{stack_trace}")
         finally:
+            self._end_modal_dialog()
             self.restore_normal_cursor()
             self.operation_in_progress = False
 
@@ -1423,6 +1479,8 @@ class MainWindow(QMainWindow):
         self.set_busy_cursor()
         
         try:
+            if not self._begin_modal_dialog():
+                return
             self.restore_normal_cursor()
             dialog = Elbas5aDialog(self)
             dialog.exec_()
@@ -1430,11 +1488,33 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message(f"خطأ في فتح أسبوع الآلام: {str(e)}", duration=5000)
             print(f"Elbas5a Error: {str(e)}")
         finally:
+            self._end_modal_dialog()
             self.restore_normal_cursor()
             self.operation_in_progress = False
 
     def handle_agbya_button_click(self):
         return
+    
+    def handle_sagda_button_click(self):
+        """Open the sagda confirmation dialog first, then launch the presentation if accepted."""
+        import elsagda
+        if self.operation_in_progress:
+            self.notification_bar.show_message("عملية جارية... يرجى الانتظار", duration=2000)
+            return
+
+        self.operation_in_progress = True
+
+        try:
+            result = self.open_confirmation_window("صلاة السجدة")
+            if result:
+                self.set_busy_cursor()
+                elsagda.elsagda(self.season, self.bishop, self.GuestBishop)
+        except Exception as e:
+            self.notification_bar.show_message(f"خطأ في فتح صلاة السجدة: {str(e)}", duration=5000)
+            print(f"Sagda Error: {str(e)}")
+        finally:
+            self.restore_normal_cursor()
+            self.operation_in_progress = False
 
     def replace_presentation(self, odasEltfl = False, baker = False, tasbha = False, aashya = False):
         from shutil import copy2
@@ -1552,40 +1632,36 @@ class MainWindow(QMainWindow):
         widget.anim = anim  # Keep a reference so it's not garbage collected
 
     def restore_main_frame(self):
-        self.frame2.deleteLater()
-        self.frame2 = QFrame(self)
-        self.frame2.setGeometry(20, 280, 585, 275)
+        if self._rebuilding_main_frame:
+            return
 
-        # Use asyncio.run to run async methods
-        asyncio.run(self.add_button_with_image(self.frame2, "Data/الصور/القداس.JPG", (13, 15, 100, 100), "القداس", self.handle_qadas_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data/الصور/قداس الطفل.png", (126, 15, 100, 100), "قداس الطفل", self.handle_qadas_eltfl_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\باكر.jpg", (239, 15, 100, 100), "باكر", self.handle_baker_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\عشية.jpg", (352, 15, 100, 100), "عشية", self.handle_3ashya_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data/الصور/الكتاب المقدس.png", (465, 15, 100, 100), "الكتاب المقدس", self.open_bible_window))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الأجبية.jpg", (13, 148, 100, 100), "الأجبية", self.handle_agbya_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\داود 1.jpg", (126, 148, 100, 100), "الإبصلمودية", self.handle_tasbha_button_click))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الفهرس.jpg", (239, 148, 100, 100), "الفهرس", self.open_elfhrs_window))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\المدائح2.jpg", (352, 148, 100, 100), "المدائح", self.open_taranym_window))
-        asyncio.run(self.add_button_with_image(self.frame2, "Data\الصور\الصليب القبطي.jpg", (465, 148, 100, 100), "المناسبات", self.open_elmonasbat_Window))
+        self._rebuilding_main_frame = True
+        try:
+            old_frame = getattr(self, "frame2", None)
+            if old_frame is not None:
+                old_frame.deleteLater()
 
-        self.frame2.show()
+            self.frame2 = QFrame(self)
+            self.frame2.setGeometry(20, 280, 585, 275)
+
+            self.add_button_with_image(self.frame2, "Data/الصور/القداس.JPG", (13, 15, 100, 100), "القداس", self.handle_qadas_button_click)
+            self.add_button_with_image(self.frame2, "Data/الصور/قداس الطفل.png", (126, 15, 100, 100), "قداس الطفل", self.handle_qadas_eltfl_button_click)
+            self.add_button_with_image(self.frame2, "Data\الصور\باكر.jpg", (239, 15, 100, 100), "باكر", self.handle_baker_button_click)
+            self.add_button_with_image(self.frame2, "Data\الصور\عشية.jpg", (352, 15, 100, 100), "عشية", self.handle_3ashya_button_click)
+            self.add_button_with_image(self.frame2, "Data/الصور/الكتاب المقدس.png", (465, 15, 100, 100), "الكتاب المقدس", self.open_bible_window)
+            self.add_button_with_image(self.frame2, "Data\الصور\الأجبية.jpg", (13, 148, 100, 100), "الأجبية", self.handle_agbya_button_click)
+            self.add_button_with_image(self.frame2, "Data\الصور\داود 1.jpg", (126, 148, 100, 100), "الإبصلمودية", self.handle_tasbha_button_click)
+            self.add_button_with_image(self.frame2, "Data\الصور\الفهرس.jpg", (239, 148, 100, 100), "الفهرس", self.open_elfhrs_window)
+            self.add_button_with_image(self.frame2, "Data\الصور\المدائح2.jpg", (352, 148, 100, 100), "المدائح", self.open_taranym_window)
+            self.add_button_with_image(self.frame2, "Data\الصور\الصليب القبطي.jpg", (465, 148, 100, 100), "المناسبات", self.open_elmonasbat_Window)
+
+            self.frame2.show()
+        finally:
+            self._rebuilding_main_frame = False
 
     def is_powerpoint_open(self):
-        import pythoncom
-        import win32com
         """Check if any PowerPoint application is open."""
-        pythoncom.CoInitialize()
-        try:
-            powerpoint = win32com.client.GetActiveObject("PowerPoint.Application")
-            if powerpoint.Presentations.Count > 0:
-                # If there's any presentation open, PowerPoint is running
-                return True
-        except Exception:
-            # If an exception is raised, PowerPoint is not open or no active instance is found
-            return False
-        finally:
-            pythoncom.CoUninitialize()
-        return False
+        return len(get_open_presentations()) > 0
 
     def checkCopticYear(self, copticYear):
         from commonFunctions import read_excel_cell, relative_path
@@ -1634,7 +1710,7 @@ class MainWindow(QMainWindow):
             return (server_version > local_version), server_version
 
         except Exception as e:
-            print(f"Update check failed: {e}")
+            self._log_exception("Update check failed", e)
             return False, None
 
     def _pulse_glow(self, effect):
@@ -1664,6 +1740,8 @@ class MainWindow(QMainWindow):
             return
 
         try:
+            if not self._begin_modal_dialog():
+                return
             url = "https://www.dropbox.com/scl/fi/tumjwytg8ptr88zs5pojd/version.json?rlkey=4fukyqxjx9lii0j0tunwxwpi7&st=sqk5fl08&dl=1"
             response = requests.get(url, timeout=5)
             response.raise_for_status()
@@ -1690,6 +1768,8 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message("⚠ ملف التحديث غير صالح أو لا يمكن تحليله.", duration=5000)
         except Exception as e:
             self.notification_bar.show_message(f"⚠ خطأ غير متوقع: {str(e)}", duration=5000)
+        finally:
+            self._end_modal_dialog()
 
     def download_update(self, installer_url):
         import requests
@@ -1759,16 +1839,10 @@ class MainWindow(QMainWindow):
         try:
             # Close any open PowerPoint instances
             if self.is_powerpoint_open():
-                import win32com.client
-                import pythoncom
-                pythoncom.CoInitialize()
                 try:
-                    powerpoint = win32com.client.GetActiveObject("PowerPoint.Application")
-                    powerpoint.Quit()
+                    close_all_presentations_safe()
                 except Exception:
                     pass
-                finally:
-                    pythoncom.CoUninitialize()
             
             # Delay slightly to allow resources to be released
             from time import sleep
@@ -1790,19 +1864,23 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message(f"فشل إعادة التشغيل: {str(e)}")
 
     def setup_powerpoint_event_listener(self):
-        """Set up a timer that specifically checks for PowerPoint close events"""
-        from PyQt5.QtCore import QTimer
-        
-        # Store the last known state of open presentations
-        self.last_open_presentations = set()
-        
-        # Create a timer that runs more frequently just to check for PowerPoint events
+        """Set up a lightweight PowerPoint polling timer to clear glow after close."""
+        try:
+            self.last_open_presentations = set(get_open_presentations())
+        except Exception:
+            self.last_open_presentations = set()
+
+        self._enable_ppt_polling = True
         self.ppt_check_timer = QTimer(self)
         self.ppt_check_timer.timeout.connect(self.check_powerpoint_changes)
-        self.ppt_check_timer.start(750)  # Check every 750ms
+        self.ppt_check_timer.start(2000)
 
     def check_powerpoint_changes(self):
         """Check if any PowerPoint presentations have been closed and update UI immediately"""
+        if not getattr(self, "_enable_ppt_polling", False):
+            return
+        if not self.isActiveWindow():
+            return
         try:
             # Get current presentations
             current_presentations = set(get_open_presentations())
@@ -1832,25 +1910,16 @@ class MainWindow(QMainWindow):
         """
         import os
 
-        # --- Close any open SectionSelectionDialog --- 
-        # Check if there is an attribute for the dialog and if it's open, close it
-        # (Assumes dialog is stored as self.section_dialog or self.elfhrs_window, etc.)
-        # You may need to adjust dialog attribute names as per your codebase
-
-        # Try to close SectionSelectionDialog if it exists and is open
-        dialog_attrs = ["section_dialog", "elfhrs_window", "elfhrs_dialog"]
-        for attr in dialog_attrs:
-            dialog = getattr(self, attr, None)
-            if dialog is not None:
-                try:
-                    # For QDialog, isVisible() is a good check
-                    if hasattr(dialog, "isVisible") and dialog.isVisible():
-                        dialog.close()
-                except Exception:
-                    pass
+        frame2 = getattr(self, "frame2", None)
+        if frame2 is None or self._rebuilding_main_frame:
+            return
 
         # Get list of open presentations
-        open_presentations = get_open_presentations()
+        try:
+            open_presentations = get_open_presentations()
+        except Exception as e:
+            print(f"Error reading open presentations: {e}")
+            open_presentations = []
         
         # Map of buttons and their corresponding presentation files
         button_map = {
@@ -1869,42 +1938,57 @@ class MainWindow(QMainWindow):
             baker_open = True
         
         # Find all buttons in the frame2 container
-        for child in self.frame2.children():
-            if isinstance(child, QFrame):
-                for btn_child in child.children():
-                    if isinstance(btn_child, QLabel) and btn_child.text() in button_map:
-                        button_text = btn_child.text()
-                        container = btn_child.parent()
-                        
-                        # Use ABSOLUTE path for comparison
-                        full_path = os.path.abspath(relative_path(button_map[button_text])).lower()
-                        
-                        # Special handling for باكر and عشية
-                        if button_text in ["باكر", "عشية"]:
-                            # Only add glow to the active button if the file is open
-                            if baker_open and self.active_presentation_source == button_text:
-                                glow = QGraphicsDropShadowEffect(container)
-                                glow.setOffset(0)
-                                glow.setBlurRadius(30)
-                                glow.setColor(QColor(0, 255, 0))
-                                container.setGraphicsEffect(glow)
+        try:
+            for child in frame2.children():
+                if isinstance(child, QFrame):
+                    for btn_child in child.children():
+                        if isinstance(btn_child, QLabel) and btn_child.text() in button_map:
+                            button_text = btn_child.text()
+                            container = btn_child.parent()
+                            
+                            # Use ABSOLUTE path for comparison
+                            full_path = os.path.abspath(relative_path(button_map[button_text])).lower()
+                            
+                            # Special handling for باكر and عشية
+                            if button_text in ["باكر", "عشية"]:
+                                # Only add glow to the active button if the file is open
+                                if baker_open and self.active_presentation_source == button_text:
+                                    glow = QGraphicsDropShadowEffect(container)
+                                    glow.setOffset(0)
+                                    glow.setBlurRadius(30)
+                                    glow.setColor(QColor(0, 255, 0))
+                                    container.setGraphicsEffect(glow)
+                                else:
+                                    container.setGraphicsEffect(None)
                             else:
-                                container.setGraphicsEffect(None)
-                        else:
-                            # Standard handling for other buttons
-                            is_open = any(open_pres.lower() == full_path for open_pres in open_presentations)
-                            if is_open:
-                                glow = QGraphicsDropShadowEffect(container)
-                                glow.setOffset(0)
-                                glow.setBlurRadius(30)
-                                glow.setColor(QColor(0, 255, 0))
-                                container.setGraphicsEffect(glow)
-                            else:
-                                container.setGraphicsEffect(None)
-    
-        if not skip_timer:
-            from PyQt5.QtCore import QTimer
-            QTimer.singleShot(1000, self.refresh_button_states)  # Check more frequently
+                                # Standard handling for other buttons
+                                is_open = any(open_pres.lower() == full_path for open_pres in open_presentations)
+                                if is_open:
+                                    glow = QGraphicsDropShadowEffect(container)
+                                    glow.setOffset(0)
+                                    glow.setBlurRadius(30)
+                                    glow.setColor(QColor(0, 255, 0))
+                                    container.setGraphicsEffect(glow)
+                                else:
+                                    container.setGraphicsEffect(None)
+        except RuntimeError:
+            return
+
+        if not skip_timer and getattr(self, "_enable_ppt_polling", False):
+            if hasattr(self, "refresh_timer") and self.refresh_timer is not None:
+                self.refresh_timer.start(1000)
+
+    def focusInEvent(self, event):
+        super().focusInEvent(event)
+        self.refresh_button_states(skip_timer=True)
+
+    def closeEvent(self, event):
+        if hasattr(self, "refresh_timer") and self.refresh_timer is not None:
+            self.refresh_timer.stop()
+        if hasattr(self, "ppt_check_timer") and self.ppt_check_timer is not None:
+            self.ppt_check_timer.stop()
+        self._end_modal_dialog()
+        super().closeEvent(event)
 
 if __name__ == "__main__":
     app = QApplication(argv)

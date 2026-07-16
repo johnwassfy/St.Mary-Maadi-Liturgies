@@ -2,8 +2,7 @@ import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QWidget, QMessageBox
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
-import win32com
-from commonFunctions import relative_path, load_background_image
+from commonFunctions import relative_path, load_background_image, open_presentation_relative_path, open_presentation_on_slide_safe
 from NotificationBar import NotificationBar  # Assuming NotificationBar is in the same directory
 
 class bibleWindow(QMainWindow):
@@ -226,23 +225,15 @@ class bibleWindow(QMainWindow):
         if file_name != None:
             file_path = relative_path(file_name)
             if slide_number is None:
-                os.startfile(file_path)
+                open_presentation_relative_path(file_name)
             else:
                 self.open_presentation_on_slide(file_path, slide_number)
     
     def open_presentation_on_slide(self, presentation_path, slide_number):
-        # Create a PowerPoint application object
-        powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-        
-        # Open the presentation
-        presentation = powerpoint.Presentations.Open(presentation_path, WithWindow=True)
-        
-        # Make PowerPoint visible
-        powerpoint.Visible = True
-        
-        # Navigate to the specified slide
-        slide = presentation.Slides(slide_number)
-        slide.Select()
+        try:
+            open_presentation_on_slide_safe(presentation_path, slide_number)
+        except Exception:
+            pass
 
     def go_back(self):
         self.close()

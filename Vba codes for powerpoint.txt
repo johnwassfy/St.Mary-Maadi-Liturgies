@@ -221,3 +221,63 @@ Sub SetContentPlaceholderPosition()
     MsgBox "Positions updated for all 'Content Placeholder 3' shapes."
 End Sub
 
+Sub FormatContentPlaceholder3InRange()
+    Dim sld As Slide
+    Dim shp As Shape
+    Dim cleanedText As String
+    Dim firstSlide As Integer
+    Dim lastSlide As Integer
+    Dim i As Integer
+    
+    ' === Set your range ===
+    firstSlide = 321
+    lastSlide = 331
+    
+    ' Safety checks
+    If firstSlide < 1 Then firstSlide = 1
+    If lastSlide > ActivePresentation.Slides.Count Then
+        lastSlide = ActivePresentation.Slides.Count
+    End If
+    
+    ' Loop through slides
+    For i = firstSlide To lastSlide
+        Set sld = ActivePresentation.Slides(i)
+        
+        For Each shp In sld.Shapes
+            
+            ' Match by name (case-insensitive just in case)
+            If LCase(shp.Name) = LCase("Content Placeholder 3") Then
+                
+                If shp.HasTextFrame Then
+                    If shp.TextFrame.HasText Then
+                        
+                        With shp.TextFrame.TextRange
+                            cleanedText = .Text
+                            
+                            ' Remove line breaks
+                            cleanedText = Replace(cleanedText, vbCrLf, " ")
+                            cleanedText = Replace(cleanedText, vbCr, " ")
+                            cleanedText = Replace(cleanedText, vbLf, " ")
+                            
+                            ' Trim + Shift+Enter
+                            cleanedText = Trim(cleanedText) & Chr(11)
+                            
+                            .Text = cleanedText
+                            
+                            ' Formatting
+                            .Font.Name = "Times New Roman"
+                            .Font.Size = 44
+                            .ParagraphFormat.Alignment = ppAlignJustifyLow
+                            .ParagraphFormat.TextDirection = ppDirectionRightToLeft
+                            .ParagraphFormat.SpaceWithin = 0.9
+                        End With
+                        
+                    End If
+                End If
+                
+            End If
+            
+        Next shp
+    Next i
+End Sub
+

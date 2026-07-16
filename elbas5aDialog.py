@@ -4,10 +4,9 @@ from PyQt5.QtGui import QFont, QPixmap, QColor
 from PyQt5.QtCore import Qt, QSize
 from commonFunctions import relative_path, open_presentation_relative_path, show_hide_insertImage_replaceText,\
                             replacefile, find_slide_nums_arrays_v2, get_slide_ids_by_numbers, show_slides, \
-                            elzoksologyat, run_vba_with_slide_id_bakr_aashya
+                            elzoksologyat, run_vba_with_slide_id_bakr_aashya, get_open_presentations
 import qtawesome as qta
 import os
-import win32com.client
 import sys
 from qudasDialog import Elbas5aSectionSelectionDialog
 
@@ -573,10 +572,10 @@ class Elbas5aDialog(QDialog):
         if not presentation_path:
             return False
         try:
-            powerpoint = win32com.client.GetActiveObject("PowerPoint.Application")
             target = os.path.abspath(presentation_path).lower()
-            for pres in powerpoint.Presentations:
-                if os.path.abspath(pres.FullName).lower() == target:
+            open_list = get_open_presentations() or []
+            for pres_path in open_list:
+                if os.path.abspath(pres_path).lower() == target:
                     return True
         except Exception:
             return False
@@ -613,8 +612,6 @@ class Elbas5aDialog(QDialog):
                 print(f"new_path is missing for {button_id}")
                 return
             try:
-                powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-                powerpoint.Visible = True
                 open_presentation_relative_path(open_path)
             except Exception as e:
                 print(f"Error opening presentation for {button_id}: {e}")
@@ -697,8 +694,6 @@ class Elbas5aDialog(QDialog):
             except Exception as e:
                 print(f"Error applying section visibility for {button_id}: {e}")
         
-        powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-        powerpoint.Visible = True  # Open PowerPoint application
         presentation = open_presentation_relative_path(old_path)
         presentation_path = os.path.abspath(relative_path(old_path or new_path))
 

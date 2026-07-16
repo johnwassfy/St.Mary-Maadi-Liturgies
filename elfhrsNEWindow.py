@@ -3,9 +3,8 @@ import pandas as pd
 from PyQt5.QtWidgets import QApplication, QMainWindow, QSizePolicy, QLineEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QWidget, QMessageBox, QComboBox
 from PyQt5.QtGui import QPixmap, QFont, QIcon
 from PyQt5.QtCore import Qt, QTimer
-from commonFunctions import relative_path, load_background_image
+from commonFunctions import relative_path, load_background_image, get_open_presentations, open_presentation_relative_path, open_presentation_on_slide_safe
 from NotificationBar import NotificationBar
-import win32com.client
 from UpdateTable import All
 
 class elfhrswindow(QMainWindow):
@@ -126,8 +125,8 @@ class elfhrswindow(QMainWindow):
 
         # Add the buttons
         self.add_buttons(["باكر و عشية", "القداس", "قداس الطفل", "الإبصلمودية السنوية", 
-                          "الإبصلمودية الكيهكية", "الذكصولوجيات", "المدائح والتماجيد", "اللقان"], 
-                         ["رفع بخور", "القداس", "قداس الطفل", "التسبحة", "تسبحة كيهك", "الذكصولوجيات", "المدائح", "اللقان"])
+                          "الإبصلمودية الكيهكية", "الذكصولوجيات", "المدائح والتماجيد", "اللقان", "صلاة السجدة"], 
+                         ["رفع بخور", "القداس", "قداس الطفل", "التسبحة", "تسبحة كيهك", "الذكصولوجيات", "المدائح", "اللقان", "صلاة السجدة"])
 
         # Create a label with the text "القطمارس"
         self.label = QLabel("القطمارس", self)
@@ -349,28 +348,10 @@ class elfhrswindow(QMainWindow):
         self.data_scroll_area.horizontalScrollBar().setValue(self.data_scroll_area.horizontalScrollBar().minimum())
 
     def open_or_goto_slide(self, ppt_path, slide_index):
-        powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-        
-        # Set up a flag to check if the presentation is already open
-        is_open = False
-        presentation = None
-
-        # Iterate over the currently open presentations
-        for pres in powerpoint.Presentations:
-            if pres.FullName == ppt_path:  # Check if the file path matches
-                is_open = True
-                presentation = pres
-                break
-        
-        if not is_open:
-            presentation = powerpoint.Presentations.Open(ppt_path)
-        
-        #select the specified slide
-        slide = presentation.Slides(slide_index)
-        slide.Select()
-
-        # Make sure PowerPoint window is visible
-        powerpoint.Visible = True
+        try:
+            open_presentation_on_slide_safe(ppt_path, slide_index)
+        except Exception:
+            pass
 
     def katamars_button_click(self, path):
         # Check if the scroll area exists and remove it
@@ -391,20 +372,16 @@ class elfhrswindow(QMainWindow):
         elif  hasattr(self, 'image_label') or self.image_label is None:
             pass
 
-        powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-        is_open = False
-
-        for pres in powerpoint.Presentations:
-            if pres.FullName == relative_path(path):  # Check if the file path matches
-                is_open = True
-                break
+        full_path = os.path.abspath(relative_path(path)).lower()
+        open_list = get_open_presentations() or []
+        is_open = any(os.path.abspath(p).lower() == full_path for p in open_list if p)
 
         if is_open:
             if self.notification_bar and self.notification_bar.isVisible():
                 self.notification_bar.show_message("الملف مفتوح بالفعل!")
         else:   
             # If the presentation is not open, open it
-            powerpoint.Presentations.Open(relative_path(path))
+            open_presentation_relative_path(path)
 
     def update_katamars_files(self):
         try:
@@ -432,7 +409,8 @@ class elfhrswindow(QMainWindow):
                 (relative_path(r"Data\CopyData\كتاب المدائح.pptx"), "المدائح"),
                 (relative_path(r"Data\CopyData\صلاة اللقان.pptx"), "اللقان"),
                 (relative_path(r"Data\اسبوع الالام\البصخة المقدسة.pptx"), "البصخة"),
-                (relative_path(r"Data\اسبوع الالام\خميس العهد.pptx"), "خميس العهد")
+                (relative_path(r"Data\اسبوع الالام\خميس العهد.pptx"), "خميس العهد"),
+                (relative_path(r"Data\CopyData\صلاة السجدة.pptx"), "صلاة السجدة")
             ]
 
             excel_file = relative_path(r'Files Data.xlsx')

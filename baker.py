@@ -1,8 +1,8 @@
 from commonFunctions import elzoksologyat, replacefile, relative_path, fetch_data_arrays, \
                             open_presentation_relative_path, find_Readings_Date, \
                             show_hide_insertImage_replaceText, run_vba_with_slide_id_bakr_aashya, \
-                            find_slide_index_by_title, show_slides, find_slide_nums_arrays_v2, move_sections_v2
-import win32com.client
+                            find_slide_index_by_title, show_slides, find_slide_nums_arrays_v2, move_sections_v2, \
+                            close_presentation_safe
 
 "_____________________________________OLD CODE_DESIGN_____________________________________"
 
@@ -151,8 +151,6 @@ def bakerSanawy(season, copticdate, adam = False, Bishop = False, guestBishop = 
     else:
         show_hide_insertImage_replaceText(prs, excel, des_sheet, baker_show_full_sections, baker_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
 
@@ -230,9 +228,9 @@ def bakerSanawy(season, copticdate, adam = False, Bishop = False, guestBishop = 
                 slide_index += 1
                 end_index += 1
 
-    presentation2.Close()
+    close_presentation_safe(katamars)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
@@ -371,8 +369,6 @@ def bakerKiahk(copticdate, adam = False, Bishop = False, guestBishop = 0):
     else:
         show_hide_insertImage_replaceText(prs, excel, des_sheet, baker_kiahk_show_full_sections, baker_kiahk_hide_full_sections)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
 
@@ -440,9 +436,9 @@ def bakerKiahk(copticdate, adam = False, Bishop = False, guestBishop = 0):
                 slide_index += 1
                 end_index += 1
 
-    presentation2.Close()
+    close_presentation_safe(katamars)
     if Bishop == True:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
@@ -549,8 +545,6 @@ def bakerElmilad(season, copticdate, Bishop = False, guestBishop = 0):
 
     show_hide_insertImage_replaceText(prs, excel, des_sheet, baker_elmilad_show_full_sections, baker_elmilad_hide_full_sections, image_path=img, new_Text=["لأنك ولِدتَ","aumack","آف ماسك"])
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
 
@@ -624,9 +618,9 @@ def bakerElmilad(season, copticdate, Bishop = False, guestBishop = 0):
 
     move_sections_v2(presentation1, ['{A0DD24B6-1053-42A1-8391-038649B3219B}'], ['{9DACDA4B-74BF-4F4B-A961-DA43C70DC545}'])
 
-    presentation2.Close()
+    close_presentation_safe(katamars)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
@@ -735,8 +729,6 @@ def bakerEl8etas(season, copticdate, Bishop = False, guestBishop = 0):
 
     show_hide_insertImage_replaceText(prs, excel, des_sheet, baker_el8etas_show_full_sections, baker_el8etas_hide_full_sections, image_path=img, new_Text=ghetasText)
 
-    powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-    powerpoint.Visible = True  # Open PowerPoint application
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
 
@@ -810,9 +802,9 @@ def bakerEl8etas(season, copticdate, Bishop = False, guestBishop = 0):
 
     move_sections_v2(presentation1, ['{BD1D9BBC-5109-4880-BAFF-4C03F37555C1}'], ['{9DACDA4B-74BF-4F4B-A961-DA43C70DC545}'])
 
-    presentation2.Close()
+    close_presentation_safe(katamars)
     if guestBishop > 0:
-        presentation3.Close()
+        close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
