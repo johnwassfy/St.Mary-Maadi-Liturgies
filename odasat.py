@@ -388,7 +388,7 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
     El3adraAndAngels = False 
     
     if season == 30 or season == 31 or copticdate[2]==21 or (copticdate[1]==9 and copticdate[2]==1) :
-        El3adraAndAngels == True
+        El3adraAndAngels = True
         # el3adra_show_values = ["مرد انجيل كيهك 2 و صوم العذراء", 
         #                        "قسمة أعياد الملائكة والسيدة العذراء وسنوى (هوذا كائن معنا على هذه)",
         #                        "اطاي بارثينوس"]
@@ -403,7 +403,7 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
         sanawy_show_full_sections.extend(el3adra_show_values)
 
     elif copticdate[2] == 12:
-        El3adraAndAngels == True
+        El3adraAndAngels = True
         # elmalakmikhael_values = ["مرد ابركسيس الملاك ميخائيل", "تكملة للملاك ميخائيل 2",
         #                               "ربع للملاك ميخائيل" , "هيتينية الملاك ميخائيل"],
         
