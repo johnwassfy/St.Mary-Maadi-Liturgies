@@ -1581,17 +1581,12 @@ class MainWindow(QMainWindow):
         return arabic_date_string
 
     def getmonth(self, num):
-        from openpyxl import load_workbook
-        # Load the Excel file
-        workbook = load_workbook(relative_path(r'Tables.xlsx'))
-        sheet = workbook["المناسبات"]
-        search_number = num 
-        corresponding_value = None
-        for row in sheet.iter_rows(values_only=True):
-            if row[0] == search_number: 
-                corresponding_value = row[1] 
-                break
-        return  corresponding_value
+        COPTIC_MONTHS = {
+            1: "توت", 2: "بابة", 3: "هاتور", 4: "كيهك", 5: "طوبة",
+            6: "أمشير", 7: "برمهات", 8: "برمودة", 9: "بشنس", 10: "بؤونة",
+            11: "أبيب", 12: "مسرى", 13: "النسيء"
+        }
+        return  COPTIC_MONTHS.get(num, num)
 
     def add_back_button(self, parent, action):
         # Get frame geometry
