@@ -1844,7 +1844,7 @@ class MainWindow(QMainWindow):
             sleep(0.5)
             
             # Hardcoded file path for development
-            script_path = r"F:\5dmt Shashat\Codes and Files\stmarymaadiliturgies.py"
+            script_path = os.path.abspath(__file__)
             
             # Close the current application
             QApplication.quit()
