@@ -1,107 +1,101 @@
-# St.Mary-Maadi-Liturgies
+# St. Mary Maadi Liturgies
 
 ![St.Mary Maadi Liturgies Logo](Data/Logo.ico)
 
-## Description
+## Overview
 
-St.Mary-Maadi-Liturgies is a specialized application designed for the Coptic Orthodox Church of St. Mary in Maadi. The program generates presentations ready for viewing during prayers and liturgical services, with intelligent handling of different liturgical seasons throughout the Coptic calendar year.
+St. Mary Maadi Liturgies is a desktop application created for the Coptic Orthodox Church of St. Mary in Maadi. The program generates ready-to-view PowerPoint presentations for prayers and liturgical services, taking into account the Coptic liturgical calendar, seasons, feast days, and special occasions.
 
-The application features a built-in Coptic calendar system that automatically adjusts the content based on the current liturgical season, feast days, and special occasions in the Coptic Orthodox Church.
+The application includes a built-in Coptic calendar and algorithms to detect liturgical seasons and convert dates, so presentations are automatically tailored for the correct day and service.
 
-## Features
+## Key Features
 
-- **Dynamic Liturgical Content**: Automatically generates appropriate liturgical content based on the current Coptic date and season
-- **Season-Aware Presentations**: Adapts presentations for different liturgical seasons (Great Lent, Holy Week, Pentecost, etc.)
-- **Coptic Calendar**: Built-in Coptic calendar with season detection and date conversion
-- **Multi-Service Support**:
+- Dynamic liturgical content generated for the selected date and service
+- Season-aware presentations (Great Lent, Holy Week, Pentecost, Kiahk, etc.)
+- Built-in Coptic calendar with date conversion and season detection
+- Support for multiple services:
   - Sunday Liturgy
   - Children's Liturgy
   - Matins (باكر)
   - Vespers (عشية)
-  - Holy Week Services
+  - Holy Week services
   - Special feast days and occasions
-- **Bible Readings**: Access to Bible readings appropriate for each day
-- **Psalmodia**: Support for regular and Kiahk Psalmodia (الإبصلمودية)
-- **Hymns and Praises**: Library of hymns and praises (المدائح)
-- **Episcopal Presence Handling**: Special modifications for when a bishop is present
-- **Automatic Updates**: Built-in update system that checks for and installs new versions
+- Bible readings appropriate for each day
+- Psalmodia support, including Kiahk psalmodia (الإبصلمودية)
+- Hymns and praises library (المدائح)
+- Special handling for episcopal (bishop) presence during services
+- Automatic update checker and installer
 
 ## Installation
 
-### Direct Download
+### Download
 
-You can download the latest installer directly from our GitHub repository:
+You can download the latest installer directly from the repository:
 
 [Download StMaryMaadiInstaller.exe](https://github.com/johnwassfy/St.Mary-Maadi-Liturgies/raw/master/StMaryMaadiInstaller.exe)
 
 ### Installation Steps
 
-1. Download the installer file using the link above
-2. Right-click the downloaded file and select "Run as administrator"
-3. Follow the on-screen instructions to complete the installation
-4. Launch the application using the desktop shortcut or start menu entry
+1. Download the installer from the link above.
+2. Right-click the downloaded file and choose "Run as administrator".
+3. Follow the on-screen instructions to complete the installation.
+4. Launch the application from the desktop shortcut or Start menu.
 
 ### System Requirements
 
 - Windows 10 or later
-- Microsoft PowerPoint 2016 or later
-- 4GB RAM minimum
-- 500MB free disk space
+- Microsoft PowerPoint 2016 or later (for opening generated presentations)
+- 4 GB RAM minimum (8 GB recommended)
+- 500 MB free disk space
 
 ## Usage
 
-1. **Main Interface**: 
-   - The application opens with the main interface showing the current Coptic date and season
-   - Select the desired service type from the menu (Liturgy, Matins, Vespers, etc.)
-
-2. **Date Selection**:
-   - Click on the date display to change the date if needed
-   - The application will automatically update content based on the selected date
-
-3. **Generating Presentations**:
-   - Select the desired service
-   - The application will generate a PowerPoint presentation appropriate for the selected service and current liturgical season
-   - The presentation will open automatically in PowerPoint
-
-4. **Special Occasions**:
-   - Use the "المناسبات" (Occasions) section for special services like Holy Week, Lakan, etc.
-
-5. **Bishop Presence**:
-   - Click "في حضور الأسقف" to indicate a bishop's presence
-   - Specify guest bishops if applicable
+1. Launch the application. The main interface displays the current Coptic date and detected liturgical season.
+2. Choose the service type from the menu (Liturgy, Matins, Vespers, etc.).
+3. To change the date, click the date display and select the desired date; the application will update content accordingly.
+4. Generate the presentation by selecting the service and pressing the generate/open button — a PowerPoint file will be created and opened automatically.
+5. For special services (e.g., Holy Week, Lakan), use the "المناسبات" (Occasions) section to select the appropriate liturgy sequence.
+6. If a bishop is present, enable "في حضور الأسقف" and optionally specify guest bishops to adjust the content and rubrics.
 
 ## Directory Structure
 
-- **Data/**: Contains images, templates, and other resources
-- **Python files**: Main application code and utility functions
-- **Excel files**: Configuration data and liturgical information
+- Data/ — images, icons, templates, and other static resources
+- Python files — main application logic and utilities
+- Excel files — configuration, mappings, and liturgical data (read by the application)
 
-## Technical Information
+## Technical Details
 
-This application is built using:
-- Python with PyQt5 for the user interface
-- Win32COM for PowerPoint integration
-- Custom Coptic calendar algorithms
-- Asynchronous programming for smooth UI experience
+- Language: Python (PyQt5 for UI)
+- PowerPoint integration via Win32 COM (win32com.client)
+- Custom Coptic calendar algorithms for date conversion and season detection
+- Uses asynchronous programming patterns to keep the UI responsive during generation and updates
 
 ## Updates and Maintenance
 
 The application includes an automatic update system:
-- Click "البحث عن تحديث" to check for updates manually
-- When updates are available, click "تحديث البرنامج" to download and install
+
+- Click "البحث عن تحديث" to check for updates manually.
+- When updates are available, click "تحديث البرنامج" to download and install.
+
+Release notes and detailed change history are shown inside the application when updates are available.
 
 ## Version History
 
-- **Current Version**: 2.3.3 (as of June 5, 2025)
-- For details on previous versions and changes, please refer to the update notes when checking for updates in the application.
+- Current Version: 2.3.3 (as of June 5, 2025)
+- See the in-app update notes for a history of changes and bug fixes.
+
+If you maintain a formal changelog or use GitHub Releases, consider adding a Releases page with versioned notes.
 
 ## License
 
-This software is developed for the specific use of St. Mary Coptic Orthodox Church in Maadi.
+This software is developed for the specific use of St. Mary Coptic Orthodox Church — Maadi. If you want to reuse or redistribute the code, please contact the maintainer for licensing details.
 
-## Contact
+## Contact & Support
 
-For support or questions, please contact the developer at [johnwassfy@gmail.com](mailto:johnwassfy@gmail.com).
+For support, questions, or to report issues, contact the developer:
+
+- Email: johnwassfy@gmail.com
+- GitHub: https://github.com/johnwassfy/St.Mary-Maadi-Liturgies
 
 ---
 
