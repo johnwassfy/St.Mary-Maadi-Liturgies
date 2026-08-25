@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFrame
-from PyQt5.QtGui import QPixmap, QFont, QIcon, QColor
+from PyQt5.QtGui import QPixmap, QFont, QIcon, QColor, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal, QSize, QTimer
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QDialog
 from copticDate import CopticCalendar
@@ -34,6 +34,19 @@ if not logger.handlers:
 class ClickableFrame(QFrame):
     clicked = pyqtSignal()
 
+    def __init__(self, *args, tooltip_text="", **kwargs):
+        super().__init__(*args, **kwargs)
+        if tooltip_text:
+            self.setToolTip(tooltip_text)
+
+    def enterEvent(self, event):
+        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.unsetCursor()
+        super().leaveEvent(event)
+
     def mousePressEvent(self, event):
         self.clicked.emit()
         super().mousePressEvent(event)
@@ -48,7 +61,10 @@ class MainWindow(QMainWindow):
             self.coptic_date = CopticCalendar().gregorian_to_coptic(self.current_date)
             self.checkCopticYear(self.coptic_date[0])
             from Season import get_season
+            from saintsCalendar import get_active_saints
             self.season = get_season(self.current_date)
+            self.active_saints = get_active_saints(self.coptic_date[1], self.coptic_date[2])
+            print(f"Active Saints for {self.coptic_date}: {self.active_saints}")
             self.bishop_window = None
             self.bishop = False
             self.GuestBishop = 0
@@ -814,10 +830,13 @@ class MainWindow(QMainWindow):
 
     def update_current_date(self, new_date, new_time):
         from Season import get_season
+        from saintsCalendar import get_active_saints
         try:
             self.current_date = datetime.strptime(new_date + ' ' + new_time, '%Y-%m-%d %I:%M %p')
             self.coptic_date = CopticCalendar().gregorian_to_coptic(self.current_date)
             self.season = get_season(self.current_date)
+            self.active_saints = get_active_saints(self.coptic_date[1], self.coptic_date[2])
+            print(f"Active Saints for {self.coptic_date}: {self.active_saints}")
             QTimer.singleShot(0, self.update_labels)
             self.close_dialog()
         except ValueError:
@@ -980,74 +999,74 @@ class MainWindow(QMainWindow):
                 # Proceed with opening the presentation
                 match self.season:
                     case 0 | 6 | 13 | 30 | 31:
-                        odasat.odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 1 | 1.1:
-                        odasat.odasElnayrooz(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasElnayrooz(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                     case 2:
-                        odasat.odasElsalyb(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasElsalyb(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 3 | 8:
-                        odasat.odasbaramonElmiladAndEl8etas(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasbaramonElmiladAndEl8etas(self.coptic_date, self.bishop, self.GuestBishop, self.active_saints)
                         presentation_opened = True
                     case 4:
-                        odasat.odasElmilad(self.bishop, self.GuestBishop)
+                        odasat.odasElmilad(self.bishop, self.GuestBishop, active_saints=self.active_saints)
                         presentation_opened = True
                     case 4.1 | 4.2:
-                        odasat.odasAfterElmilad(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasAfterElmilad(self.coptic_date, self.bishop, self.GuestBishop, active_saints=self.active_saints)
                     case 5:
-                        odasat.odasKiahk(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasKiahk(self.coptic_date, self.bishop, self.GuestBishop, active_saints=self.active_saints)
                         presentation_opened = True
                     case 7:
-                        odasat.odasEl5etan(self.bishop, self.GuestBishop)
+                        odasat.odasEl5etan(self.bishop, self.GuestBishop, active_saints=self.active_saints)
                         presentation_opened = True
                     case 9 | 9.1:
-                        odasat.odasEl8ytas(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasEl8ytas(self.coptic_date, self.bishop, self.GuestBishop, active_saints=self.active_saints)
                         presentation_opened = True
                     case 10:
-                        odasat.odas3orsKanaElgalyl(self.bishop, self.GuestBishop, self.seneksar)                        
+                        odasat.odas3orsKanaElgalyl(self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 12:
-                        odasat.odasSomNynawa(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasSomNynawa(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 14:
-                        odasat.odasElbeshara(self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasElbeshara(self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11:
-                        odasat.odasElSomElkbyr(self.coptic_date, self.season, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasElSomElkbyr(self.coptic_date, self.season, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 16:
-                        odasat.odasSbtLe3azr(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasSbtLe3azr(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 17:
-                        odasat.odasElsh3anyn(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasElsh3anyn(self.coptic_date, self.bishop, self.GuestBishop, self.active_saints)
                         presentation_opened = True
                     case 22:
-                        odasat.odasEl2yama(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasEl2yama(self.coptic_date, self.bishop, self.GuestBishop, self.active_saints)
                         presentation_opened = True
                     case 24:
-                        odasat.odasEl5amasyn_2_39(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasEl5amasyn_2_39(self.coptic_date, self.bishop, self.GuestBishop, self.active_saints)
                         presentation_opened = True
                     case 24.1:
-                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, True)
+                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, True, self.active_saints)
                         presentation_opened = True
                     case 25:
-                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, False)
+                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, False, self.active_saints)
                         presentation_opened = True
                     case 26:
-                        odasat.odasEl3nsara(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasEl3nsara(self.coptic_date, self.bishop, self.GuestBishop, self.active_saints)
                         presentation_opened = True
                     case 27:
-                        odasat.odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 28:
-                        odasat.odas3ydElrosol(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odas3ydElrosol(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 29:
-                        odasat.odasEltagaly(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasEltagaly(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 32:
-                        odasat.odas29thOfMonth(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odas29thOfMonth(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case default:
                         self.notification_bar.show_message(f"قداس {get_season_name(self.season)} غير متوفر حاليا")
