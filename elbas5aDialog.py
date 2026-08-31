@@ -4,7 +4,8 @@ from PyQt5.QtGui import QFont, QPixmap, QColor
 from PyQt5.QtCore import Qt, QSize
 from commonFunctions import relative_path, open_presentation_relative_path, show_hide_insertImage_replaceText,\
                             replacefile, find_slide_nums_arrays_v2, get_slide_ids_by_numbers, show_slides, \
-                            elzoksologyat, run_vba_with_slide_id_bakr_aashya, get_open_presentations
+                            elzoksologyat, run_vba_with_slide_id_bakr_aashya, get_open_presentations, ExcelLookupError, \
+                            reset_vba_module
 import qtawesome as qta
 import os
 import sys
@@ -645,16 +646,17 @@ class Elbas5aDialog(QDialog):
         # Get VBA sheet name from config (needed for show_hide function)
         vba_sheet = config.get("vba_sheet") or "البصخة"
         
-        tar7_values = find_slide_nums_arrays_v2(
-            self.excel,
-            vba_sheet,
-            ['{9BEC2A31-DA53-45BE-AF39-7BE678B18A94}', '{5DF0EB10-99E1-41E1-AAD9-469FAC87A801}', '{931A7E35-642D-498D-A76F-2896828706A5}', '{378535F0-B031-4254-99A2-726504C335DB}', '{37F96881-032F-4EEB-8D10-5B5C2D5966F2}'],
-            2,
-            [2, 2, 2, 2, 2],
-        )
-
-        if isinstance(tar7_values, str):
-            print(f"Error reading tar7 values from Excel: {tar7_values}")
+        tar7_values = None
+        try:
+            tar7_values = find_slide_nums_arrays_v2(
+                self.excel,
+                vba_sheet,
+                ['{9BEC2A31-DA53-45BE-AF39-7BE678B18A94}', '{5DF0EB10-99E1-41E1-AAD9-469FAC87A801}', '{931A7E35-642D-498D-A76F-2896828706A5}', '{378535F0-B031-4254-99A2-726504C335DB}', '{37F96881-032F-4EEB-8D10-5B5C2D5966F2}'],
+                2,
+                [2, 2, 2, 2, 2],
+            )
+        except ExcelLookupError as e:
+            print(f"Error reading tar7 values from Excel: {e}")
             return
 
         if not isinstance(tar7_values, list) or len(tar7_values) != 5:
@@ -746,29 +748,32 @@ class Elbas5aDialog(QDialog):
             return
         
         if button_id in ["sun_night_monday", "mon_day", "mon_night_tuesday", "tue_day", "tue_night_wednesday", "wed_day", "wed_night_thursday"]:
-            vba_values = find_slide_nums_arrays_v2(
-                self.excel,
-                sheet,
-                ['{81AD693D-C29D-45B2-95D4-0C613DDDE79B}', '{C77E4783-C285-4706-B437-1BBF92A3E954}', '{D0A19F68-9B40-46E9-8CEE-20069205C2F5}', '{9D06AEAB-48F5-44D5-B54C-6166991785C3}', '{B49BB649-3054-4719-BC60-F1B97BA48DF9}', '{E4CF5EBF-7A16-40CE-8CF3-AF5E72A35258}'],
-                2,
-                [2, 2, 2, 2, 2, 2],
-            )
+            try:
+                vba_values = find_slide_nums_arrays_v2(
+                    self.excel,
+                    sheet,
+                    ['{81AD693D-C29D-45B2-95D4-0C613DDDE79B}', '{C77E4783-C285-4706-B437-1BBF92A3E954}', '{D0A19F68-9B40-46E9-8CEE-20069205C2F5}', '{9D06AEAB-48F5-44D5-B54C-6166991785C3}', '{B49BB649-3054-4719-BC60-F1B97BA48DF9}', '{E4CF5EBF-7A16-40CE-8CF3-AF5E72A35258}'],
+                    2,
+                    [2, 2, 2, 2, 2, 2],
+                )
+            except ExcelLookupError as e:
+                print(f"Error reading Excel file: {e}")
+                return
         elif button_id in ["thurs_maundy_thursday"]:
-            vba_values = find_slide_nums_arrays_v2(
-                self.excel,
-                sheet,
-                ['{81AD693D-C29D-45B2-95D4-0C613DDDE79B}', '{C77E4783-C285-4706-B437-1BBF92A3E954}', '{D0A19F68-9B40-46E9-8CEE-20069205C2F5}', '{9D06AEAB-48F5-44D5-B54C-6166991785C3}', '{B49BB649-3054-4719-BC60-F1B97BA48DF9}', '{D4DC8BC9-795A-4AB0-8BF0-67ABCD5AA7BC}', '{5F8571AA-3756-4993-80D9-31D04DB137B4}', '{F0D339B8-4A92-41DD-94E0-D5AF495E0092}'],
-                2,
-                [2, 2, 2, 2, 2, 2, 2, 1],
-            )
+            try:
+                vba_values = find_slide_nums_arrays_v2(
+                    self.excel,
+                    sheet,
+                    ['{81AD693D-C29D-45B2-95D4-0C613DDDE79B}', '{C77E4783-C285-4706-B437-1BBF92A3E954}', '{D0A19F68-9B40-46E9-8CEE-20069205C2F5}', '{9D06AEAB-48F5-44D5-B54C-6166991785C3}', '{B49BB649-3054-4719-BC60-F1B97BA48DF9}', '{D4DC8BC9-795A-4AB0-8BF0-67ABCD5AA7BC}', '{5F8571AA-3756-4993-80D9-31D04DB137B4}', '{F0D339B8-4A92-41DD-94E0-D5AF495E0092}'],
+                    2,
+                    [2, 2, 2, 2, 2, 2, 2, 1],
+                )
+            except ExcelLookupError as e:
+                print(f"Error reading Excel file: {e}")
+                return
         else:
             return
 
-        # Check if vba_values is a string (error message from find_slide_nums_arrays_v2)
-        if isinstance(vba_values, str):
-            print(f"Error reading Excel file: {vba_values}")
-            return
-        
         # Validate value count: 8 for thurs_maundy_thursday (with extra jump slide + destination), 6 for others
         expected_count = 8 if button_id == "thurs_maundy_thursday" else 6
         if not isinstance(vba_values, list) or len(vba_values) != expected_count:
@@ -833,8 +838,7 @@ class Elbas5aDialog(QDialog):
             return
 
         vba_project = presentation.VBProject
-        modules = vba_project.VBComponents
-        new_module = modules.Add(1)
+        new_module = reset_vba_module(vba_project)
 
         # Module-level variables to track trigger and deferred return target
         vba_code = "Dim triggeringHourIndex As Long  ' Stores the hour index: 1, 3, 6, 9, or 11\n"

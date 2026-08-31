@@ -23,10 +23,9 @@ def run_vba_with_slide_id(excel, sheet, prs, presentation, slide_id_pairs=None, 
 
     # Access the VBA project
     vba_project = presentation.VBProject
-    modules = vba_project.VBComponents
 
     # Add a new module to the VBA project
-    new_module = modules.Add(1)  # 1 corresponds to a standard module
+    new_module = reset_vba_module(vba_project)
 
     # Generate the VBA code for the subroutine using SlideID
     vba_code = "Sub OnSlideShowPageChange()\n"
@@ -224,9 +223,9 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1, acti
     elebrksis1 = katamars_values[2]
     elmzmor = katamars_values[3]
     elengil = katamars_values[4]
-    elbouls2 = elkatholikon1 - 1
-    elkatholikon2 = elebrksis1 - 1
-    elebrksis2 = elmzmor - 1
+    elbouls2 = int(elkatholikon1) - 1
+    elkatholikon2 = int(elebrksis1) - 1
+    elebrksis2 = int(elmzmor) - 1
     elengil2 = katamars_values[5]
 
     seneksar_sheet = "السنكسار"
@@ -440,8 +439,6 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1, acti
         sanawy_show_full_sections.extend(saint_show)
         sanawy_hide_full_sections.extend(saint_hide)
  
-    print(f"DEBUG sanawy_show_full_sections: {sanawy_show_full_sections}")
-    print(f"DEBUG sanawy_hide_full_sections: {sanawy_hide_full_sections}")
     if cd.weekday() == 6:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, sanawy_show_full_sections, sanawy_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
     else:
@@ -466,7 +463,6 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1, acti
     
     sanawy_show_values.append([khetamValue, khetamValue])
     show_slides(presentation1, sanawy_show_values)
-    print(f"DEBUG show_slides called with: {sanawy_show_values}")  # add this
     run_vba_with_slide_id(excel, des_sheet, prs1, presentation1)
     
     if cd.weekday() == 2 or cd.weekday() == 4:
@@ -2199,7 +2195,7 @@ def odasElmilad(Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if Bishop:
         close_presentation_safe(prs3)
@@ -2539,7 +2535,7 @@ def odasAfterElmilad(copticdate, Bishop=False, guestBishop=0, seneksar=1, active
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if Bishop:
         close_presentation_safe(prs3)
@@ -2836,7 +2832,7 @@ def odasEl5etan(Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
                 slide_index += 1
                 end_index += 1
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if Bishop:
         close_presentation_safe(prs3)
@@ -3171,7 +3167,7 @@ def odasEl8ytas(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_sain
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if guestBishop > 0:
         close_presentation_safe(prs3)
@@ -3458,7 +3454,7 @@ def odas3orsKanaElgalyl(Bishop=False, guestBishop=0, seneksar=1, active_saints=N
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if Bishop:
         close_presentation_safe(prs3)
@@ -3741,7 +3737,7 @@ def odasSomNynawa(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_sa
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if Bishop:
         close_presentation_safe(prs3)
@@ -6236,8 +6232,8 @@ def odasDo5olElmasy7Masr(copticdate, season, Bishop=False, guestBishop=0, seneks
     seneksar1 = seneksar_values[0]
     seneksar2 = seneksar_values[1]
 
-    eltagaly_show_values = []
-    eltagaly_hide_values = []
+    egypt_show_values = []
+    egypt_hide_values = []
 
     # egypt_show_full_sections = ["الليلويا فاي بيبي", "طاي شوري", "مرد ابركسيس دخول المسيح أرض مصر", 
     #                                "مرد مزمور دخول المسيح أرض مصر", "فاي اريه بي اوو", "مرد انجيل دخول المسيح أرض مصر",
@@ -6288,8 +6284,8 @@ def odasDo5olElmasy7Masr(copticdate, season, Bishop=False, guestBishop=0, seneks
         
         bishop_hide_values = ['{4D2B15D5-C978-467C-9D6C-726FE25128B8}']
         
-        eltagaly_show_full_sections.extend(bishop_show_values)
-        eltagaly_hide_full_sections.extend(bishop_hide_values)
+        egypt_show_full_sections.extend(bishop_show_values)
+        egypt_hide_full_sections.extend(bishop_hide_values)
 
         if guestBishop > 0:
             # bishop_values = ["صلاة الشكر", "صلاة الشكر", "طوبه هينا الكبيرة", "طوبه هينا الكبيرة", 
@@ -7465,7 +7461,7 @@ def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_
     mrdMazmorEltawzy3_elqiyama = twentyNine_values[5]
 
     #الاواشي
-    AwashySeason = CopticCalendar.get_coptic_date_range(copticdate)
+    AwashySeason = CopticCalendar().get_coptic_date_range(copticdate)
     match AwashySeason:
         case "Air": twentyNine_show_full_sections.extend(['{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}'])
         case "Tree": twentyNine_show_full_sections.extend(['{F94B3D1F-649D-4839-BD2E-19439E173129}', '{5DD6BABA-9FE4-4D33-9F90-0C865CB95EE4}'])

@@ -23,6 +23,16 @@ SAINTS_CALENDAR = {
 }
 
 # ---------------------------------------------------------------------------
+# SAINT_NAMES
+# saint_id → Arabic display name, used for the "تذكارات" reminder banner in the UI.
+# Keep in sync with SAINTS_CALENDAR whenever a new saint_id is added.
+# ---------------------------------------------------------------------------
+SAINT_NAMES = {
+    7: "رئيس الملائكة ميخائيل",
+    8: "رئيس الملائكة غبريال",
+}
+
+# ---------------------------------------------------------------------------
 # SAINTS SECTIONS
 # saint_id → { file_key: { "show": [GUIDs], "hide": [GUIDs] } }
 #
@@ -154,3 +164,8 @@ def get_saint_show_hide(active_saints: list, file_key: str) -> tuple:
         all_show.extend(data["show"])
         all_hide.extend(data["hide"])
     return all_show, all_hide
+
+
+def get_saint_names(active_saints: list) -> list:
+    """Returns display names for today's active saints, for the UI reminder banner."""
+    return [SAINT_NAMES[saint_id] for saint_id in active_saints if saint_id in SAINT_NAMES]
