@@ -1,10 +1,15 @@
 import os
 import sys
+from typing import Any
 from openpyxl import load_workbook, utils
 from pptx import Presentation
 import win32com.client
 from PyQt5.QtGui import QPixmap, QPainter, QColor, QLinearGradient
 from PyQt5.QtCore import Qt, QLineF, QPointF
+
+class ExcelLookupError(Exception):
+    """Raised when an Excel-based slide/section lookup fails, instead of silently returning a string sentinel."""
+    pass
 
 class PowerPointManager:
     """Centralized PowerPoint COM lifecycle helper."""
@@ -201,8 +206,55 @@ class PowerPointManager:
         finally:
             pythoncom.CoUninitialize()
 
+    def close_paths(self, paths):
+        """Close only presentations whose path matches one in `paths`, ignoring the rest."""
+        normalized_targets = {self._normalize_path(p) for p in paths}
+        if not normalized_targets:
+            return []
+
+        pythoncom = self._co_initialize()
+        try:
+            app = self._get_active_app()
+            if app is None:
+                return []
+
+            closed = []
+            for pres in self._iter_presentations(app):
+                try:
+                    full_name = pres.FullName
+                    if self._normalize_path(full_name) in normalized_targets:
+                        pres.Close()
+                        closed.append(full_name)
+                except Exception:
+                    continue
+            return closed
+        finally:
+            pythoncom.CoUninitialize()
+
 
 powerpoint_manager = PowerPointManager()
+
+# Helper presentations opened mid-liturgy (katamars/synaxarium/bishop files) that should
+# never stay open on their own; used as an exception safety net to close orphans.
+_SECONDARY_PRESENTATION_RELATIVE_PATHS = [
+    r"Data\القطمارس\السنكسار.pptx",
+    r"Data\حضور الأسقف.pptx",
+    r"Data\القطمارس\القطمارس السنوي احاد.pptx",
+    r"Data\القطمارس\القطمارس السنوي ايام.pptx",
+    r"Data\القطمارس\قطمارس الصوم الكبير (القداس).pptx",
+    r"Data\القطمارس\الصوم الكبير و صوم نينوى\قطمارس الصوم الكبير.pptx",
+    r"Data\القطمارس\الصوم الكبير و صوم نينوى\قرائات صوم نينوى و فصح يونان.pptx",
+    r"Data\القطمارس\قرائات احد الشعانين.pptx",
+    r"Data\القطمارس\قطمارس الخماسين (القداس).pptx",
+]
+
+def close_stray_presentations_safe():
+    """Close any leftover katamars/synaxarium/bishop presentations left open by a crashed liturgy build."""
+    try:
+        paths = [relative_path(p) for p in _SECONDARY_PRESENTATION_RELATIVE_PATHS]
+        return powerpoint_manager.close_paths(paths)
+    except Exception:
+        return []
 
 
 
@@ -271,7 +323,8 @@ def find_slide_num(excel_path, sheet_name, word, col_num):
         # Handle any errors that might occur (e.g., file not found, sheet not found, etc.)
         return f"Error: {str(e)}"
 
-def find_slide_num_v2(excel_path, sheet_name, word, search_col, offset):
+def find_slide_num_v2(excel_path, sheet_name, word, search_col, offset) -> Any:
+    workbook = None
     try:
         # Load the Excel workbook
         workbook = load_workbook(excel_path, read_only=True)
@@ -289,12 +342,16 @@ def find_slide_num_v2(excel_path, sheet_name, word, search_col, offset):
                 if 0 <= target_col < len(row):
                     return row[target_col]  # Return the value directly
                 else:
-                    return f"Offset {offset} out of bounds for row with word '{word}'."
+                    raise ExcelLookupError(f"Offset {offset} out of bounds for word '{word}' in sheet '{sheet_name}'.")
         
-        return f"No corresponding number found for '{word}' in column {search_col + 1}."
+        raise ExcelLookupError(f"No corresponding number found for '{word}' in column {search_col + 1} of sheet '{sheet_name}'.")
     
+    except ExcelLookupError:
+        raise
     except Exception as e:
-        return f"Error: {str(e)}"
+        raise ExcelLookupError(f"Error reading '{excel_path}' sheet '{sheet_name}': {e}") from e
+    finally:
+        _close_workbook(workbook)
 
 def find_slide_nums_arrays(excel_path, sheet_name, words, col_nums):
     try:
@@ -326,7 +383,8 @@ def find_slide_nums_arrays(excel_path, sheet_name, words, col_nums):
         # Handle any errors that might occur (e.g., file not found, sheet not found, etc.)
         return f"Error: {str(e)}"
 
-def find_slide_nums_arrays_v2(excel_path, sheet_name, words, search_col, offsets):
+def find_slide_nums_arrays_v2(excel_path, sheet_name, words, search_col, offsets) -> Any:
+    workbook = None
     try:
         # Load the Excel workbook
         workbook = load_workbook(excel_path, read_only=True)
@@ -351,17 +409,20 @@ def find_slide_nums_arrays_v2(excel_path, sheet_name, words, search_col, offsets
                     if 0 <= target_col < len(row):
                         results.append(row[target_col])  # Append the value from the target column
                     else:
-                        results.append(f"Offset {offset} out of bounds for row with word '{word}'.")
+                        raise ExcelLookupError(f"Offset {offset} out of bounds for word '{word}' in sheet '{sheet_name}'.")
                     found = True
                     break
             if not found:
-                results.append(f"No corresponding number found for '{word}' in column {search_col + 1}.")
+                raise ExcelLookupError(f"No corresponding number found for '{word}' in column {search_col + 1} of sheet '{sheet_name}'.")
         
         return results
     
+    except ExcelLookupError:
+        raise
     except Exception as e:
-        # Handle any errors that might occur (e.g., file not found, sheet not found, etc.)
-        return f"Error: {str(e)}"
+        raise ExcelLookupError(f"Error reading '{excel_path}' sheet '{sheet_name}': {e}") from e
+    finally:
+        _close_workbook(workbook)
 
 def find_season_date(excel_path, sheet_name, words, search_col):
     """
@@ -583,7 +644,8 @@ def fetch_data(excel_path, sheet_name, column_b_value, column_a_value, column_nu
     # If the value is not found, return None
     return None
 
-def fetch_data_arrays(excel_path, sheet_name, column_b_value, column_a_value, column_numbers):
+def fetch_data_arrays(excel_path, sheet_name, column_b_value, column_a_value, column_numbers) -> Any:
+    workbook = None
     try:
         # Load the workbook
         workbook = load_workbook(excel_path, read_only=True)
@@ -604,15 +666,19 @@ def fetch_data_arrays(excel_path, sheet_name, column_b_value, column_a_value, co
                         data = sheet.cell(row=row, column=col_num).value
                         results.append(data)
         
-        # If no matching row is found, return a message indicating that
+        # If no matching row is found, raise a clear error instead of a string sentinel
         if not results:
-            return f"No matching row found for column B value '{column_b_value}' and column A value '{column_a_value}'."
+            raise ExcelLookupError(f"No matching row found for column B value '{column_b_value}' and column A value '{column_a_value}' in sheet '{sheet_name}'.")
         
         return results
     
+    except ExcelLookupError:
+        raise
     except Exception as e:
         # Handle any errors that might occur (e.g., file not found, sheet not found, etc.)
-        return f"Error: {str(e)}"
+        raise ExcelLookupError(f"Error reading '{excel_path}' sheet '{sheet_name}': {e}") from e
+    finally:
+        _close_workbook(workbook)
 
 def read_excel_cells_by_array(file_path, sheet_name, column_to_search, search_words, offsets):
     # Ensure both arrays are of the same length
@@ -807,7 +873,7 @@ def close_all_presentations_safe():
 def open_presentation_on_slide_safe(path_value, slide_index):
     return powerpoint_manager.go_to_slide(path_value, slide_index)
 
-def open_presentation_relative_path(rp):
+def open_presentation_relative_path(rp) -> Any:
     absolute_path = relative_path(rp)
     file_name = os.path.basename(absolute_path)
 
@@ -1527,6 +1593,21 @@ def move_sections_range_v2(presentation, start_section_id, end_section_id, targe
         presentation.SectionProperties.Move(move_index, target_index + 1)
         target_index += 1
 
+def reset_vba_module(vba_project, module_name="STMaryLiturgyMacros"):
+    """Replace any previously-injected macro module with a fresh one instead of accumulating Module1/2/3.."""
+    modules = vba_project.VBComponents
+    try:
+        existing = modules.Item(module_name)
+        modules.Remove(existing)
+    except Exception:
+        pass
+    new_module = modules.Add(1)  # 1 corresponds to a standard module
+    try:
+        new_module.Name = module_name
+    except Exception:
+        pass
+    return new_module
+
 def run_vba_with_slide_id_bakr_aashya(excel, sheet, prs, presentation, slide_section_id = '{A5B9CE2F-90E3-44D7-B22F-CAE6783C8E2F}'):
 
     slide = find_slide_num_v2(excel, sheet, slide_section_id, 2, 1)
@@ -1535,10 +1616,9 @@ def run_vba_with_slide_id_bakr_aashya(excel, sheet, prs, presentation, slide_sec
 
     # Access the VBA project
     vba_project = presentation.VBProject
-    modules = vba_project.VBComponents
 
     # Add a new module to the VBA project
-    new_module = modules.Add(1)  # 1 corresponds to a standard module
+    new_module = reset_vba_module(vba_project)
 
     vba_code = f"""
 Dim visitedSlides As Collection ' Global collection to track visited slides

@@ -17,10 +17,9 @@ def vba_code(excel, sheet, prs, presentation, slide_section_id='{A5B9CE2F-90E3-4
 
     # Access the VBA project
     vba_project = presentation.VBProject
-    modules = vba_project.VBComponents
 
     # Add a new module to the VBA project
-    new_module = modules.Add(1)  # 1 corresponds to a standard module
+    new_module = reset_vba_module(vba_project)
 
     custom_show_start_case = ""
     if custom_show_name is not None and custom_show_trigger_section_id is not None:

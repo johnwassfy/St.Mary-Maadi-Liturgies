@@ -1,7 +1,9 @@
+from typing import cast
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFrame
-from PyQt5.QtGui import QPixmap, QFont, QIcon, QColor
+from PyQt5.QtGui import QPixmap, QFont, QIcon, QColor, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal, QSize, QTimer
-from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QDialog
+from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QDialog, QGraphicsOpacityEffect
+from PyQt5.QtCore import QPropertyAnimation
 from copticDate import CopticCalendar
 from datetime import datetime
 from bibleWindow import bibleWindow
@@ -17,6 +19,7 @@ from commonFunctions import (
     get_open_presentations,
     close_presentation_safe,
     close_all_presentations_safe,
+    close_stray_presentations_safe,
 )
 from sys import exit, argv
 from SplashScreen import ModernSplashScreen
@@ -34,6 +37,19 @@ if not logger.handlers:
 class ClickableFrame(QFrame):
     clicked = pyqtSignal()
 
+    def __init__(self, *args, tooltip_text="", **kwargs):
+        super().__init__(*args, **kwargs)
+        if tooltip_text:
+            self.setToolTip(tooltip_text)
+
+    def enterEvent(self, event):
+        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.unsetCursor()
+        super().leaveEvent(event)
+
     def mousePressEvent(self, event):
         self.clicked.emit()
         super().mousePressEvent(event)
@@ -48,7 +64,9 @@ class MainWindow(QMainWindow):
             self.coptic_date = CopticCalendar().gregorian_to_coptic(self.current_date)
             self.checkCopticYear(self.coptic_date[0])
             from Season import get_season
+            from saintsCalendar import get_active_saints
             self.season = get_season(self.current_date)
+            self.active_saints = get_active_saints(self.coptic_date[1], self.coptic_date[2])
             self.bishop_window = None
             self.bishop = False
             self.GuestBishop = 0
@@ -69,6 +87,7 @@ class MainWindow(QMainWindow):
             
             # Cursor management to prevent stuck loading cursor
             self.cursor_override_count = 0
+            self._is_closing = False
             self.refresh_timer = QTimer(self)
             self.refresh_timer.setSingleShot(True)
             self.refresh_timer.timeout.connect(self.refresh_button_states)
@@ -114,6 +133,8 @@ class MainWindow(QMainWindow):
             self.image_label = QLabel(frame1)
             self.image_label.setGeometry(0, 0, 130, 190)
             self.image_label.setScaledContents(True)
+
+            self._build_saints_reminder()
 
             self.frame2 = QFrame(self)
             self.refresh_button_states()
@@ -167,6 +188,8 @@ class MainWindow(QMainWindow):
             # Initialize PowerPoint tracking
             self.last_open_presentations = set()
             self.setup_powerpoint_event_listener()
+
+            self.show_saints_reminder()
 
         except Exception as e:
             stack_trace = traceback.format_exc()
@@ -454,7 +477,7 @@ class MainWindow(QMainWindow):
         
         if text == "صلاة السجدة":
             button.clicked.connect(lambda _, p=action: self.handle_sagda_button_click())
-        else:
+        elif action is not None:
             button.clicked.connect(action)
 
     def create_button(self, text, y, action):
@@ -668,6 +691,9 @@ class MainWindow(QMainWindow):
             # Styled back button
             self.add_back_button(self.frame2, self.restore_main_frame)
             self.frame2.show()
+            reminder = getattr(self, "saints_reminder", None)
+            if reminder is not None:
+                reminder.raise_()
         finally:
             self._rebuilding_main_frame = False
 
@@ -808,17 +834,21 @@ class MainWindow(QMainWindow):
             if layout:
                 while layout.count():
                     child = layout.takeAt(0)
-                    if child.widget():
-                        child.widget().deleteLater()
+                    widget = child.widget() if child else None
+                    if widget:
+                        widget.deleteLater()
                 self.setCentralWidget(None)
 
     def update_current_date(self, new_date, new_time):
         from Season import get_season
+        from saintsCalendar import get_active_saints
         try:
             self.current_date = datetime.strptime(new_date + ' ' + new_time, '%Y-%m-%d %I:%M %p')
             self.coptic_date = CopticCalendar().gregorian_to_coptic(self.current_date)
             self.season = get_season(self.current_date)
+            self.active_saints = get_active_saints(self.coptic_date[1], self.coptic_date[2])
             QTimer.singleShot(0, self.update_labels)
+            self.show_saints_reminder()
             self.close_dialog()
         except ValueError:
             self.show_error_message("التاريخ/الوقت غير صحيح.")
@@ -894,7 +924,10 @@ class MainWindow(QMainWindow):
 
     def close_dialog(self):
         from ChangeDateWindow import ChangeDate
-        for widget in QApplication.instance().topLevelWidgets():
+        app = QApplication.instance()
+        if not isinstance(app, QApplication):
+            return
+        for widget in app.topLevelWidgets():
             if isinstance(widget, ChangeDate):
                 widget.close()
 
@@ -980,74 +1013,74 @@ class MainWindow(QMainWindow):
                 # Proceed with opening the presentation
                 match self.season:
                     case 0 | 6 | 13 | 30 | 31:
-                        odasat.odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasSanawy(self.coptic_date, self.season, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 1 | 1.1:
-                        odasat.odasElnayrooz(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasElnayrooz(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                     case 2:
-                        odasat.odasElsalyb(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasElsalyb(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 3 | 8:
-                        odasat.odasbaramonElmiladAndEl8etas(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasbaramonElmiladAndEl8etas(self.coptic_date, self.bishop, self.GuestBishop, active_saints=self.active_saints)
                         presentation_opened = True
                     case 4:
-                        odasat.odasElmilad(self.bishop, self.GuestBishop)
+                        odasat.odasElmilad(self.bishop, self.GuestBishop, active_saints=self.active_saints)
                         presentation_opened = True
                     case 4.1 | 4.2:
-                        odasat.odasAfterElmilad(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasAfterElmilad(self.coptic_date, self.bishop, self.GuestBishop, active_saints=self.active_saints)
                     case 5:
-                        odasat.odasKiahk(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasKiahk(self.coptic_date, self.bishop, self.GuestBishop, active_saints=self.active_saints)
                         presentation_opened = True
                     case 7:
-                        odasat.odasEl5etan(self.bishop, self.GuestBishop)
+                        odasat.odasEl5etan(self.bishop, self.GuestBishop, active_saints=self.active_saints)
                         presentation_opened = True
                     case 9 | 9.1:
-                        odasat.odasEl8ytas(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasEl8ytas(self.coptic_date, self.bishop, self.GuestBishop, active_saints=self.active_saints)
                         presentation_opened = True
                     case 10:
-                        odasat.odas3orsKanaElgalyl(self.bishop, self.GuestBishop, self.seneksar)                        
+                        odasat.odas3orsKanaElgalyl(self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 12:
-                        odasat.odasSomNynawa(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasSomNynawa(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 14:
-                        odasat.odasElbeshara(self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasElbeshara(self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 15 | 15.1 | 15.2 | 15.3 | 15.4 | 15.5 | 15.6 | 15.7 | 15.8 | 15.9 | 15.11:
-                        odasat.odasElSomElkbyr(self.coptic_date, self.season, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasElSomElkbyr(self.coptic_date, self.season, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 16:
-                        odasat.odasSbtLe3azr(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasSbtLe3azr(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 17:
-                        odasat.odasElsh3anyn(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasElsh3anyn(self.coptic_date, self.bishop, self.GuestBishop, self.active_saints)
                         presentation_opened = True
                     case 22:
-                        odasat.odasEl2yama(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasEl2yama(self.coptic_date, self.bishop, self.GuestBishop, self.active_saints)
                         presentation_opened = True
                     case 24:
-                        odasat.odasEl5amasyn_2_39(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasEl5amasyn_2_39(self.coptic_date, self.bishop, self.GuestBishop, self.active_saints)
                         presentation_opened = True
                     case 24.1:
-                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, True)
+                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, True, self.active_saints)
                         presentation_opened = True
                     case 25:
-                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, False)
+                        odasat.odasElso3od(self.coptic_date, self.bishop, self.GuestBishop, False, self.active_saints)
                         presentation_opened = True
                     case 26:
-                        odasat.odasEl3nsara(self.coptic_date, self.bishop, self.GuestBishop)
+                        odasat.odasEl3nsara(self.coptic_date, self.bishop, self.GuestBishop, self.active_saints)
                         presentation_opened = True
                     case 27:
-                        odasat.odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasSomElRosol(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 28:
-                        odasat.odas3ydElrosol(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odas3ydElrosol(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 29:
-                        odasat.odasEltagaly(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odasEltagaly(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case 32:
-                        odasat.odas29thOfMonth(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar)
+                        odasat.odas29thOfMonth(self.coptic_date, self.bishop, self.GuestBishop, self.seneksar, self.active_saints)
                         presentation_opened = True
                     case default:
                         self.notification_bar.show_message(f"قداس {get_season_name(self.season)} غير متوفر حاليا")
@@ -1076,6 +1109,7 @@ class MainWindow(QMainWindow):
             stack_trace = traceback.format_exc()
             self.notification_bar.show_message(f"خطأ في فتح القداس: {str(e)}", duration=5000)
             print(f"Qudas Error: {str(e)}\n{stack_trace}")
+            close_stray_presentations_safe()
         finally:
             self.restore_normal_cursor()
             self.operation_in_progress = False
@@ -1204,6 +1238,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.notification_bar.show_message(f"خطأ في فتح باكر: {str(e)}", duration=5000)
             print(f"Baker Error: {str(e)}")
+            close_stray_presentations_safe()
         finally:
             self.restore_normal_cursor()
             self.operation_in_progress = False    
@@ -1305,6 +1340,7 @@ class MainWindow(QMainWindow):
             stack_trace = traceback.format_exc()
             self.notification_bar.show_message(f"خطأ في فتح عشية: {str(e)}", duration=5000)
             print(f"Aashya Error: {str(e)}\n{stack_trace}")
+            close_stray_presentations_safe()
         finally:
             self.restore_normal_cursor()
             self.operation_in_progress = False
@@ -1323,8 +1359,10 @@ class MainWindow(QMainWindow):
         self.operation_in_progress = True
         self.set_busy_cursor()
         
+        modal_dialog_owned = False
         try:
-            if not self._begin_modal_dialog():
+            modal_dialog_owned = self._begin_modal_dialog()
+            if not modal_dialog_owned:
                 return
             # Check if either Tasbha presentation is already open
             standard_tasbha_file = os.path.abspath(relative_path(r"الإبصلمودية.pptx")).lower()
@@ -1422,8 +1460,10 @@ class MainWindow(QMainWindow):
             stack_trace = traceback.format_exc()
             self.notification_bar.show_message(f"خطأ في فتح التسبحة: {str(e)}", duration=5000)
             print(f"Tasbha Error: {str(e)}\n{stack_trace}")
+            close_stray_presentations_safe()
         finally:
-            self._end_modal_dialog()
+            if modal_dialog_owned:
+                self._end_modal_dialog()
             self.restore_normal_cursor()
             self.operation_in_progress = False
 
@@ -1439,8 +1479,10 @@ class MainWindow(QMainWindow):
         self.operation_in_progress = True
         self.set_busy_cursor()
         
+        modal_dialog_owned = False
         try:
-            if not self._begin_modal_dialog():
+            modal_dialog_owned = self._begin_modal_dialog()
+            if not modal_dialog_owned:
                 return
             # Show the selection dialog
             dialog = LakanSelectionDialog(self)
@@ -1463,7 +1505,8 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message(f"خطأ في فتح اللقان: {str(e)}", duration=5000)
             print(f"Lakan Error: {str(e)}\n{stack_trace}")
         finally:
-            self._end_modal_dialog()
+            if modal_dialog_owned:
+                self._end_modal_dialog()
             self.restore_normal_cursor()
             self.operation_in_progress = False
 
@@ -1478,8 +1521,10 @@ class MainWindow(QMainWindow):
         self.operation_in_progress = True
         self.set_busy_cursor()
         
+        modal_dialog_owned = False
         try:
-            if not self._begin_modal_dialog():
+            modal_dialog_owned = self._begin_modal_dialog()
+            if not modal_dialog_owned:
                 return
             self.restore_normal_cursor()
             dialog = Elbas5aDialog(self)
@@ -1488,7 +1533,8 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message(f"خطأ في فتح أسبوع الآلام: {str(e)}", duration=5000)
             print(f"Elbas5a Error: {str(e)}")
         finally:
-            self._end_modal_dialog()
+            if modal_dialog_owned:
+                self._end_modal_dialog()
             self.restore_normal_cursor()
             self.operation_in_progress = False
 
@@ -1581,17 +1627,12 @@ class MainWindow(QMainWindow):
         return arabic_date_string
 
     def getmonth(self, num):
-        from openpyxl import load_workbook
-        # Load the Excel file
-        workbook = load_workbook(relative_path(r'Tables.xlsx'))
-        sheet = workbook["المناسبات"]
-        search_number = num 
-        corresponding_value = None
-        for row in sheet.iter_rows(values_only=True):
-            if row[0] == search_number: 
-                corresponding_value = row[1] 
-                break
-        return  corresponding_value
+        COPTIC_MONTHS = {
+            1: "توت", 2: "بابة", 3: "هاتور", 4: "كيهك", 5: "طوبة",
+            6: "أمشير", 7: "برمهات", 8: "برمودة", 9: "بشنس", 10: "بؤونة",
+            11: "أبيب", 12: "مسرى", 13: "النسيء"
+        }
+        return  COPTIC_MONTHS.get(num, num)
 
     def add_back_button(self, parent, action):
         # Get frame geometry
@@ -1631,6 +1672,77 @@ class MainWindow(QMainWindow):
         anim.start()
         widget.anim = anim  # Keep a reference so it's not garbage collected
 
+    def _build_saints_reminder(self):
+        """Overlay banner announcing today's commemorated saints; click-through and self-fading."""
+        box_width, box_height = 380, 90
+        # Positioned at the bottom-middle of frame2's area (20, 280, 585, 275)
+        box_x = 20 + (585 - box_width) // 2
+        box_y = 280 + 275 - box_height - 15
+        self.saints_reminder = QLabel(self)
+        self.saints_reminder.setGeometry(box_x, box_y, box_width, box_height)
+        self.saints_reminder.setAlignment(Qt.AlignCenter)
+        self.saints_reminder.setWordWrap(True)
+        self.saints_reminder.setTextFormat(Qt.RichText)
+        # Click-through only (not visually transparent): whatever is behind stays the active widget
+        self.saints_reminder.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.saints_reminder.setStyleSheet("""
+            QLabel {
+                background: qlineargradient(
+                    x1: 0, y1: 0, x2: 1, y2: 1,
+                    stop: 0 rgba(15, 46, 71, 235),
+                    stop: 0.6 rgba(30, 91, 138, 235),
+                    stop: 1 rgba(140, 217, 255, 235)
+                );
+                color: white;
+                border-radius: 15px;
+                border: black 2px solid;
+                padding: 8px;
+            }
+        """)
+        self._saints_reminder_effect = QGraphicsOpacityEffect(self.saints_reminder)
+        self._saints_reminder_effect.setOpacity(0)
+        self.saints_reminder.setGraphicsEffect(self._saints_reminder_effect)
+        self.saints_reminder.hide()
+
+    def show_saints_reminder(self):
+        """Fade the today's-saints banner in, hold it briefly, then fade it back out."""
+        from saintsCalendar import get_saint_names
+        reminder = getattr(self, "saints_reminder", None)
+        if reminder is None:
+            return
+
+        names = get_saint_names(self.active_saints)
+        if not names:
+            reminder.hide()
+            return
+
+        title = "تذكار" if len(names) == 1 else "تذكارات"
+        body = "<br>".join(names)
+        reminder.setText(
+            f"<div style='font-size:16pt; font-weight:bold; text-decoration: underline;'>{title}</div>"
+            f"<div style='font-size:13pt; margin-top:6px;'>{body}</div>"
+        )
+        reminder.raise_()
+        reminder.show()
+
+        fade_in = QPropertyAnimation(self._saints_reminder_effect, b"opacity", self)
+        fade_in.setDuration(500)
+        fade_in.setStartValue(0)
+        fade_in.setEndValue(1)
+
+        def _fade_out():
+            fade_out = QPropertyAnimation(self._saints_reminder_effect, b"opacity", self)
+            fade_out.setDuration(800)
+            fade_out.setStartValue(1)
+            fade_out.setEndValue(0)
+            fade_out.finished.connect(reminder.hide)
+            fade_out.start()
+            self._saints_reminder_fade_out = fade_out  # keep a reference alive
+
+        fade_in.finished.connect(lambda: QTimer.singleShot(4000, _fade_out))
+        fade_in.start()
+        self._saints_reminder_fade_in = fade_in  # keep a reference alive
+
     def restore_main_frame(self):
         if self._rebuilding_main_frame:
             return
@@ -1646,16 +1758,19 @@ class MainWindow(QMainWindow):
 
             self.add_button_with_image(self.frame2, "Data/الصور/القداس.JPG", (13, 15, 100, 100), "القداس", self.handle_qadas_button_click)
             self.add_button_with_image(self.frame2, "Data/الصور/قداس الطفل.png", (126, 15, 100, 100), "قداس الطفل", self.handle_qadas_eltfl_button_click)
-            self.add_button_with_image(self.frame2, "Data\الصور\باكر.jpg", (239, 15, 100, 100), "باكر", self.handle_baker_button_click)
-            self.add_button_with_image(self.frame2, "Data\الصور\عشية.jpg", (352, 15, 100, 100), "عشية", self.handle_3ashya_button_click)
+            self.add_button_with_image(self.frame2, "Data/الصور/باكر.jpg", (239, 15, 100, 100), "باكر", self.handle_baker_button_click)
+            self.add_button_with_image(self.frame2, "Data/الصور/عشية.jpg", (352, 15, 100, 100), "عشية", self.handle_3ashya_button_click)
             self.add_button_with_image(self.frame2, "Data/الصور/الكتاب المقدس.png", (465, 15, 100, 100), "الكتاب المقدس", self.open_bible_window)
-            self.add_button_with_image(self.frame2, "Data\الصور\الأجبية.jpg", (13, 148, 100, 100), "الأجبية", self.handle_agbya_button_click)
-            self.add_button_with_image(self.frame2, "Data\الصور\داود 1.jpg", (126, 148, 100, 100), "الإبصلمودية", self.handle_tasbha_button_click)
-            self.add_button_with_image(self.frame2, "Data\الصور\الفهرس.jpg", (239, 148, 100, 100), "الفهرس", self.open_elfhrs_window)
-            self.add_button_with_image(self.frame2, "Data\الصور\المدائح2.jpg", (352, 148, 100, 100), "المدائح", self.open_taranym_window)
-            self.add_button_with_image(self.frame2, "Data\الصور\الصليب القبطي.jpg", (465, 148, 100, 100), "المناسبات", self.open_elmonasbat_Window)
+            self.add_button_with_image(self.frame2, "Data/الصور/الأجبية.jpg", (13, 148, 100, 100), "الأجبية", self.handle_agbya_button_click)
+            self.add_button_with_image(self.frame2, "Data/الصور/داود 1.jpg", (126, 148, 100, 100), "الإبصلمودية", self.handle_tasbha_button_click)
+            self.add_button_with_image(self.frame2, "Data/الصور/الفهرس.jpg", (239, 148, 100, 100), "الفهرس", self.open_elfhrs_window)
+            self.add_button_with_image(self.frame2, "Data/الصور/المدائح2.jpg", (352, 148, 100, 100), "المدائح", self.open_taranym_window)
+            self.add_button_with_image(self.frame2, "Data/الصور/الصليب القبطي.jpg", (465, 148, 100, 100), "المناسبات", self.open_elmonasbat_Window)
 
             self.frame2.show()
+            reminder = getattr(self, "saints_reminder", None)
+            if reminder is not None:
+                reminder.raise_()
         finally:
             self._rebuilding_main_frame = False
 
@@ -1739,8 +1854,10 @@ class MainWindow(QMainWindow):
             self.notification_bar.show_message("⚠ لا يوجد اتصال بالإنترنت. تحقق من الاتصال وحاول مرة أخرى.", duration=5000)
             return
 
+        modal_dialog_owned = False
         try:
-            if not self._begin_modal_dialog():
+            modal_dialog_owned = self._begin_modal_dialog()
+            if not modal_dialog_owned:
                 return
             url = "https://www.dropbox.com/scl/fi/tumjwytg8ptr88zs5pojd/version.json?rlkey=4fukyqxjx9lii0j0tunwxwpi7&st=sqk5fl08&dl=1"
             response = requests.get(url, timeout=5)
@@ -1751,9 +1868,12 @@ class MainWindow(QMainWindow):
             notes = data.get("description", "لا توجد تفاصيل.")
             exe_url = data.get("download_url")
 
+            def _close_update_dialog():
+                dialog.close()
+
             dialog = UpdatePrompt(version, notes, self)
             dialog.update_button.clicked.connect(lambda: self.download_update(exe_url))
-            dialog.cancel_button.clicked.connect(dialog.close)
+            dialog.cancel_button.clicked.connect(_close_update_dialog)
             dialog.exec_()
 
         except requests.exceptions.ConnectionError:
@@ -1769,7 +1889,8 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.notification_bar.show_message(f"⚠ خطأ غير متوقع: {str(e)}", duration=5000)
         finally:
-            self._end_modal_dialog()
+            if modal_dialog_owned:
+                self._end_modal_dialog()
 
     def download_update(self, installer_url):
         import requests
@@ -1849,7 +1970,7 @@ class MainWindow(QMainWindow):
             sleep(0.5)
             
             # Hardcoded file path for development
-            script_path = r"F:\5dmt Shashat\Codes and Files\stmarymaadiliturgies.py"
+            script_path = os.path.abspath(__file__)
             
             # Close the current application
             QApplication.quit()
@@ -1877,6 +1998,8 @@ class MainWindow(QMainWindow):
 
     def check_powerpoint_changes(self):
         """Check if any PowerPoint presentations have been closed and update UI immediately"""
+        if getattr(self, "_is_closing", False):
+            return
         if not getattr(self, "_enable_ppt_polling", False):
             return
         if not self.isActiveWindow():
@@ -1908,6 +2031,8 @@ class MainWindow(QMainWindow):
         Updates glow effects on buttons based on currently open presentations.
         Also closes any open SectionSelectionDialog if present.
         """
+        if getattr(self, "_is_closing", False):
+            return
         import os
 
         frame2 = getattr(self, "frame2", None)
@@ -1944,7 +2069,7 @@ class MainWindow(QMainWindow):
                     for btn_child in child.children():
                         if isinstance(btn_child, QLabel) and btn_child.text() in button_map:
                             button_text = btn_child.text()
-                            container = btn_child.parent()
+                            container = cast(QFrame, btn_child.parent())
                             
                             # Use ABSOLUTE path for comparison
                             full_path = os.path.abspath(relative_path(button_map[button_text])).lower()
@@ -1983,6 +2108,7 @@ class MainWindow(QMainWindow):
         self.refresh_button_states(skip_timer=True)
 
     def closeEvent(self, event):
+        self._is_closing = True
         if hasattr(self, "refresh_timer") and self.refresh_timer is not None:
             self.refresh_timer.stop()
         if hasattr(self, "ppt_check_timer") and self.ppt_check_timer is not None:

@@ -1,5 +1,6 @@
 import os
 from commonFunctions import *
+from saintsCalendar import *
 
 def run_vba_with_slide_id(excel, sheet, prs, presentation, slide_id_pairs=None, sha3anyn = False):
     if slide_id_pairs is None:
@@ -22,10 +23,9 @@ def run_vba_with_slide_id(excel, sheet, prs, presentation, slide_id_pairs=None, 
 
     # Access the VBA project
     vba_project = presentation.VBProject
-    modules = vba_project.VBComponents
 
     # Add a new module to the VBA project
-    new_module = modules.Add(1)  # 1 corresponds to a standard module
+    new_module = reset_vba_module(vba_project)
 
     # Generate the VBA code for the subroutine using SlideID
     vba_code = "Sub OnSlideShowPageChange()\n"
@@ -181,8 +181,11 @@ def _initialize_liturgy_session():
         'CopticCalendar': CopticCalendar
     }
 
-def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
+def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
+    print(f"Active Saints for {copticdate}: {active_saints}")
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = _session['prs1']
@@ -220,9 +223,9 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
     elebrksis1 = katamars_values[2]
     elmzmor = katamars_values[3]
     elengil = katamars_values[4]
-    elbouls2 = elkatholikon1 - 1
-    elkatholikon2 = elebrksis1 - 1
-    elebrksis2 = elmzmor - 1
+    elbouls2 = int(elkatholikon1) - 1
+    elkatholikon2 = int(elebrksis1) - 1
+    elebrksis2 = int(elmzmor) - 1
     elengil2 = katamars_values[5]
 
     seneksar_sheet = "السنكسار"
@@ -388,7 +391,7 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
     El3adraAndAngels = False 
     
     if season == 30 or season == 31 or copticdate[2]==21 or (copticdate[1]==9 and copticdate[2]==1) :
-        El3adraAndAngels == True
+        El3adraAndAngels = True
         # el3adra_show_values = ["مرد انجيل كيهك 2 و صوم العذراء", 
         #                        "قسمة أعياد الملائكة والسيدة العذراء وسنوى (هوذا كائن معنا على هذه)",
         #                        "اطاي بارثينوس"]
@@ -402,8 +405,8 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
         sanawy_hide_full_sections.extend(el3adra_hide_values)
         sanawy_show_full_sections.extend(el3adra_show_values)
 
-    elif copticdate[2] == 12:
-        El3adraAndAngels == True
+    if copticdate[2] == 12:
+        El3adraAndAngels = True
         # elmalakmikhael_values = ["مرد ابركسيس الملاك ميخائيل", "تكملة للملاك ميخائيل 2",
         #                               "ربع للملاك ميخائيل" , "هيتينية الملاك ميخائيل"],
         
@@ -428,6 +431,14 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
         sanawy_show_full_sections.extend(['{EB470874-9124-4BDB-8075-189A7B264402}', '{4A03C859-F4BF-49C0-8ACD-88213CF6D13D}'])
         sanawy_hide_full_sections.extend(['{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{ECE652ED-1345-4C6D-B92D-5996CFA27AEE}'])
     
+    if not El3adraAndAngels:
+        # Inline Virgin/Michael block above already handled day 12 and seasons 30/31.
+        # Only inject here for saints not covered by that block (future saints).
+        # Skipping when El3adraAndAngels=True prevents duplicate GUIDs in the array.
+        saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+        sanawy_show_full_sections.extend(saint_show)
+        sanawy_hide_full_sections.extend(saint_hide)
+ 
     if cd.weekday() == 6:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, sanawy_show_full_sections, sanawy_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
     else:
@@ -452,7 +463,6 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
     
     sanawy_show_values.append([khetamValue, khetamValue])
     show_slides(presentation1, sanawy_show_values)
-
     run_vba_with_slide_id(excel, des_sheet, prs1, presentation1)
     
     if cd.weekday() == 2 or cd.weekday() == 4:
@@ -525,8 +535,10 @@ def odasSanawy(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
 
     presentation1.SlideShowSettings.Run()
 
-def odasElnayrooz(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odasElnayrooz(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = _session['prs1']
@@ -719,11 +731,13 @@ def odasElnayrooz(copticdate, Bishop=False, guestBishop=0, seneksar=1):
         # nayrooz_hide_full_sections.extend(['ربع للعذراء'])
         nayrooz_hide_full_sections.extend(['{ECE652ED-1345-4C6D-B92D-5996CFA27AEE}'])
         
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    nayrooz_show_full_sections.extend(saint_show)
+    nayrooz_hide_full_sections.extend(saint_hide)
     if cd.weekday() == 6:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, nayrooz_show_full_sections, nayrooz_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
     else:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, nayrooz_show_full_sections, nayrooz_hide_full_sections)
-
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -826,8 +840,10 @@ def odasElnayrooz(copticdate, Bishop=False, guestBishop=0, seneksar=1):
 
     presentation1.SlideShowSettings.Run()
 
-def odasElsalyb(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odasElsalyb(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs = _session['prs1']
@@ -1019,7 +1035,11 @@ def odasElsalyb(copticdate, Bishop=False, guestBishop=0, seneksar=1):
         start_slides = [mrdMazmorEltawzy3, elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [mrdMazmorEltawzy3, elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    salyb_show_full_sections.extend(saint_show)
+    salyb_hide_full_sections.extend(saint_hide)
     show_hide_insertImage_replaceText(prs, excel, des_sheet, salyb_show_full_sections, salyb_hide_full_sections, new_Text=SlaybText)
+
 
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(prs2)
@@ -1146,8 +1166,10 @@ def odasElsalyb(copticdate, Bishop=False, guestBishop=0, seneksar=1):
 
     presentation1.SlideShowSettings.Run()
 
-def odasKiahk(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odasKiahk(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = _session['prs1']
@@ -1363,6 +1385,9 @@ def odasKiahk(copticdate, Bishop=False, guestBishop=0, seneksar=1):
         start_slides = [elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    kiahk_show_full_sections.extend(saint_show)
+    kiahk_hide_full_sections.extend(saint_hide)
     if cd.weekday() == 6:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, kiahk_show_full_sections, kiahk_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
     else:
@@ -1489,8 +1514,10 @@ def odasKiahk(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     
     presentation1.SlideShowSettings.Run()
 
-def odasbaramonElmiladAndEl8etas(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odasbaramonElmiladAndEl8etas(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs = _session['prs1']
@@ -1703,6 +1730,9 @@ def odasbaramonElmiladAndEl8etas(copticdate, Bishop=False, guestBishop=0, seneks
         start_slides = [elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    baramon_show_full_sections.extend(saint_show)
+    baramon_hide_full_sections.extend(saint_hide)
     show_hide_insertImage_replaceText(prs, excel, des_sheet, baramon_show_full_sections, baramon_hide_full_sections, new_Text=replaceText)
     
     presentation1 = open_presentation_relative_path(prs)
@@ -1840,8 +1870,10 @@ def odasbaramonElmiladAndEl8etas(copticdate, Bishop=False, guestBishop=0, seneks
 
     presentation1.SlideShowSettings.Run()
     
-def odasElmilad(Bishop=False, guestBishop=0, seneksar=1):
+def odasElmilad(Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     prs = _session['prs1']
     excel = _session['excel']
     excel2 = _session['excel2']
@@ -2031,6 +2063,9 @@ def odasElmilad(Bishop=False, guestBishop=0, seneksar=1):
         start_slides = [mrdMazmorEltawzy3, elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [mrdMazmorEltawzy3, elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    milad_show_full_sections.extend(saint_show)
+    milad_hide_full_sections.extend(saint_hide)
     show_hide_insertImage_replaceText(prs, excel, des_sheet, milad_show_full_sections, milad_hide_full_sections, None, milad_hide_full_sections_range, image, miladText)
     
     presentation1 = open_presentation_relative_path(prs)
@@ -2160,15 +2195,17 @@ def odasElmilad(Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if Bishop:
         close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
-def odasAfterElmilad(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odasAfterElmilad(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs = _session['prs1']
@@ -2365,8 +2402,11 @@ def odasAfterElmilad(copticdate, Bishop=False, guestBishop=0, seneksar=1):
         start_slides = [mrdMazmorEltawzy3, elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [mrdMazmorEltawzy3, elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
     
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    milad_show_full_sections.extend(saint_show)
+    milad_hide_full_sections.extend(saint_hide)
     show_hide_insertImage_replaceText(prs, excel, des_sheet, milad_show_full_sections, milad_hide_full_sections, None, None, image, miladText)
-    
+
     presentation1 = open_presentation_relative_path(prs)
     presentation2 = open_presentation_relative_path(katamars)
     seneksar_presentation = open_presentation_relative_path(seneksar_prs)
@@ -2495,15 +2535,17 @@ def odasAfterElmilad(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if Bishop:
         close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
-def odasEl5etan(Bishop=False, guestBishop=0, seneksar=1):
+def odasEl5etan(Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     prs = _session['prs1']
     excel = _session['excel']
     excel2 = _session['excel2']
@@ -2682,6 +2724,9 @@ def odasEl5etan(Bishop=False, guestBishop=0, seneksar=1):
         start_slides = [mrdMazmorEltawzy3, elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [mrdMazmorEltawzy3, elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    el5etan_show_full_sections.extend(saint_show)
+    el5etan_hide_full_sections.extend(saint_hide)
     show_hide_insertImage_replaceText(prs, excel, des_sheet, el5etan_show_full_sections, el5etan_hide_full_sections, None, None, None, el5etanText)
     
     presentation1 = open_presentation_relative_path(prs)
@@ -2787,15 +2832,17 @@ def odasEl5etan(Bishop=False, guestBishop=0, seneksar=1):
                 slide_index += 1
                 end_index += 1
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if Bishop:
         close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
-def odasEl8ytas(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odasEl8ytas(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs = _session['prs1']
@@ -3120,15 +3167,17 @@ def odasEl8ytas(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if guestBishop > 0:
         close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
-def odas3orsKanaElgalyl(Bishop=False, guestBishop=0, seneksar=1):
+def odas3orsKanaElgalyl(Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     prs1 = _session['prs1']
     excel = _session['excel']
     excel2 = _session['excel2']
@@ -3305,6 +3354,9 @@ def odas3orsKanaElgalyl(Bishop=False, guestBishop=0, seneksar=1):
         start_slides = [mrdMazmorEltawzy3, elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [mrdMazmorEltawzy3, elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    wedding_show_full_sections.extend(saint_show)
+    wedding_hide_full_sections.extend(saint_hide)
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, wedding_show_full_sections, wedding_hide_full_sections)
 
     presentation1 = open_presentation_relative_path(prs1)
@@ -3402,18 +3454,20 @@ def odas3orsKanaElgalyl(Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if Bishop:
         close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
-def odasDo5olElhykal(Bishop=False, guestBishop=0, seneksar=1):
+def odasDo5olElhykal(Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     return False
 
-def odasSomNynawa(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odasSomNynawa(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs = _session['prs1']
@@ -3683,15 +3737,17 @@ def odasSomNynawa(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     # Call the function once for all moves
     move_sections_v2(presentation1, move_section_names, target_section_names)
 
-    close_presentation_safe(prs2)
+    close_presentation_safe(katamars)
     close_presentation_safe(seneksar_prs)
     if Bishop:
         close_presentation_safe(prs3)
 
     presentation1.SlideShowSettings.Run()
 
-def odasElSomElkbyr(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
+def odasElSomElkbyr(copticdate, season, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = _session['prs1']
@@ -3899,8 +3955,29 @@ def odasElSomElkbyr(copticdate, season, Bishop=False, guestBishop=0, seneksar=1)
         start_slides = [mrdMazmorEltawzy3, elengil, elmzmor, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [mrdMazmorEltawzy3, elengil2, elmzmor, elebrksis2, elkatholikon2, elbouls2]
 
+    if cd.weekday() >= 5 or season in (15.1, 15.3, 15.4):
+        # Weekends and special Sundays/Fridays: show saint sections normally
+        saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+        som_show_full_sections.extend(saint_show)
+        som_hide_full_sections.extend(saint_hide)
+    # Regular weekdays of the Great Fast: saint sections skipped entirely
+ 
+    if cd.weekday() >= 5 or season in (15.1, 15.3, 15.4):
+        # Weekends and special Sundays/Fridays: show saint sections normally
+        saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+        som_show_full_sections.extend(saint_show)
+        som_hide_full_sections.extend(saint_hide)
+    # Regular weekdays of the Great Fast: saint sections skipped entirely
+ 
+    if cd.weekday() >= 5 or season in (15.1, 15.3, 15.4):
+        # Weekends and special Sundays/Fridays: show saint sections normally
+        saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+        som_show_full_sections.extend(saint_show)
+        som_hide_full_sections.extend(saint_hide)
+    # Regular weekdays of the Great Fast: saint sections skipped entirely
+ 
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, som_show_full_sections, som_hide_full_sections, None, som_hide_full_sections_ranges, None, None)
-    
+
     som_show_values.extend([[EsmaElsomElkbyr1, EsmaElsomElkbyr1]])
 
     presentation1 = open_presentation_relative_path(prs1)
@@ -4009,7 +4086,7 @@ def odasElSomElkbyr(copticdate, season, Bishop=False, guestBishop=0, seneksar=1)
     if guestBishop>0:
         close_presentation_safe(prs3)
 
-def odasElbeshara(Bishop=False, guestBishop=0, seneksar=1):
+def odasElbeshara(Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
@@ -4292,7 +4369,7 @@ def odasElbeshara(Bishop=False, guestBishop=0, seneksar=1):
 
     presentation1.SlideShowSettings.Run()
 
-def odasSbtLe3azr(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odasSbtLe3azr(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
@@ -4466,6 +4543,9 @@ def odasSbtLe3azr(copticdate, Bishop=False, guestBishop=0, seneksar=1):
         start_slides = [elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    le3azr_show_full_sections.extend(saint_show)
+    le3azr_hide_full_sections.extend(saint_hide)
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, le3azr_show_full_sections, le3azr_hide_full_sections)
 
     presentation1 = open_presentation_relative_path(prs1)
@@ -4553,7 +4633,7 @@ def odasSbtLe3azr(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     if guestBishop > 0:
         close_presentation_safe(prs3)
 
-def odasElsh3anyn(copticdate, Bishop=False, guestBishop=0):
+def odasElsh3anyn(copticdate, Bishop=False, guestBishop=0, active_saints=None):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
@@ -4897,7 +4977,7 @@ def odasElsh3anyn(copticdate, Bishop=False, guestBishop=0):
         close_presentation_safe(prs3)
     close_presentation_safe(prs2)
 
-def odasEl2yama(copticdate, Bishop=False, guestBishop=0):
+def odasEl2yama(copticdate, Bishop=False, guestBishop=0, active_saints=None):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
@@ -5206,7 +5286,7 @@ def odasEl2yama(copticdate, Bishop=False, guestBishop=0):
 
     presentation1.SlideShowSettings.Run()
 
-def odasEl5amasyn_2_39(copticdate, Bishop=False, guestBishop=0):
+def odasEl5amasyn_2_39(copticdate, Bishop=False, guestBishop=0, active_saints=None):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
@@ -5508,7 +5588,7 @@ def odasEl5amasyn_2_39(copticdate, Bishop=False, guestBishop=0):
 
     presentation1.SlideShowSettings.Run()
 
-def odasElso3od(copticdate, Bishop=False, guestBishop=0, afterSo3od=False):
+def odasElso3od(copticdate, Bishop=False, guestBishop=0, afterSo3od=False, active_saints=None):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
@@ -5817,7 +5897,7 @@ def odasElso3od(copticdate, Bishop=False, guestBishop=0, afterSo3od=False):
 
     presentation1.SlideShowSettings.Run()
 
-def odasEl3nsara(copticdate, Bishop=False, guestBishop=0):
+def odasEl3nsara(copticdate, Bishop=False, guestBishop=0, active_saints=None):
     prs1 = relative_path(r"قداس.pptx")  # Using the relative path
     excel = relative_path(r"Files Data.xlsx")
     excel2 = relative_path(r"Tables.xlsx")
@@ -6115,8 +6195,10 @@ def odasEl3nsara(copticdate, Bishop=False, guestBishop=0):
 
     presentation1.SlideShowSettings.Run()
 
-def odasDo5olElmasy7Masr(copticdate, season, Bishop=False, guestBishop=0, seneksar=1):
+def odasDo5olElmasy7Masr(copticdate, season, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = _session['prs1']
@@ -6150,41 +6232,41 @@ def odasDo5olElmasy7Masr(copticdate, season, Bishop=False, guestBishop=0, seneks
     seneksar1 = seneksar_values[0]
     seneksar2 = seneksar_values[1]
 
-    eltagaly_show_values = []
-    eltagaly_hide_values = []
+    egypt_show_values = []
+    egypt_hide_values = []
 
-    # eltagaly_show_full_sections = ["الليلويا فاي بيبي", "طاي شوري", "مرد ابركسيس دخول المسيح أرض مصر", 
+    # egypt_show_full_sections = ["الليلويا فاي بيبي", "طاي شوري", "مرد ابركسيس دخول المسيح أرض مصر", 
     #                                "مرد مزمور دخول المسيح أرض مصر", "فاي اريه بي اوو", "مرد انجيل دخول المسيح أرض مصر",
     #                                "قسمة عيد دخول المسيح أرض مصر (أيها السيد الرب الهنا.. جاء اليوم الى مصر..)",
     #                                "مدائح الاعياد السيدية", "اوشية اهوية السماء", "اوشية اهوية السماء غ"]
     
-    # eltagaly_hide_full_sections = ["مرد المزمور", "مرد الانجيل", "ربع للعذراء",
+    # egypt_hide_full_sections = ["مرد المزمور", "مرد الانجيل", "ربع للعذراء",
     #                                "قسمة القداس الباسيلي (أيها السيد الرب إلهنا)"]
     
-    # eltagaly_values = ["تكملة على حسب المناسبة", "مزمور التوزيع", "مزمور التوزيع", "مرد توزيع دخول المسيح أرض مصر",
+    # egypt_values = ["تكملة على حسب المناسبة", "مزمور التوزيع", "مزمور التوزيع", "مرد توزيع دخول المسيح أرض مصر",
     #                    "الانجيل", "المزمور", "الابركسيس", "الكاثوليكون", "البولس عربي", "السنكسار", "بدء قداس الكلمة"]
 
-    eltagaly_show_full_sections = ['{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}', '{4D4ADF3D-C5E3-4912-84F2-0CB91C3ED475}', '{6CFFE3AA-240A-4A85-BE89-A1311636F7BA}', '{B7D98377-B994-4654-B49C-DE10E0DDE4F1}', '{292AFDD4-709D-457C-979A-DB9F3F0FC0B0}', '{EB2E0FC4-58C3-41BB-8EAF-0576B8086000}', '{147FD013-1F73-40AC-92A0-5544B48FA888}', '{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}']
-    eltagaly_hide_full_sections = ['{F13A48F2-238D-4617-B84E-9B0A694D9A18}', '{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{ECE652ED-1345-4C6D-B92D-5996CFA27AEE}', '{681FF6A7-4230-4171-8F41-83FD64E8C960}']
+    egypt_show_full_sections = ['{072F3D96-A6C8-405F-9A23-7CCA1B2F13FF}', '{20F525FD-C708-4DDD-8E40-FE502EFEBDDE}', '{4D4ADF3D-C5E3-4912-84F2-0CB91C3ED475}', '{6CFFE3AA-240A-4A85-BE89-A1311636F7BA}', '{B7D98377-B994-4654-B49C-DE10E0DDE4F1}', '{292AFDD4-709D-457C-979A-DB9F3F0FC0B0}', '{EB2E0FC4-58C3-41BB-8EAF-0576B8086000}', '{147FD013-1F73-40AC-92A0-5544B48FA888}', '{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}']
+    egypt_hide_full_sections = ['{F13A48F2-238D-4617-B84E-9B0A694D9A18}', '{06D592C8-05BF-4B7C-86F7-FDAB3FAB5FB1}', '{ECE652ED-1345-4C6D-B92D-5996CFA27AEE}', '{681FF6A7-4230-4171-8F41-83FD64E8C960}']
     
-    eltagaly_values = ['{A18EDC94-F257-4FAC-99C7-0A8EA70F0FAF}', '{C29E5A83-A98B-4077-8194-99A6D803EF53}', '{C29E5A83-A98B-4077-8194-99A6D803EF53}', '{1848C53A-97F7-4DE5-80E7-B423E4B79D30}', '{C7D4A109-F792-4661-BAD0-075FD1A1909F}', '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{E234C6C7-3837-4CE4-A541-CDC9627AAAC2}', '{6D4B3F52-63BF-435F-BF0C-C9D41120C2A3}', '{D88055F5-EAA0-4C8E-8249-C364A572BF7B}', '{1DA5C6AA-2FE5-461B-9E2C-40113CFC7804}', '{C08D8D44-E49E-47CE-8027-C8AE26B1AA9A}']
+    egypt_values = ['{A18EDC94-F257-4FAC-99C7-0A8EA70F0FAF}', '{C29E5A83-A98B-4077-8194-99A6D803EF53}', '{C29E5A83-A98B-4077-8194-99A6D803EF53}', '{1848C53A-97F7-4DE5-80E7-B423E4B79D30}', '{C7D4A109-F792-4661-BAD0-075FD1A1909F}', '{B74DBB8C-2B2D-46E4-9508-DA46008D19A4}', '{E234C6C7-3837-4CE4-A541-CDC9627AAAC2}', '{6D4B3F52-63BF-435F-BF0C-C9D41120C2A3}', '{D88055F5-EAA0-4C8E-8249-C364A572BF7B}', '{1DA5C6AA-2FE5-461B-9E2C-40113CFC7804}', '{C08D8D44-E49E-47CE-8027-C8AE26B1AA9A}']
 
-    eltagaly_values = find_slide_nums_arrays_v2(excel, des_sheet, eltagaly_values, 2, [2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
+    egypt_values = find_slide_nums_arrays_v2(excel, des_sheet, egypt_values, 2, [2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
 
     #الختام
-    elkhetam = eltagaly_values[0]
+    elkhetam = egypt_values[0]
     #التوزيع
-    mazmorELtawzy3 = eltagaly_values[1] + 1
-    mazmorELtawzy32 = eltagaly_values[2] - 1
-    mrdMazmorEltawzy3 = eltagaly_values[3]
+    mazmorELtawzy3 = egypt_values[1] + 1
+    mazmorELtawzy32 = egypt_values[2] - 1
+    mrdMazmorEltawzy3 = egypt_values[3]
     
     #القرائات
-    elengil3 = eltagaly_values[4]
-    elmazmor3 = eltagaly_values[5]
-    elebrksis3 = eltagaly_values[6]
-    elkatholikon3 = eltagaly_values[7]
-    elbouls3 = eltagaly_values[8]
-    elseneksar = eltagaly_values[9]
+    elengil3 = egypt_values[4]
+    elmazmor3 = egypt_values[5]
+    elebrksis3 = egypt_values[6]
+    elkatholikon3 = egypt_values[7]
+    elbouls3 = egypt_values[8]
+    elseneksar = egypt_values[9]
 
     if Bishop == True:
         prs3 = relative_path(r"Data\حضور الأسقف.pptx")
@@ -6202,8 +6284,8 @@ def odasDo5olElmasy7Masr(copticdate, season, Bishop=False, guestBishop=0, seneks
         
         bishop_hide_values = ['{4D2B15D5-C978-467C-9D6C-726FE25128B8}']
         
-        eltagaly_show_full_sections.extend(bishop_show_values)
-        eltagaly_hide_full_sections.extend(bishop_hide_values)
+        egypt_show_full_sections.extend(bishop_show_values)
+        egypt_hide_full_sections.extend(bishop_hide_values)
 
         if guestBishop > 0:
             # bishop_values = ["صلاة الشكر", "صلاة الشكر", "طوبه هينا الكبيرة", "طوبه هينا الكبيرة", 
@@ -6301,10 +6383,13 @@ def odasDo5olElmasy7Masr(copticdate, season, Bishop=False, guestBishop=0, seneks
         start_slides = [elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    egypt_show_full_sections.extend(saint_show)
+    egypt_hide_full_sections.extend(saint_hide)
     if cd.weekday() == 6:
-        show_hide_insertImage_replaceText(prs1, excel, des_sheet, eltagaly_show_full_sections, eltagaly_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
+        show_hide_insertImage_replaceText(prs1, excel, des_sheet, egypt_show_full_sections, egypt_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
     else:
-        show_hide_insertImage_replaceText(prs1, excel, des_sheet, eltagaly_show_full_sections, eltagaly_hide_full_sections)
+        show_hide_insertImage_replaceText(prs1, excel, des_sheet, egypt_show_full_sections, egypt_hide_full_sections)
 
     presentation1 = open_presentation_relative_path(prs1)
     presentation2 = open_presentation_relative_path(prs2)
@@ -6314,10 +6399,10 @@ def odasDo5olElmasy7Masr(copticdate, season, Bishop=False, guestBishop=0, seneks
         presentation3 = open_presentation_relative_path(prs3)
 
     khetamValue = find_slide_index_by_title(presentation1, "دخول المسيح ارض مصر", elkhetam, "up")
-    eltagaly_show_values.extend([[khetamValue, khetamValue]])
+    egypt_show_values.extend([[khetamValue, khetamValue]])
     run_vba_with_slide_id(excel, des_sheet, prs1, presentation1)
-    show_slides(presentation1, eltagaly_show_values)
-    agbya(presentation1, eltagaly_values[10], 1)
+    show_slides(presentation1, egypt_show_values)
+    agbya(presentation1, egypt_values[10], 1)
 
     # Initialize variables for current position, slide, and end index
     current_position = start_positions[0]
@@ -6389,8 +6474,10 @@ def odasDo5olElmasy7Masr(copticdate, season, Bishop=False, guestBishop=0, seneks
 
     presentation1.SlideShowSettings.Run()
 
-def odasSomElRosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odasSomElRosol(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = _session['prs1']
@@ -6591,26 +6678,9 @@ def odasSomElRosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
         start_slides = [elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
-    if copticdate[2] == 12:
-        # elmalakmikhael_values = ['تكملة للملاك ميخائيل 2', 'تكملة للملاك ميخائيل 12 بؤونة', 'مرد ابركسيس الملاك ميخائيل'],
-        # elmalakmikhael_show_values = ['ربع للملاك ميخائيل', 'هيتينية الملاك ميخائيل']
-        
-        elmalakmikhael_show_values = ['{E95B1DDC-4235-4C02-91A4-DCB7A2808C33}', '{9EF543FB-A75B-4171-B358-2EB549C98411}']
-        elrosol_show_full_sections.extend(elmalakmikhael_show_values)
-        elmalakmikhael_values = find_slide_nums_arrays_v2(excel, des_sheet, 
-                                ["{4329E910-BD2C-4FBB-8FF3-A59F06EE9D45}", "{5BB65881-3E8A-4130-839D-6EB6F9D5FAFA}", "{02EBDDE5-1CBF-452A-A12A-A3F76FE68DDC}", "{56E5BC0D-5FFC-4411-AC9C-78085E58A9E3}"],
-                                2, [1, 2, 1, 2])
-        mrdebrksis = elmalakmikhael_values[0]
-        mrdebrksis3 = elmalakmikhael_values[1]
-        mrdebrksis2 = elmalakmikhael_values[2]
-        mrdebrksis4 = elmalakmikhael_values[3]
-        elrosol_show_values.extend([[mrdebrksis, mrdebrksis], [mrdebrksis2, mrdebrksis2], [mrdebrksis3, mrdebrksis3], [mrdebrksis4, mrdebrksis4]])
-
-    elif copticdate[2] == 13:
-        # elmalakghobrial = ["هيتينية الملاك غبريال", "مرد ابركسيس كيهك 2و4 و الملاك غبريال", "ربع للملاك غبريال"]
-        elmalakghobrial_show_values = ['{AE7AA37A-5543-45C2-9921-1F5B7FF26544}', '{D7004C9A-722E-4972-BC92-78D7310ECF12}', '{D291E41B-2C53-4536-8FD1-348E9CDB2155}']
-        elrosol_show_full_sections.extend(elmalakghobrial_show_values)
-
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    elrosol_show_full_sections.extend(saint_show)
+    elrosol_hide_full_sections.extend(saint_hide)
     if cd.weekday() == 6:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, elrosol_show_full_sections, elrosol_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
     else:
@@ -6717,8 +6787,10 @@ def odasSomElRosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
 
     presentation1.SlideShowSettings.Run()
 
-def odas3ydElrosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odas3ydElrosol(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = _session['prs1']
@@ -6919,6 +6991,9 @@ def odas3ydElrosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
         start_slides = [elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    elrosol_show_full_sections.extend(saint_show)
+    elrosol_hide_full_sections.extend(saint_hide)
     if cd.weekday() == 6:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, elrosol_show_full_sections, elrosol_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
     else:
@@ -7018,8 +7093,10 @@ def odas3ydElrosol(copticdate, Bishop=False, guestBishop=0, seneksar=1):
 
     presentation1.SlideShowSettings.Run()
 
-def odasEltagaly(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odasEltagaly(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = _session['prs1']
@@ -7211,6 +7288,9 @@ def odasEltagaly(copticdate, Bishop=False, guestBishop=0, seneksar=1):
         start_slides = [elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    eltagaly_show_full_sections.extend(saint_show)
+    eltagaly_hide_full_sections.extend(saint_hide)
     if cd.weekday() == 6:
         show_hide_insertImage_replaceText(prs1, excel, des_sheet, eltagaly_show_full_sections, eltagaly_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
     else:
@@ -7299,8 +7379,10 @@ def odasEltagaly(copticdate, Bishop=False, guestBishop=0, seneksar=1):
 
     presentation1.SlideShowSettings.Run()
 
-def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0, seneksar=1):
+def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0, seneksar=1, active_saints=None):
     _session = _initialize_liturgy_session()
+    if active_saints is None:
+            active_saints = []
     CopticCalendar = _session['CopticCalendar']
     cd = CopticCalendar().coptic_to_gregorian(copticdate)
     prs1 = _session['prs1']
@@ -7379,7 +7461,7 @@ def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0, seneksar=1):
     mrdMazmorEltawzy3_elqiyama = twentyNine_values[5]
 
     #الاواشي
-    AwashySeason = CopticCalendar.get_coptic_date_range(copticdate)
+    AwashySeason = CopticCalendar().get_coptic_date_range(copticdate)
     match AwashySeason:
         case "Air": twentyNine_show_full_sections.extend(['{BC7E3DCD-6AA8-44CC-B8AF-BC3E2BC71B5A}', '{A20DA654-32F7-4B4C-96CB-C76232EB96E8}'])
         case "Tree": twentyNine_show_full_sections.extend(['{F94B3D1F-649D-4839-BD2E-19439E173129}', '{5DD6BABA-9FE4-4D33-9F90-0C865CB95EE4}'])
@@ -7498,6 +7580,9 @@ def odas29thOfMonth(copticdate, Bishop=False, guestBishop=0, seneksar=1):
         start_slides = [mrdMazmorEltawzy3_elqiyama, elengil, elmzmor, seneksar1, elebrksis1, elkatholikon1, elbouls1]
         end_slides = [mrdMazmorEltawzy3_elqiyama, elengil2, elmzmor, seneksar2, elebrksis2, elkatholikon2, elbouls2]
 
+    saint_show, saint_hide = get_saint_show_hide(active_saints, "القداس")
+    twentyNine_show_full_sections.extend(saint_show)
+    twentyNine_hide_full_sections.extend(saint_hide)
     show_hide_insertImage_replaceText(prs1, excel, des_sheet, twentyNine_show_full_sections, twentyNine_hide_full_sections, new_Text=["لأنك قمت","aktwnk", "آك طونك"])
 
     presentation1 = open_presentation_relative_path(prs1)
