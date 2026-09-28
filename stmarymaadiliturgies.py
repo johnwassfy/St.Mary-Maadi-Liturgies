@@ -794,6 +794,8 @@ class MainWindow(QMainWindow):
                 return r"Data\الصور\Aykona.png"
             case 1 | 1.1:
                 return r"Data\الصور\النيروز.JPG"
+            # case 2:
+            #     return r"Data\الصور\الصليب.jpeg"
             case 4 | 4.1:
                 return r"Data\الصور\عيد الميلاد.jpg"
             case 10 :
