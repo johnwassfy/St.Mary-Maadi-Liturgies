@@ -246,6 +246,7 @@ _SECONDARY_PRESENTATION_RELATIVE_PATHS = [
     r"Data\القطمارس\الصوم الكبير و صوم نينوى\قرائات صوم نينوى و فصح يونان.pptx",
     r"Data\القطمارس\قرائات احد الشعانين.pptx",
     r"Data\القطمارس\قطمارس الخماسين (القداس).pptx",
+    r"Data\CopyData\كتاب المدائح.pptx",
 ]
 
 def close_stray_presentations_safe():
@@ -799,6 +800,85 @@ def find_section_range_arrays(excel_path, sheet_name, words):
     except Exception as e:
         print(f"Error reading Excel file: {e}")
         return []
+
+def classify_sections_by_keyword(excel_path, sheet_name, keyword_map):
+    """Bucket each section's GUID (col 1) by whether its name (col 0) contains a service keyword; unmatched rows go to 'fixed'."""
+    workbook = None
+    try:
+        workbook = load_workbook(excel_path, read_only=True)
+        worksheet = workbook[sheet_name]
+
+        buckets = {"fixed": []}
+        for service_key in keyword_map:
+            buckets[service_key] = []
+
+        for row in worksheet.iter_rows(min_row=2, values_only=True):
+            name, guid = row[0], row[1]
+            if not name or not guid:
+                continue
+            matched = False
+            for service_key, keyword in keyword_map.items():
+                if keyword in str(name):
+                    buckets[service_key].append(guid)
+                    matched = True
+            if not matched:
+                buckets["fixed"].append(guid)
+
+        return buckets
+    except Exception as e:
+        raise ExcelLookupError(f"Error classifying sections in '{excel_path}' sheet '{sheet_name}': {e}") from e
+    finally:
+        _close_workbook(workbook)
+
+def list_section_rows(excel_path, sheet_name):
+    """Return [(section_name, section_guid), ...] for a sheet in original row order."""
+    workbook = None
+    try:
+        workbook = load_workbook(excel_path, read_only=True)
+        worksheet = workbook[sheet_name]
+
+        rows = []
+        for row in worksheet.iter_rows(min_row=2, values_only=True):
+            name, guid = row[0], row[1]
+            if name and guid:
+                rows.append((name, guid))
+
+        return rows
+    except Exception as e:
+        raise ExcelLookupError(f"Error listing sections in '{excel_path}' sheet '{sheet_name}': {e}") from e
+    finally:
+        _close_workbook(workbook)
+
+def list_hymns_by_part(excel_path, sheet_name, part_marker):
+    """Return [{'name','first_slide','last_slide','num_slides'}, ...] for rows between a "الباب ..." break marker and the next one."""
+    workbook = None
+    try:
+        workbook = load_workbook(excel_path, read_only=True)
+        worksheet = workbook[sheet_name]
+
+        part_markers = {"الباب الاول", "الباب الثاني", "الباب الثالث"}
+        hymns = []
+        in_part = False
+        for row in worksheet.iter_rows(min_row=2, values_only=True):
+            name = row[0]
+            if not name:
+                continue
+            if name in part_markers:
+                in_part = (name == part_marker)
+                continue
+            if in_part:
+                hymns.append({
+                    "name": name,
+                    "first_slide": row[2],
+                    "last_slide": row[3],
+                    "num_slides": row[4],
+                })
+
+        return hymns
+    except Exception as e:
+        raise ExcelLookupError(f"Error listing hymns in '{excel_path}' sheet '{sheet_name}': {e}") from e
+    finally:
+        _close_workbook(workbook)
 
 def show_slide_ranges_from_sections(ppt_file, excel_path, sheet_name, section_ids):
     # Open the PowerPoint presentation

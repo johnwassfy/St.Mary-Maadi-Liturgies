@@ -773,6 +773,7 @@ class MainWindow(QMainWindow):
                 (relative_path(r"Data\اسبوع الالام\خميس العهد.pptx"), "خميس العهد"),
                 (relative_path(r"Data\اسبوع الالام\الجمعة العظيمة.pptx"), "الجمعة العظيمة"),
                 (relative_path(r"Data\CopyData\صلاة السجدة.pptx"), "صلاة السجدة"),
+                (relative_path(r"Data\CopyData\الأجبية\07- منتصف الليل.pptx"), "صلاة نصف الليل")
                 ]
 
             excel_file = relative_path(r'Files Data.xlsx')
@@ -1541,7 +1542,77 @@ class MainWindow(QMainWindow):
             self.operation_in_progress = False
 
     def handle_agbya_button_click(self):
-        return
+        from agbyaConfig import AGBYA_PRAYERS
+        from agbyaDialog import AgbyaDialog, AgbyaSetupDialog, AgbyaGatheringBuilderDialog
+        from qudasDialog import SectionSelectionDialog
+        import os
+
+        # Prevent concurrent operations
+        if self.operation_in_progress:
+            self.notification_bar.show_message("عملية جارية... يرجى الانتظار", duration=2000)
+            return
+
+        self.operation_in_progress = True
+        self.set_busy_cursor()
+
+        try:
+            self.restore_normal_cursor()
+            picker = AgbyaDialog(self)
+            if picker.exec_() != QDialog.Accepted or not picker.selected_prayer_key:
+                return
+
+            prayer_key = picker.selected_prayer_key
+            config = AGBYA_PRAYERS[prayer_key]
+            presentation_file = os.path.abspath(relative_path(config["working_file"])).lower()
+            is_already_open = any(open_pres.lower() == presentation_file for open_pres in get_open_presentations())
+
+            if not is_already_open:
+                setup_dialog = AgbyaSetupDialog(self, prayer_key)
+                if setup_dialog.exec_() != QDialog.Accepted or not setup_dialog.action:
+                    return
+                selected_sub_services = setup_dialog.selected_services
+
+                # Agbya prayers have no bishop-specific sections, so no confirmation window here.
+                self.bishop = False
+                self.GuestBishop = 0
+
+                self.set_busy_cursor()
+                hidden_section_ids = None
+                hymn_insertions = None
+                media_insertions = None
+                if setup_dialog.action == "construct":
+                    self.restore_normal_cursor()
+                    builder_dialog = AgbyaGatheringBuilderDialog(self, prayer_key, selected_sub_services)
+                    if builder_dialog.exec_() != QDialog.Accepted:
+                        return
+                    hidden_section_ids = builder_dialog.hidden_section_ids
+                    hymn_insertions = builder_dialog.hymn_insertions
+                    media_insertions = builder_dialog.media_insertions
+                    self.set_busy_cursor()
+
+                import agbya
+                agbya.open_agbya_prayer(prayer_key, selected_sub_services, hidden_section_ids,
+                                         self.bishop, self.GuestBishop, hymn_insertions, media_insertions)
+
+            self.refresh_button_states(skip_timer=True)
+            self.restore_main_frame()
+            m = self.getmonth(self.coptic_date[1])
+            m = self.convert_to_arabic_digits(m)
+            coptic_date_text = f"{self.convert_to_arabic_digits(self.coptic_date[2])} {m}، {self.convert_to_arabic_digits(self.coptic_date[0])}"
+            arabic_date_text = self.get_arabic_month_date(self.current_date)
+            title = f"{config['label']} {coptic_date_text} / {arabic_date_text}"
+            self.restore_normal_cursor()
+            dialog = SectionSelectionDialog.get_dialog(self, title, config["sheet"])
+            dialog.exec_()
+
+        except Exception as e:
+            stack_trace = traceback.format_exc()
+            self.notification_bar.show_message(f"خطأ في فتح الأجبية: {str(e)}", duration=5000)
+            print(f"Agbya Error: {str(e)}\n{stack_trace}")
+            close_stray_presentations_safe()
+        finally:
+            self.restore_normal_cursor()
+            self.operation_in_progress = False
     
     def handle_sagda_button_click(self):
         """Open the sagda confirmation dialog first, then launch the presentation if accepted."""
@@ -2063,19 +2134,25 @@ class MainWindow(QMainWindow):
         baker_path = os.path.abspath(relative_path(r"رفع بخور عشية و باكر.pptx")).lower()
         if any(open_pres.lower() == baker_path for open_pres in open_presentations):
             baker_open = True
-        
+
+        # Check if any Agbya prayer's working file is currently open
+        from agbyaConfig import AGBYA_PRAYERS
+        agbya_open = False
+        for agbya_config in AGBYA_PRAYERS.values():
+            agbya_path = os.path.abspath(relative_path(agbya_config["working_file"])).lower()
+            if any(open_pres.lower() == agbya_path for open_pres in open_presentations):
+                agbya_open = True
+                break
+
         # Find all buttons in the frame2 container
         try:
             for child in frame2.children():
                 if isinstance(child, QFrame):
                     for btn_child in child.children():
-                        if isinstance(btn_child, QLabel) and btn_child.text() in button_map:
+                        if isinstance(btn_child, QLabel) and (btn_child.text() in button_map or btn_child.text() == "الأجبية"):
                             button_text = btn_child.text()
                             container = cast(QFrame, btn_child.parent())
-                            
-                            # Use ABSOLUTE path for comparison
-                            full_path = os.path.abspath(relative_path(button_map[button_text])).lower()
-                            
+
                             # Special handling for باكر and عشية
                             if button_text in ["باكر", "عشية"]:
                                 # Only add glow to the active button if the file is open
@@ -2087,8 +2164,18 @@ class MainWindow(QMainWindow):
                                     container.setGraphicsEffect(glow)
                                 else:
                                     container.setGraphicsEffect(None)
+                            elif button_text == "الأجبية":
+                                if agbya_open:
+                                    glow = QGraphicsDropShadowEffect(container)
+                                    glow.setOffset(0)
+                                    glow.setBlurRadius(30)
+                                    glow.setColor(QColor(0, 255, 0))
+                                    container.setGraphicsEffect(glow)
+                                else:
+                                    container.setGraphicsEffect(None)
                             else:
                                 # Standard handling for other buttons
+                                full_path = os.path.abspath(relative_path(button_map[button_text])).lower()
                                 is_open = any(open_pres.lower() == full_path for open_pres in open_presentations)
                                 if is_open:
                                     glow = QGraphicsDropShadowEffect(container)

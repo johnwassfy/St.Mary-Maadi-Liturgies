@@ -1050,6 +1050,12 @@ class SectionSelectionDialog(QDialog):
     
     def determine_file_path(self):
         """Determine which PowerPoint file to use based on the sheet name"""
+        from agbyaConfig import AGBYA_PRAYERS
+        for config in AGBYA_PRAYERS.values():
+            if config["sheet"] == self.sheet_name:
+                self.file_path = relative_path(config["working_file"])
+                return
+
         match(self.sheet_name):
             case "رفع بخور":
                 self.file_path = r"رفع بخور عشية و باكر.pptx"
