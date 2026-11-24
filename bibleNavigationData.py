@@ -38,14 +38,14 @@ class BibleNavigationError(Exception):
     """Raised when a book's chapter/verse manifest cannot be built or loaded."""
 
 
-def _phase3_folder(testament):
-    return Path(relative_path(os.path.join("الكتاب المقدس", testament, "phase3")))
+def _testament_folder(testament):
+    return Path(relative_path(os.path.join(r"Data\الكتاب المقدس", testament)))
 
 
 def _book_files(testament):
     """Map book number to its Phase 3 file path for one testament."""
     files = {}
-    folder = _phase3_folder(testament)
+    folder = _testament_folder(testament)
     if not folder.is_dir():
         return files
     for path in folder.glob("*.pptx"):

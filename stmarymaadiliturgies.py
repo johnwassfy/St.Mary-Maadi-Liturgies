@@ -1613,7 +1613,7 @@ class MainWindow(QMainWindow):
         finally:
             self.restore_normal_cursor()
             self.operation_in_progress = False
-    
+
     def handle_sagda_button_click(self):
         """Open the sagda confirmation dialog first, then launch the presentation if accepted."""
         import elsagda
